@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Service de développement
   area-web-dev:
     build:
       context: .
@@ -15,7 +14,6 @@ services:
       - NODE_ENV=development
     command: npm run dev -- --host 0.0.0.0
 
-  # Service de production
   area-web-prod:
     build:
       context: .
@@ -27,7 +25,6 @@ services:
     profiles:
       - production
 
-  # Service de build (pour construire sans lancer)
   area-web-build:
     build:
       context: .

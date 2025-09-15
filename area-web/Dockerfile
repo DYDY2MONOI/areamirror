@@ -1,27 +1,24 @@
-# Dockerfile pour l'application React/Vite
 FROM node:20-alpine AS base
 
-# Installer les dépendances nécessaires
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copier les fichiers de configuration des dépendances
 COPY package*.json ./
 
-# Stage de développement
+# dev
 FROM base AS dev
 RUN npm install
 COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
-# Stage de build
+# build
 FROM base AS builder
 RUN npm install --only=production
 COPY . .
 RUN npm run build
 
-# Stage de production
+# prod
 FROM nginx:alpine AS production
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
