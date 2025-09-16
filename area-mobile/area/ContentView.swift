@@ -76,12 +76,12 @@ struct ContentView: View {
                             .padding(.bottom, 60)
                         
                         VStack(spacing: 12) {
-                            Text("CONNECTEZ-VOUS À VOTRE COMPTE")
+                            Text("LOGIN TO YOUR ACCOUNT")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                             
-                            Text("Entrez vos informations de connexion")
+                            Text("Enter your login information")
                                 .font(.system(size: 16))
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
@@ -117,11 +117,11 @@ struct ContentView: View {
                                     .frame(width: 20)
                                 
                                 if showPassword {
-                                    TextField("Mot de passe", text: $password)
+                                    TextField("Password", text: $password)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                 } else {
-                                    SecureField("Mot de passe", text: $password)
+                                    SecureField("Password", text: $password)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                 }
@@ -155,7 +155,7 @@ struct ContentView: View {
                                     Image(systemName: rememberMe ? "checkmark.square.fill" : "square")
                                         .foregroundColor(rememberMe ? Color(red: 0.34, green: 0.50, blue: 0.91) : .gray)
                                     
-                                    Text("Se souvenir de moi")
+                                    Text("Remember me")
                                         .foregroundColor(.gray)
                                         .font(.system(size: 14))
                                 }
@@ -163,7 +163,7 @@ struct ContentView: View {
                             
                             Spacer()
                             
-                            Button("Mot de passe oublié ?") {
+                            Button("Forgot password?") {
                             }
                             .foregroundColor(Color(red: 0.34, green: 0.50, blue: 0.91))
                             .font(.system(size: 14))
@@ -172,9 +172,9 @@ struct ContentView: View {
                         .padding(.bottom, 30)
                         
                         Button(action: {
-                            print("Connexion avec email: \(email)")
+                            print("Login with email: \(email)")
                         }) {
-                            Text("CONNEXION")
+                            Text("LOGIN")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -199,7 +199,7 @@ struct ContentView: View {
                                 .fill(Color.gray.opacity(0.3))
                                 .frame(height: 1)
                             
-                            Text("Ou")
+                            Text("Or")
                                 .foregroundColor(.gray)
                                 .font(.system(size: 14))
                                 .padding(.horizontal, 16)
@@ -213,7 +213,7 @@ struct ContentView: View {
                         
                         VStack(spacing: 12) {
                             Button(action: {
-                                print("Connexion Google")
+                                print("Google Login")
                             }) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "globe")
@@ -231,7 +231,7 @@ struct ContentView: View {
                             }
                             
                             Button(action: {
-                                print("Connexion Apple")
+                                print("Apple Login")
                             }) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "applelogo")
@@ -252,12 +252,12 @@ struct ContentView: View {
                         .padding(.bottom, 40)
                         
                         HStack {
-                            Text("Vous n'avez pas de compte ? ")
+                            Text("Don't have an account? ")
                                 .foregroundColor(.gray)
                                 .font(.system(size: 14))
                             
-                            Button("S'inscrire") {
-                                print("Inscription")
+                            Button("Sign up") {
+                                print("Sign up")
                             }
                             .foregroundColor(Color(red: 0.34, green: 0.50, blue: 0.91))
                             .font(.system(size: 14, weight: .semibold))
