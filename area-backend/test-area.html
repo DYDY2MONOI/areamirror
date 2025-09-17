@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API AREA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #555; margin-top: 0; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .post-btn { background-color: #28a745; }
+        .delete-btn { background-color: #dc3545; }
+        input, select, textarea {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        textarea { width: 300px; height: 60px; }
+        #response {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔗 Test API AREA</h1>
+
+    <!-- Section GET -->
+    <div class="container">
+        <h2>📊 Récupérer les données</h2>
+        <button onclick="get('/users')">GET Users</button>
+        <button onclick="get('/services')">GET Services</button>
+        <button onclick="get('/actions')">GET Actions</button>
+        <button onclick="get('/reactions')">GET Reactions</button>
+        <button onclick="get('/areas')">GET Areas</button>
+    </div>
+
+    <!-- Section POST Users -->
+    <div class="container">
+        <h2>👤 Créer un utilisateur</h2>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="userEmail" placeholder="test@example.com">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="userPassword" placeholder="password123">
+        </div>
+        <div class="form-group">
+            <label>Prénom:</label>
+            <input type="text" id="userFirstName" placeholder="John">
+        </div>
+        <div class="form-group">
+            <label>Nom:</label>
+            <input type="text" id="userLastName" placeholder="Doe">
+        </div>
+        <button class="post-btn" onclick="createUser()">POST User</button>
+    </div>
+
+    <!-- Section POST Services -->
+    <div class="container">
+        <h2>🔧 Créer un service</h2>
+        <div class="form-group">
+            <label>Nom:</label>
+            <input type="text" id="serviceName" placeholder="Discord">
+        </div>
+        <div class="form-group">
+            <label>Description:</label>
+            <textarea id="serviceDesc" placeholder="Service de chat"></textarea>
+        </div>
+        <button class="post-btn" onclick="createService()">POST Service</button>
+    </div>
+
+    <!-- Section POST AREA -->
+    <div class="container">
+        <h2>🎯 Créer une AREA</h2>
+        <div class="form-group">
+            <label>User ID:</label>
+            <input type="number" id="areaUserId" placeholder="1">
+        </div>
+        <div class="form-group">
+            <label>Action ID:</label>
+            <input type="number" id="areaActionId" placeholder="1">
+        </div>
+        <div class="form-group">
+            <label>Reaction ID:</label>
+            <input type="number" id="areaReactionId" placeholder="1">
+        </div>
+        <div class="form-group">
+            <label>Nom:</label>
+            <input type="text" id="areaName" placeholder="Gmail vers Slack">
+        </div>
+        <div class="form-group">
+            <label>Description:</label>
+            <textarea id="areaDesc" placeholder="Envoyer message Slack quand email reçu"></textarea>
+        </div>
+        <button class="post-btn" onclick="createArea()">POST Area</button>
+    </div>
+
+    <!-- Réponse -->
+    <div class="container">
+        <h2>📋 Réponse de l'API</h2>
+        <div id="response">Cliquez sur un bouton pour tester l'API</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        function displayResponse(data, status = 'success') {
+            const responseDiv = document.getElementById('response');
+            const timestamp = new Date().toLocaleTimeString();
+            responseDiv.innerHTML = `[${timestamp}] ${status.toUpperCase()}:\n${JSON.stringify(data, null, 2)}`;
+            responseDiv.style.color = status === 'success' ? '#28a745' : '#dc3545';
+        }
+
+        async function get(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                displayResponse(`Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function createUser() {
+            const userData = {
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value,
+                first_name: document.getElementById('userFirstName').value,
+                last_name: document.getElementById('userLastName').value
+            };
+
+            if (!userData.email || !userData.password) {
+                alert('Email et mot de passe requis');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    document.getElementById('userEmail').value = '';
+                    document.getElementById('userPassword').value = '';
+                    document.getElementById('userFirstName').value = '';
+                    document.getElementById('userLastName').value = '';
+                }
+            } catch (error) {
+                displayResponse(`Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function createService() {
+            const serviceData = {
+                name: document.getElementById('serviceName').value,
+                description: document.getElementById('serviceDesc').value,
+                is_active: true
+            };
+
+            if (!serviceData.name) {
+                alert('Nom du service requis');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/services`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serviceData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    document.getElementById('serviceName').value = '';
+                    document.getElementById('serviceDesc').value = '';
+                }
+            } catch (error) {
+                displayResponse(`Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function createArea() {
+            const areaData = {
+                user_id: parseInt(document.getElementById('areaUserId').value),
+                action_id: parseInt(document.getElementById('areaActionId').value),
+                reaction_id: parseInt(document.getElementById('areaReactionId').value),
+                name: document.getElementById('areaName').value,
+                description: document.getElementById('areaDesc').value,
+                is_active: true
+            };
+
+            if (!areaData.user_id || !areaData.action_id || !areaData.reaction_id || !areaData.name) {
+                alert('Tous les champs requis');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/areas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(areaData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    document.getElementById('areaUserId').value = '';
+                    document.getElementById('areaActionId').value = '';
+                    document.getElementById('areaReactionId').value = '';
+                    document.getElementById('areaName').value = '';
+                    document.getElementById('areaDesc').value = '';
+                }
+            } catch (error) {
+                displayResponse(`Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        // Test de connexion au démarrage
+        window.onload = function() {
+            get('/users');
+        };
+    </script>
+</body>
+</html>
