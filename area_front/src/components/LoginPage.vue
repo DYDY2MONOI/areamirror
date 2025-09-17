@@ -1,33 +1,53 @@
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue'
+
+const formData = reactive({
+  email: '',
+  password: '',
+  rememberMe: false
+})
+
+const showPassword = ref(false)
+const isLoading = ref(false)
+const isPageLoaded = ref(false)
+
+onMounted(() => {
+  setTimeout(() => {
+    isPageLoaded.value = true
+  }, 100)
+})
+
+const handleLogin = async () => {
+  isLoading.value = true
+  console.log('Login attempt:', formData)
+
+  setTimeout(() => {
+    isLoading.value = false
+    alert('Login functionality would be implemented here!')
+  }, 2000)
+}
+</script>
+
 <template>
   <div class="min-h-screen bg-slate-900 relative overflow-hidden">
-    <!-- Geometric Background Elements -->
     <div class="geometric-shape top-0 left-0 w-96 h-96 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full transform -translate-x-48 -translate-y-48"></div>
     <div class="geometric-shape bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-cyan-500 to-purple-600 rounded-full transform translate-x-40 translate-y-40"></div>
     <div class="geometric-shape top-1/2 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full transform -translate-y-32 opacity-10"></div>
-
-    <!-- Main Content -->
     <div class="relative z-10 flex items-center justify-center min-h-screen px-4">
       <div class="w-full max-w-md">
-        <!-- Header -->
         <div class="text-center mb-8" :class="{ 'animate-fade-in-down': isPageLoaded }">
           <h1 class="text-4xl font-bold text-white mb-2" :class="{ 'logo-animate': isPageLoaded }">AREA.</h1>
           <h2 class="text-2xl font-semibold text-white mb-2" :class="{ 'animate-fade-in-up delay-200': isPageLoaded }">LOGIN TO YOUR ACCOUNT</h2>
           <p class="text-gray-400" :class="{ 'animate-fade-in-up delay-300': isPageLoaded }">Enter your login information.</p>
         </div>
-
-        <!-- Login Form -->
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-600/50" :class="{ 'animate-fade-in-up delay-400': isPageLoaded }">
           <form @submit.prevent="handleLogin" class="space-y-6">
-            <!-- Email Field -->
             <div :class="{ 'animate-fade-in-left delay-500': isPageLoaded }">
               <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
                 Email Address
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400 icon-animate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                  </svg>
                 </div>
                 <input
                   type="email"
@@ -39,16 +59,12 @@
               </div>
             </div>
 
-            <!-- Password Field -->
             <div :class="{ 'animate-fade-in-right delay-600': isPageLoaded }">
               <label for="password" class="block text-sm font-medium text-gray-300 mb-1">
                 Password
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400 icon-animate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                  </svg>
                 </div>
                 <input
                   :type="showPassword ? 'text' : 'password'"
@@ -73,7 +89,6 @@
               </div>
             </div>
 
-            <!-- Remember Me & Forgot Password -->
             <div class="flex items-center justify-between" :class="{ 'animate-fade-in-up delay-700': isPageLoaded }">
               <label class="flex items-center">
                 <input
@@ -88,13 +103,11 @@
               </a>
             </div>
 
-            <!-- Login Button -->
             <button type="submit" class="btn-primary" :class="{ 'animate-fade-in-up delay-800': isPageLoaded }">
               <span v-if="isLoading" class="loading-dots">LOGIN</span>
               <span v-else>LOGIN</span>
             </button>
 
-            <!-- Divider -->
             <div class="relative">
               <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t border-gray-600"></div>
@@ -104,7 +117,6 @@
             </div>
             </div>
 
-            <!-- Social Login Buttons -->
             <div class="space-y-3" :class="{ 'animate-fade-in-up delay-900': isPageLoaded }">
               <button type="button" class="btn-secondary flex items-center justify-center space-x-3">
                 <svg class="h-5 w-5" viewBox="0 0 24 24">
@@ -125,7 +137,6 @@
             </div>
           </form>
 
-          <!-- Sign Up Link -->
           <div class="mt-6 text-center" :class="{ 'animate-fade-in-up delay-1000': isPageLoaded }">
             <p class="text-gray-400">
               Don't have an account?
@@ -139,35 +150,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-
-const formData = reactive({
-  email: '',
-  password: '',
-  rememberMe: false
-})
-
-const showPassword = ref(false)
-const isLoading = ref(false)
-const isPageLoaded = ref(false)
-
-onMounted(() => {
-  // Délai pour s'assurer que le DOM est prêt
-  setTimeout(() => {
-    isPageLoaded.value = true
-  }, 100)
-})
-
-const handleLogin = async () => {
-  isLoading.value = true
-  console.log('Login attempt:', formData)
-
-  // Simulation d'une requête API
-  setTimeout(() => {
-    isLoading.value = false
-    alert('Login functionality would be implemented here!')
-  }, 2000)
-}
-</script>
