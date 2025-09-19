@@ -87,6 +87,9 @@ struct RegisterView: View {
                 onRegisterSuccess()
             }
         }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
     }
     
     private func performRegister() {
@@ -159,6 +162,7 @@ struct RegisterForm: View {
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
                         .autocapitalization(.words)
+                        .submitLabel(.next)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -180,6 +184,7 @@ struct RegisterForm: View {
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
                         .autocapitalization(.words)
+                        .submitLabel(.next)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -203,6 +208,8 @@ struct RegisterForm: View {
                     .foregroundColor(.white)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .keyboardType(.emailAddress)
+                    .submitLabel(.next)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
@@ -224,10 +231,12 @@ struct RegisterForm: View {
                     TextField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .submitLabel(.next)
                 } else {
                     SecureField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .submitLabel(.next)
                 }
                 
                 Button(action: {
@@ -257,10 +266,12 @@ struct RegisterForm: View {
                     TextField("Confirm Password", text: $confirmPassword)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .submitLabel(.done)
                 } else {
                     SecureField("Confirm Password", text: $confirmPassword)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .submitLabel(.done)
                 }
                 
                 Button(action: {
