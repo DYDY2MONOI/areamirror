@@ -200,12 +200,10 @@
                 displayResponse(data, response.ok ? 'success' : 'error');
 
                 if (response.ok) {
-                    // Stocker le token JWT si présent
                     if (data.token) {
                         localStorage.setItem('authToken', data.token);
                         console.log('Token JWT stocké:', data.token);
                     }
-                    // Afficher un message de succès
                     alert('✅ Utilisateur créé avec succès ! Bienvenue ' + (data.user?.first_name || 'utilisateur') + ' !');
                     document.getElementById('userEmail').value = '';
                     document.getElementById('userPassword').value = '';
@@ -242,7 +240,6 @@
                         localStorage.setItem('authToken', data.token);
                         console.log('Token JWT stocké:', data.token);
                     }
-                    // Afficher un message de succès
                     alert('✅ Connexion réussie ! Bienvenue ' + (data.user?.first_name || 'utilisateur') + ' !');
                     document.getElementById('loginEmail').value = '';
                     document.getElementById('loginPassword').value = '';
