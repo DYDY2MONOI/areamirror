@@ -11,9 +11,14 @@ struct RegisterView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
     @State private var showPassword = false
     @State private var showConfirmPassword = false
     @State private var acceptTerms = false
+    @State private var showAlert = false
+    
+    @StateObject private var authService = AuthService.shared
     
     let onRegisterSuccess: () -> Void
     let onLoginTap: () -> Void
@@ -41,6 +46,8 @@ struct RegisterView: View {
                             email: $email,
                             password: $password,
                             confirmPassword: $confirmPassword,
+                            firstName: $firstName,
+                            lastName: $lastName,
                             showPassword: $showPassword,
                             showConfirmPassword: $showConfirmPassword
                         )
@@ -48,9 +55,9 @@ struct RegisterView: View {
                         TermsAndConditions(acceptTerms: $acceptTerms)
                         
                         RegisterButton {
-                            print("Register with email: \(email)")
-                            onRegisterSuccess()
+                            performRegister()
                         }
+                        .disabled(authService.isLoading)
                         
                         DividerWithText(text: "Or")
                         
@@ -69,6 +76,47 @@ struct RegisterView: View {
                     }
                 }
             }
+        }
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text(authService.errorMessage ?? "An error occurred")
+        }
+        .onChange(of: authService.isAuthenticated) { isAuthenticated in
+            if isAuthenticated {
+                onRegisterSuccess()
+            }
+        }
+    }
+    
+    private func performRegister() {
+        guard !email.isEmpty && !password.isEmpty else {
+            authService.errorMessage = "Please fill in all required fields"
+            showAlert = true
+            return
+        }
+        
+        guard password == confirmPassword else {
+            authService.errorMessage = "Passwords do not match"
+            showAlert = true
+            return
+        }
+        
+        guard acceptTerms else {
+            authService.errorMessage = "Please accept the terms and conditions"
+            showAlert = true
+            return
+        }
+        
+        authService.register(
+            email: email,
+            password: password,
+            firstName: firstName.isEmpty ? nil : firstName,
+            lastName: lastName.isEmpty ? nil : lastName
+        )
+        
+        if let error = authService.errorMessage {
+            showAlert = true
         }
     }
 }
@@ -94,11 +142,57 @@ struct RegisterForm: View {
     @Binding var email: String
     @Binding var password: String
     @Binding var confirmPassword: String
+    @Binding var firstName: String
+    @Binding var lastName: String
     @Binding var showPassword: Bool
     @Binding var showConfirmPassword: Bool
     
     var body: some View {
         VStack(spacing: 20) {
+            HStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person")
+                        .foregroundColor(.gray)
+                        .frame(width: 20)
+                    
+                    TextField("First Name", text: $firstName)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .foregroundColor(.white)
+                        .autocapitalization(.words)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppColors.darkBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                
+                HStack(spacing: 12) {
+                    Image(systemName: "person")
+                        .foregroundColor(.gray)
+                        .frame(width: 20)
+                    
+                    TextField("Last Name", text: $lastName)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .foregroundColor(.white)
+                        .autocapitalization(.words)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppColors.darkBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+            
             HStack(spacing: 12) {
                 Image(systemName: "envelope")
                     .foregroundColor(.gray)
@@ -216,16 +310,24 @@ struct TermsAndConditions: View {
 
 struct RegisterButton: View {
     let action: () -> Void
+    @StateObject private var authService = AuthService.shared
     
     var body: some View {
         Button(action: action) {
-            Text("CREATE ACCOUNT")
-                .font(AppTextStyles.button)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(AppGradients.button)
-                .cornerRadius(12)
+            HStack {
+                if authService.isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                }
+                Text(authService.isLoading ? "CREATING..." : "CREATE ACCOUNT")
+                    .font(AppTextStyles.button)
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppGradients.button)
+            .cornerRadius(12)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 30)

@@ -13,6 +13,9 @@ struct LoginView: View {
     @State private var rememberMe = false
     @State private var showPassword = false
     @State private var showTestView = false
+    @State private var showAlert = false
+    
+    @StateObject private var authService = AuthService.shared
     
     let onLoginSuccess: () -> Void
     let onSignUpTap: () -> Void
@@ -45,9 +48,9 @@ struct LoginView: View {
                         LoginOptions(rememberMe: $rememberMe)
                         
                         LoginButton {
-                            print("Login with email: \(email)")
-                            onLoginSuccess()
+                            performLogin()
                         }
+                        .disabled(authService.isLoading)
                         
                         DividerWithText(text: "Or")
                         
@@ -69,6 +72,30 @@ struct LoginView: View {
         }
         .fullScreenCover(isPresented: $showTestView) {
             TestView()
+        }
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text(authService.errorMessage ?? "An error occurred")
+        }
+        .onChange(of: authService.isAuthenticated) { isAuthenticated in
+            if isAuthenticated {
+                onLoginSuccess()
+            }
+        }
+    }
+    
+    private func performLogin() {
+        guard !email.isEmpty && !password.isEmpty else {
+            authService.errorMessage = "Please fill in all fields"
+            showAlert = true
+            return
+        }
+        
+        authService.login(email: email, password: password)
+        
+        if let error = authService.errorMessage {
+            showAlert = true
         }
     }
 }
