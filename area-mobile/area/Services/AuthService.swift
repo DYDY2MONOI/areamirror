@@ -16,7 +16,7 @@ class AuthService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let baseURL = "http://localhost:8080"
+    private let baseURL = AppConfig.baseURL
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
