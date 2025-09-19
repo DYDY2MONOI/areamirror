@@ -33,7 +33,6 @@ type RegisterRequest struct {
 }
 
 func init() {
-	// Utiliser variable d'environnement si disponible
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
 	}
@@ -47,21 +46,18 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Vérifier si l'utilisateur existe déjà
 	var existingUser models.User
 	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Un utilisateur avec cet email existe déjà"})
 		return
 	}
 
-	// Hash du mot de passe
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors du hashage du mot de passe"})
 		return
 	}
 
-	// Créer l'utilisateur
 	user := models.User{
 		Email:     req.Email,
 		Password:  string(hashedPassword),
@@ -74,7 +70,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Générer le token JWT
 	token, err := generateJWT(user.ID, user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la génération du token"})
@@ -101,20 +96,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Rechercher l'utilisateur
 	var user models.User
 	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email ou mot de passe incorrect"})
 		return
 	}
 
-	// Vérifier le mot de passe
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email ou mot de passe incorrect"})
 		return
 	}
 
-	// Générer le token JWT
 	token, err := generateJWT(user.ID, user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la génération du token"})
@@ -170,7 +162,6 @@ func generateJWT(userID uint, email string) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
-// Middleware d'authentification JWT
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
@@ -180,7 +171,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Retirer "Bearer " du début du token
 		if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
 			tokenString = tokenString[7:]
 		}

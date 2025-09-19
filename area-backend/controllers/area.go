@@ -87,7 +87,6 @@ func UpdateArea(c *gin.Context) {
 
 	database.DB.Model(&area).Updates(input)
 
-	// Recharger avec les relations
 	database.DB.Preload("User").Preload("Action").Preload("Reaction").First(&area, area.ID)
 
 	c.JSON(http.StatusOK, gin.H{"data": area})
