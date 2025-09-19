@@ -97,6 +97,20 @@
         <button class="post-btn" onclick="createUser()">POST User</button>
     </div>
 
+    <!-- Section LOGIN -->
+    <div class="container">
+        <h2>login user</h2>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="loginEmail" placeholder="john@example.com">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="loginPassword" placeholder="password123">
+        </div>
+        <button class="post-btn" onclick="loginUser()">LOGIN</button>
+    </div>
+
     <!-- Section POST Services -->
     <div class="container">
         <h2>🔧 Créer un service</h2>
@@ -190,6 +204,41 @@
                     document.getElementById('userPassword').value = '';
                     document.getElementById('userFirstName').value = '';
                     document.getElementById('userLastName').value = '';
+                }
+            } catch (error) {
+                displayResponse(`Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function loginUser() {
+            const loginData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            if (!loginData.email || !loginData.password) {
+                alert('Email et mot de passe requis');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    if (data.token) {
+                        localStorage.setItem('authToken', data.token);
+                        console.log('Token JWT stocké:', data.token);
+                    }
+                    // Afficher un message de succès
+                    alert('✅ Connexion réussie ! Bienvenue ' + (data.user?.first_name || 'utilisateur') + ' !');
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
                 }
             } catch (error) {
                 displayResponse(`Erreur: ${error.message}`, 'error');
