@@ -123,16 +123,24 @@ struct LoginOptions: View {
 
 struct LoginButton: View {
     let action: () -> Void
+    @StateObject private var authService = AuthService.shared
     
     var body: some View {
         Button(action: action) {
-            Text("LOGIN")
-                .font(AppTextStyles.button)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(AppGradients.button)
-                .cornerRadius(12)
+            HStack {
+                if authService.isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                }
+                Text(authService.isLoading ? "LOGGING IN..." : "LOGIN")
+                    .font(AppTextStyles.button)
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppGradients.button)
+            .cornerRadius(12)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 30)
