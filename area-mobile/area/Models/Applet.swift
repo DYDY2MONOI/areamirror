@@ -27,7 +27,6 @@ struct Applet: Identifiable {
 
 extension Applet {
     static let sampleApplets: [Applet] = [
-        // Popular AREAs
         Applet(
             title: "Gmail → Discord",
             subtitle: "Auto notification",
@@ -68,7 +67,6 @@ extension Applet {
             action: { print("GitHub → Slack") }
         ),
         
-        // Weather AREAs
         Applet(
             title: "Weather → Telegram",
             subtitle: "Daily reminder",

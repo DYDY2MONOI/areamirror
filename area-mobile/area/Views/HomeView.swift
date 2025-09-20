@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var showTestView = false
+    @State private var showNewArea = false
     @State private var selectedTab = 0
     let onLogout: () -> Void
     
@@ -90,7 +91,7 @@ struct HomeView: View {
                                             endPoint: .bottomTrailing
                                         ),
                                         type: .create,
-                                        action: { print("Create new AREA") }
+                                        action: { showNewArea = true }
                                     ),
                                     Applet(
                                         title: "Email Template",
@@ -129,6 +130,9 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $showTestView) {
             TestView()
+        }
+        .fullScreenCover(isPresented: $showNewArea) {
+            NewAreaView()
         }
     }
 }
