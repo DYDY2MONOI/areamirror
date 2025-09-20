@@ -100,8 +100,9 @@ struct NowPlayingBar: View {
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 50, height: 50)
                 .overlay(
-                    Text("🎵")
+                    Image(systemName: "music.note")
                         .font(.title2)
+                        .foregroundColor(.white)
                 )
             
             VStack(alignment: .leading, spacing: 2) {

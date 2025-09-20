@@ -20,9 +20,17 @@ struct ServiceCard: View {
                         .fill(service.color.opacity(0.2))
                         .frame(width: 50, height: 50)
                     
-                    Image(systemName: service.icon)
-                        .font(.system(size: 24))
-                        .foregroundColor(service.color)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(service.color == .white ? Color.gray : service.color)
+                            .frame(width: 24, height: 24)
+                        
+                        Image(service.icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                            .colorMultiply(service.color == .white ? .white : service.color)
+                    }
                 }
                 
                 Text(service.name)

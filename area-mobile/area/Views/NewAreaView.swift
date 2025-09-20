@@ -72,8 +72,17 @@ struct NewAreaView: View {
                                         showingActionSelection = true
                                     }) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: service.icon)
-                                                .foregroundColor(service.color)
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 3)
+                                                    .fill(service.color == .white ? Color.gray : service.color)
+                                                    .frame(width: 16, height: 16)
+                                                
+                                                Image(service.icon)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 14, height: 14)
+                                                    .colorMultiply(service.color == .white ? .white : service.color)
+                                            }
                                             Text(service.name)
                                                 .foregroundColor(.white)
                                             Image(systemName: "chevron.right")
@@ -130,8 +139,17 @@ struct NewAreaView: View {
                                         showingReactionSelection = true
                                     }) {
                                         HStack(spacing: 8) {
-                                            Image(systemName: service.icon)
-                                                .foregroundColor(service.color)
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 3)
+                                                    .fill(service.color == .white ? Color.gray : service.color)
+                                                    .frame(width: 16, height: 16)
+                                                
+                                                Image(service.icon)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 14, height: 14)
+                                                    .colorMultiply(service.color == .white ? .white : service.color)
+                                            }
                                             Text(service.name)
                                                 .foregroundColor(.white)
                                             Image(systemName: "chevron.right")

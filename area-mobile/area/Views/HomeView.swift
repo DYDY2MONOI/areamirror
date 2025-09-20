@@ -34,8 +34,9 @@ struct HomeView: View {
                                     ))
                                     .frame(width: 32, height: 32)
                                     .overlay(
-                                        Text("👤")
+                                        Image(systemName: "person.fill")
                                             .font(.system(size: 16))
+                                            .foregroundColor(.white)
                                     )
                                 
                                 Spacer()
