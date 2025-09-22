@@ -8,3 +8,7 @@
 
 <script setup lang="ts">
 </script>
+
+<style>
+#app { position: relative; }
+</style>
