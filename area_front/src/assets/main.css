@@ -462,3 +462,664 @@ input[type="checkbox"] {
     animation-duration: 8s;
   }
 }
+
+/* Classes réutilisables pour les formulaires */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #334155; /* bg-slate-700 */
+  border: 1px solid #475569; /* border-slate-600 */
+  border-radius: 0.5rem;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.input-field::placeholder {
+  color: #9ca3af; /* placeholder-gray-400 */
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* ring-2 ring-blue-500 */
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to right, #3b82f6, #9333ea); /* from-blue-500 to-purple-600 */
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, #2563eb, #7c3aed); /* from-blue-600 to-purple-700 */
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #334155; /* bg-slate-700 */
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #475569; /* bg-slate-600 */
+}
+
+.btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.5); /* ring-slate-500 */
+}
+
+/* Animations de transition entre pages */
+.perspective-container {
+  perspective: 1000px;
+}
+
+.auth-container {
+  position: relative;
+  transition: opacity 0.3s ease;
+}
+
+.auth-panel {
+  animation: slideIn 0.5s ease-out;
+}
+
+.slide-out {
+  opacity: 0.3;
+  animation: slideOut 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideOut {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(50px) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Alternative: Animation de fondu avec rotation légère */
+@keyframes fadeRotateOut {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(-15deg) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeRotateIn {
+  0% {
+    transform: rotateY(15deg) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Formulaire moderne avec glassmorphism amélioré */
+.form-card {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 2.5rem;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Groupes de formulaire */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Wrapper pour input avec effet */
+.input-wrapper {
+  position: relative;
+}
+
+/* Input field moderne */
+.input-field-modern {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(71, 85, 105, 0.3);
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input-field-modern:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.input-field-modern:focus {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.input-field-modern::placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* Effet de focus animé */
+.input-focus-effect {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.input-field-modern:focus ~ .input-focus-effect {
+  width: 100%;
+}
+
+/* Bouton toggle password */
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  transition: all 0.2s;
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.password-toggle:hover {
+  color: #e2e8f0;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Checkbox personnalisée */
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-mark {
+  width: 20px;
+  height: 20px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(71, 85, 105, 0.4);
+  border-radius: 6px;
+  margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.checkbox-input:checked ~ .checkbox-mark {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-color: transparent;
+}
+
+.checkbox-mark::after {
+  content: '✓';
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.2s ease;
+}
+
+.checkbox-input:checked ~ .checkbox-mark::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.checkbox-label {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  user-select: none;
+}
+
+/* Lien forgot password */
+.forgot-link {
+  font-size: 0.875rem;
+  color: #60a5fa;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.forgot-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background: #60a5fa;
+  transition: width 0.3s ease;
+}
+
+.forgot-link:hover {
+  color: #93bbfc;
+}
+
+.forgot-link:hover::after {
+  width: 100%;
+}
+
+/* Bouton principal moderne */
+.btn-primary-modern {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  group: true;
+}
+
+.btn-primary-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 20px -5px rgba(59, 130, 246, 0.5),
+    0 5px 10px -3px rgba(139, 92, 246, 0.3);
+}
+
+.btn-primary-modern:hover::before {
+  left: 100%;
+}
+
+.btn-primary-modern:active {
+  transform: translateY(0);
+}
+
+.btn-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Divider amélioré */
+.divider-container {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.5), transparent);
+}
+
+.divider-text {
+  padding: 0 1rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Boutons sociaux */
+.social-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid rgba(71, 85, 105, 0.3);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.social-btn:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(71, 85, 105, 0.5);
+  transform: translateY(-2px);
+}
+
+.google-btn:hover {
+  border-color: rgba(234, 67, 53, 0.5);
+  box-shadow: 0 4px 12px rgba(234, 67, 53, 0.2);
+}
+
+.apple-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+/* Animation de chargement */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .form-card {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .social-buttons {
+    flex-direction: column;
+  }
+  
+  .social-btn {
+    width: 100%;
+  }
+}
+
+/* Styles spécifiques pour le formulaire d'inscription */
+.terms-container {
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  transition: all 0.3s ease;
+}
+
+.terms-container:hover {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+.terms-link {
+  color: #60a5fa;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(96, 165, 250, 0.5);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.terms-link:hover {
+  color: #93bbfc;
+  border-bottom-color: #93bbfc;
+  border-bottom-style: solid;
+}
+
+/* Indicateurs de force du mot de passe (optionnel) */
+.password-strength {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  height: 3px;
+}
+
+.strength-bar {
+  flex: 1;
+  background: rgba(71, 85, 105, 0.3);
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.strength-weak .strength-bar:first-child {
+  background: #ef4444;
+}
+
+.strength-medium .strength-bar:first-child,
+.strength-medium .strength-bar:nth-child(2) {
+  background: #f59e0b;
+}
+
+.strength-strong .strength-bar {
+  background: #10b981;
+}
+
+/* Validation en temps réel des champs */
+.input-field-modern.valid {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.input-field-modern.invalid {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.validation-message {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.validation-message.error {
+  color: #ef4444;
+}
+
+.validation-message.success {
+  color: #10b981;
+}
+
+/* Animation pour le changement de vue login/register */
+.form-card {
+  animation: cardEntrance 0.6s ease-out;
+}
+
+@keyframes cardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Amélioration du responsive pour les formulaires */
+@media (max-width: 480px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-label {
+    font-size: 0.8rem;
+  }
+  
+  .input-field-modern {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .btn-primary-modern {
+    padding: 0.875rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Effet de brillance sur les cartes au survol */
+.form-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #3b82f6);
+  border-radius: 24px;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  filter: blur(8px);
+}
+
+.form-card:hover::before {
+  opacity: 0.3;
+}
+
+/* Animation de pulsation pour attirer l'attention sur le bouton CTA */
+@keyframes pulse-cta {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+.btn-primary-modern:focus {
+  animation: pulse-cta 1.5s infinite;
+}
+
+/* Micro-interactions pour les labels */
+.form-label svg {
+  transition: all 0.3s ease;
+}
+
+.form-group:focus-within .form-label svg {
+  color: #60a5fa;
+  transform: scale(1.1);
+}
+
+/*fonctionne pas encore*/
+/* ciel et étoiles statiques */
+.bg-stars {
+  position: fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(2px 2px at 20% 30%, #ffffffaa 98%, transparent 100%) repeat,
+    radial-gradient(1px 1px at 80% 60%, #ffffff88 98%, transparent 100%) repeat,
+    radial-gradient(1.5px 1.5px at 50% 80%, #ffffff66 98%, transparent 100%) repeat;
+  background-size: 400px 400px, 500px 500px, 600px 600px;
+  opacity:.25;
+}
+
+/* étoile filante */
+.shooting-star {
+  position: fixed;
+  top: -5vh;
+  left: -10vw;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 8px 2px #fff;
+  transform: rotate(25deg);
+  opacity: 0;
+  animation: shoot 1.6s ease-out forwards;
+}
+
+.shooting-star::after {
+  content:'';
+  position:absolute;
+  left:-140px; top:-1px;
+  width:140px; height:2px;
+  background: linear-gradient(90deg, rgba(255,255,255,.7), rgba(255,255,255,0));
+  filter: blur(0.5px);
+}
+
+@keyframes shoot {
+  0%   { transform: translate(0,0) rotate(25deg); opacity:0; }
+  10%  { opacity:.9; }
+  100% { transform: translate(120vw, 60vh) rotate(25deg); opacity:0; }
+}
+
+.shooting-star:nth-child(1){ animation-delay: 3s; }
+.shooting-star:nth-child(2){ animation-delay: 11s; }
+.shooting-star:nth-child(3){ animation-delay: 19s; }
+.shooting-star:nth-child(4){ animation-delay: 33s; }
+
+@media (prefers-reduced-motion: reduce){
+  .bg-stars, .shooting-star{ display:none; }
+}
+/*fonctionne pas encore*/
