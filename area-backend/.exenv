@@ -1,8 +1,6 @@
-// exemple d'env
-
-DATABASE_URL=host=localhost user=dydy2brazil dbname=area_db port=5432 sslmode=disable
-
-PORT=8080
-GIN_MODE=debug
-
-JWT_SECRET=your-secret-key-here
+DB_HOST=localhost
+DB_USER=dydy2brazil
+DB_PASSWORD=
+DB_NAME=area_db
+DB_PORT=5432
+DB_SSLMODE=disable
