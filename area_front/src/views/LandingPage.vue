@@ -1,6 +1,5 @@
 <template>
   <div class="landing-dark">
-    <!-- Desktop sidebar -->
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
       <v-list class="text-white" density="comfortable" nav lines="false">
         <v-tooltip text="Home" location="end">
@@ -13,11 +12,7 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <v-tooltip text="Create" location="end">
-          <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-plus-circle" class="text-white" rounded></v-list-item>
-          </template>
-        </v-tooltip>
+        <SidebarButton tooltip="Create" @open="showCreateModal = true" />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
             <v-list-item v-bind="props" prepend-icon="mdi-book-open-variant" class="text-white" rounded></v-list-item>
@@ -32,23 +27,70 @@
     </v-navigation-drawer>
 
     <div class="content">
+    <div class="search-section">
+      <div class="search-container">
+        <div class="search-header">
+          <h1 class="search-title">Find Your Perfect Automation</h1>
+          <p class="search-subtitle">Discover templates, browse services, or create something new</p>
+        </div>
+        <div class="search-bar">
+          <div class="search-input-container">
+            <v-icon size="20" color="#9ca3af" class="search-icon">mdi-magnify</v-icon>
+            <input type="text" placeholder="Search automations, services, or templates..." class="search-input">
+            <button class="search-filter-btn">
+              <v-icon size="16" color="#9ca3af">mdi-tune</v-icon>
+            </button>
+          </div>
+          <div class="search-suggestions">
+            <span class="suggestion-label">Popular:</span>
+            <button class="suggestion-chip">Gmail</button>
+            <button class="suggestion-chip">Discord</button>
+            <button class="suggestion-chip">Spotify</button>
+            <button class="suggestion-chip">GitHub</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <v-container class="pt-6 pb-4">
       <div class="d-flex align-center justify-space-between">
-        <v-avatar size="44" class="gradient-avatar elevation-2">
-          <v-icon color="white">mdi-account</v-icon>
-        </v-avatar>
-        <div class="d-flex ga-3 chips-row">
-          <v-chip color="success" variant="flat" class="px-6" rounded="pill">All</v-chip>
-          <v-chip variant="outlined" class="px-6" rounded="pill">My AREAs</v-chip>
-          <v-chip variant="outlined" class="px-6" rounded="pill">Popular</v-chip>
-          <v-chip variant="outlined" class="px-6" rounded="pill">Create</v-chip>
+        <div class="user-section">
+          <v-avatar size="48" class="gradient-avatar">
+            <v-icon color="white">mdi-account</v-icon>
+          </v-avatar>
+          <div class="user-info">
+            <span class="user-name">Alex Johnson</span>
+            <span class="user-status">Premium Member</span>
+          </div>
         </div>
-        <v-btn icon variant="text"><v-icon>mdi-test-tube</v-icon></v-btn>
+        <div class="filter-tabs">
+          <button class="filter-tab active">All</button>
+          <button class="filter-tab">My AREAs</button>
+          <button class="filter-tab">Popular</button>
+          <button class="filter-tab">Templates</button>
+        </div>
+        <div class="action-buttons">
+          <button class="action-btn-icon">
+            <v-icon size="20">mdi-magnify</v-icon>
+          </button>
+          <button class="action-btn-icon">
+            <v-icon size="20">mdi-bell-outline</v-icon>
+          </button>
+        </div>
       </div>
     </v-container>
 
     <v-container>
-      <h2 class="section-title mb-4">Popular AREAs</h2>
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">Popular AREAs</h2>
+          <p class="section-subtitle">Most used automation templates</p>
+        </div>
+        <button class="view-all-btn">
+          <span>View All</span>
+          <v-icon size="16">mdi-arrow-right</v-icon>
+        </button>
+      </div>
       <div class="cards-grid">
         <div class="card-col">
           <v-sheet class="area-card gradient-red" rounded="xl">
@@ -85,8 +127,23 @@
       </div>
     </v-container>
 
+    <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
+      <div class="custom-modal-content" @click.stop>
+        <CreateArea @close="showCreateModal = false" @save="showCreateModal = false" />
+      </div>
+    </div>
+
     <v-container class="mt-6">
-      <h2 class="section-title mb-4">Recommended for you</h2>
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">Recommended for you</h2>
+          <p class="section-subtitle">Based on your usage patterns</p>
+        </div>
+        <button class="view-all-btn">
+          <span>View All</span>
+          <v-icon size="16">mdi-arrow-right</v-icon>
+        </button>
+      </div>
       <div class="cards-grid">
         <div class="card-col">
           <v-sheet class="area-card gradient-blue" rounded="xl">
@@ -123,62 +180,428 @@
       </div>
     </v-container>
 
-    <div class="bottom-nav">
-      <div class="nav-inner">
-        <v-btn variant="text" class="nav-btn" stacked>
-          <v-icon size="26">mdi-home</v-icon>
-          <span>Home</span>
-        </v-btn>
-        <v-btn variant="text" class="nav-btn" stacked>
-          <v-icon size="26">mdi-magnify</v-icon>
-          <span>Search</span>
-        </v-btn>
-        <v-btn variant="text" class="nav-btn" stacked>
-          <v-icon size="26">mdi-plus-circle</v-icon>
-          <span>Create</span>
-        </v-btn>
-        <v-btn variant="text" class="nav-btn" stacked>
-          <v-icon size="26">mdi-book-open-variant</v-icon>
-          <span>Library</span>
-        </v-btn>
-        <v-btn variant="text" class="nav-btn" stacked>
-          <v-icon size="26">mdi-account-circle</v-icon>
-          <span>Profile</span>
-        </v-btn>
+    <v-container>
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">Create new AREA</h2>
+          <p class="section-subtitle">Start building your automation</p>
+        </div>
       </div>
-    </div>
+      <div class="create-section">
+        <div class="floating-icons">
+          <div class="floating-card card-1">
+            <v-icon size="24" color="white">mdi-email-outline</v-icon>
+          </div>
+          <div class="floating-card card-2">
+            <v-icon size="24" color="white">mdi-music-note</v-icon>
+          </div>
+          <div class="floating-card card-3">
+            <v-icon size="24" color="white">mdi-github</v-icon>
+          </div>
+          <div class="floating-card card-4">
+            <v-icon size="24" color="white">mdi-chat</v-icon>
+          </div>
+          <div class="floating-card card-5">
+            <v-icon size="24" color="white">mdi-calendar</v-icon>
+          </div>
+        </div>
+        <div class="cards-grid">
+          <CardButton @open="showCreateModal = true" />
+        </div>
+      </div>
+    </v-container>
     </div>
   </div>
 
 </template>
 
 <script setup lang="ts">
+import CreateArea from '../components/CreateArea/CreateArea.vue'
+import SidebarButton from '../components/CreateArea/SidebarButton.vue'
+import CardButton from '../components/CreateArea/CardButton.vue'
+import { ref, watch } from 'vue'
 const year = new Date().getFullYear()
+const showCreateModal = ref(false)
+
+watch(showCreateModal, (isOpen) => {
+  if (isOpen) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+  }
+})
 </script>
 
 <style scoped>
 .landing-dark {
-  background: #000;
+  background: linear-gradient(135deg, #0a0e13 0%, #0f1419 25%, #1a1f2e 50%, #0f1419 75%, #0a0e13 100%);
   color: white;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
 .content {
   padding-left: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
+
+.search-section {
+  padding: 2rem 2rem 3rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30vh;
+  position: relative;
+}
+
+.search-container {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+}
+
+.search-header {
+  margin-bottom: 2rem;
+}
+
+.search-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.search-subtitle {
+  font-size: 1rem;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.search-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.2s ease;
+}
+
+.search-input-container:focus-within {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.search-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-suggestions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.suggestion-label {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.suggestion-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(20px);
+}
+
+.suggestion-chip:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.create-section {
+  position: relative;
+  min-height: 300px;
+}
+
+.floating-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floating-card {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.card-1 {
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.card-2 {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  top: 20%;
+  right: 10%;
+  animation-delay: 1s;
+}
+
+.card-3 {
+  background: linear-gradient(135deg, #ec4899, #3b82f6);
+  top: 60%;
+  left: 15%;
+  animation-delay: 2s;
+}
+
+.card-4 {
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  top: 70%;
+  right: 20%;
+  animation-delay: 3s;
+}
+
+.card-5 {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  top: 40%;
+  left: 50%;
+  animation-delay: 4s;
+}
+
+.cards-grid {
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.user-status {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 0.25rem;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.filter-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn-icon {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.v-container {
+  max-width: 100% !important;
+  overflow-x: hidden;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.section-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .section-title {
   font-weight: 800;
-  font-size: 32px;
+  font-size: 2rem;
+  color: white;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: #9ca3af;
+  margin: 0;
+  font-weight: 400;
+}
+
+.view-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(20px);
+}
+
+.view-all-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 .chips-row :deep(.v-chip) {
   font-weight: 600;
 }
 .gradient-avatar {
-  background: linear-gradient(135deg, #7c4dff, #18ffff);
+  background: linear-gradient(135deg, #3b82f6, #7c3aed, #ec4899);
 }
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .card-col { max-width: 320px; }
 .area-card {
@@ -212,7 +635,6 @@ const year = new Date().getFullYear()
   transform: translateY(-2px) scale(0.99);
 }
 
-/* Subtle entrance animation */
 .cards-grid .card-col { animation: fadeUp .45s ease both; }
 .cards-grid .card-col:nth-child(2) { animation-delay: .05s; }
 .cards-grid .card-col:nth-child(3) { animation-delay: .1s; }
@@ -223,7 +645,6 @@ const year = new Date().getFullYear()
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .area-card,
   .area-card :deep(.v-icon),
@@ -232,14 +653,14 @@ const year = new Date().getFullYear()
     animation: none !important;
   }
 }
-.gradient-red { background: linear-gradient(135deg, #c0392b, #d35400); }
-.gradient-green { background: linear-gradient(135deg, #16a085, #27ae60); }
-.gradient-blue { background: linear-gradient(135deg, #2980b9, #2ecc71); }
-.gradient-pink { background: linear-gradient(135deg, #8e44ad, #e74c3c); }
-.gradient-indigo { background: linear-gradient(135deg, #303f9f, #512da8); }
-.gradient-crimson { background: linear-gradient(135deg, #c2185b, #e53935); }
-.gradient-teal { background: linear-gradient(135deg, #00796b, #26a69a); }
-.gradient-orange { background: linear-gradient(135deg, #ef6c00, #f39c12); }
+.gradient-red { background: linear-gradient(135deg, #ef4444, #f97316); }
+.gradient-green { background: linear-gradient(135deg, #10b981, #06b6d4); }
+.gradient-blue { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+.gradient-pink { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.gradient-indigo { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.gradient-crimson { background: linear-gradient(135deg, #dc2626, #ec4899); }
+.gradient-teal { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+.gradient-orange { background: linear-gradient(135deg, #f97316, #ec4899); }
 .card-title { margin-top: 12px; font-weight: 800; font-size: 20px; }
 .card-subtitle { color: rgba(255,255,255,0.85); font-weight: 700; }
 .card-description { color: rgba(255,255,255,0.7); }
@@ -257,7 +678,6 @@ const year = new Date().getFullYear()
 }
 .nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .nav-btn { color: white !important; text-transform: none; }
-/* Sidebar visible on desktop, hidden on mobile */
 .sidebar-desktop {
   display: none;
 }
@@ -266,11 +686,174 @@ const year = new Date().getFullYear()
     display: block;
   }
   .content {
-    padding-left: 80px; /* rail width */
+    padding-left: 80px;
   }
   .bottom-nav {
     display: none;
   }
+}
+
+@media (max-width: 1024px) {
+  .search-section {
+    padding: 2rem 1rem 2rem 1rem;
+    min-height: 25vh;
+  }
+
+  .search-title {
+    font-size: 2rem;
+  }
+
+  .search-suggestions {
+    justify-content: flex-start;
+  }
+
+  .create-section {
+    min-height: 250px;
+  }
+
+  .floating-card {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-section {
+    padding: 1.5rem 1rem 1.5rem 1rem;
+    min-height: 20vh;
+  }
+
+  .search-title {
+    font-size: 1.75rem;
+  }
+
+  .search-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .search-input-container {
+    padding: 0.875rem 1rem;
+  }
+
+  .search-suggestions {
+    gap: 0.5rem;
+  }
+
+  .suggestion-chip {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .filter-tabs {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .filter-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .view-all-btn {
+    align-self: flex-end;
+  }
+}
+
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #7c3aed, #ec4899);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2563eb, #6d28d9, #db2777);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #1d4ed8, #5b21b6, #be185d);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
+}
+
+body.modal-open {
+  overflow: hidden !important;
+}
+
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(10, 14, 19, 0.9), rgba(26, 31, 46, 0.8));
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.custom-modal-content {
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: transparent;
+}
+
+.custom-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.custom-modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #7c3aed, #ec4899);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.custom-modal-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2563eb, #6d28d9, #db2777);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.custom-modal-content::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #1d4ed8, #5b21b6, #be185d);
+}
+
+.custom-modal-content {
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
 }
 </style>
 
