@@ -19,7 +19,7 @@
       <div class="card-footer">
         <div class="card-action">
           <span class="action-text">Get Started</span>
-          <v-icon size="16" color="var(--color-accent-primary)">mdi-arrow-right</v-icon>
+          <v-icon size="16" color="#3b82f6">mdi-arrow-right</v-icon>
         </div>
       </div>
 

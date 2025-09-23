@@ -418,14 +418,14 @@ watch(showCreateModal, (isOpen) => {
 }
 
 .card-2 {
-  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-light));
+  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-tertiary));
   top: 20%;
   right: 10%;
   animation-delay: 1s;
 }
 
 .card-3 {
-  background: linear-gradient(135deg, var(--color-accent-tertiary), var(--color-accent-light));
+  background: linear-gradient(135deg, var(--color-accent-tertiary), var(--color-accent-primary));
   top: 60%;
   left: 15%;
   animation-delay: 2s;
@@ -439,7 +439,7 @@ watch(showCreateModal, (isOpen) => {
 }
 
 .card-5 {
-  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-light));
+  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-tertiary));
   top: 40%;
   left: 50%;
   animation-delay: 4s;
@@ -770,34 +770,6 @@ html, body {
   max-width: 100vw !important;
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-scrollbar-track);
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-scrollbar-thumb);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border-primary);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-scrollbar-thumb-hover);
-  box-shadow: var(--shadow-glow);
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: var(--color-scrollbar-thumb-active);
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
-}
 
 body.modal-open {
   overflow: hidden !important;
