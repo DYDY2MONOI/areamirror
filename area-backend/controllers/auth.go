@@ -32,6 +32,11 @@ type RegisterRequest struct {
 	LastName  string `json:"last_name"`
 }
 
+type ProfileUpdateRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
 func init() {
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
@@ -144,6 +149,69 @@ func GetProfile(c *gin.Context) {
 			"email":      user.Email,
 			"first_name": user.FirstName,
 			"last_name":  user.LastName,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
+			"phone":      user.Phone,
+			"birthday":   user.Birthday,
+			"gender":     user.Gender,
+			"country":    user.Country,
+			"lang":       user.Lang,
+			"login_provider": user.LoginProvider,
+		},
+	})
+}
+
+func UpdateProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
+		return
+	}
+
+	var req ProfileUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+	if req.FirstName != "" {
+		updates["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		updates["last_name"] = req.LastName
+	}
+
+	if err := database.DB.Model(&user).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la mise à jour du profil"})
+		return
+	}
+
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération du profil"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
+			"phone":      user.Phone,
+			"birthday":   user.Birthday,
+			"gender":     user.Gender,
+			"country":    user.Country,
+			"lang":       user.Lang,
+			"login_provider": user.LoginProvider,
 		},
 	})
 }
