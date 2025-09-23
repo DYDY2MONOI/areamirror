@@ -14,6 +14,12 @@ struct User: Codable, Identifiable {
     let lastName: String?
     let createdAt: String?
     let updatedAt: String?
+    let phone: String?
+    let birthday: String?
+    let gender: String?
+    let country: String?
+    let lang: String?
+    let loginProvider: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -22,6 +28,12 @@ struct User: Codable, Identifiable {
         case lastName = "last_name"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case phone
+        case birthday
+        case gender
+        case country
+        case lang
+        case loginProvider = "login_provider"
     }
 }
 
@@ -48,4 +60,18 @@ struct RegisterRequest: Codable {
         case firstName = "first_name"
         case lastName = "last_name"
     }
+}
+
+struct ProfileUpdateRequest: Codable {
+    let firstName: String?
+    let lastName: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case firstName = "first_name"
+        case lastName = "last_name"
+    }
+}
+
+struct ProfileResponse: Codable {
+    let user: User
 }

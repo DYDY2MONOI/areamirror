@@ -11,6 +11,7 @@ struct ProfileView: View {
     @StateObject private var authService = AuthService.shared
     @State private var showLoginView = false
     @State private var showRegisterView = false
+    @State private var showEditProfile = false
     
     var body: some View {
         NavigationView {
@@ -57,6 +58,7 @@ struct ProfileView: View {
                                     icon: "person.circle",
                                     title: "Edit Profile",
                                     action: {
+                                        showEditProfile = true
                                     }
                                 )
                                 
@@ -186,6 +188,13 @@ struct ProfileView: View {
                 onLoginTap: {
                     showRegisterView = false
                     showLoginView = true
+                }
+            )
+        }
+        .sheet(isPresented: $showEditProfile) {
+            EditProfileView(
+                onDismiss: {
+                    showEditProfile = false
                 }
             )
         }
