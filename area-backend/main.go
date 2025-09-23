@@ -72,5 +72,11 @@ func main() {
 
 	r.GET("/user/:id/areas", controllers.GetUserAreas)
 
+	r.POST("/user/:id/applets", controllers.CreateApplet)
+	r.GET("/user/:id/applets", controllers.GetApplets)
+	r.GET("/user/:id/applets/:id", controllers.GetApplet)
+	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
+	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
+
 	r.Run()
 }
