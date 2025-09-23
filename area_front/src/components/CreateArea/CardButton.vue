@@ -19,7 +19,7 @@
       <div class="card-footer">
         <div class="card-action">
           <span class="action-text">Get Started</span>
-          <v-icon size="16" color="#3b82f6">mdi-arrow-right</v-icon>
+          <v-icon size="16" color="var(--color-accent-primary)">mdi-arrow-right</v-icon>
         </div>
       </div>
 
@@ -33,16 +33,6 @@ defineEmits<{ (e: 'open'): void }>()
 </script>
 
 <style scoped>
-:root {
-  --primary-blue: #3b82f6;
-  --secondary-purple: #7c3aed;
-  --accent-pink: #ec4899;
-  --dark-bg: #0f0f23;
-  --darker-bg: #0a0a1a;
-  --light-gray: #9ca3af;
-  --white: #ffffff;
-  --border: rgba(255, 255, 255, 0.1);
-}
 
 .card-button-container {
   width: 100%;
@@ -58,7 +48,7 @@ defineEmits<{ (e: 'open'): void }>()
   min-height: 280px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 20px;
   padding: 1.5rem;
   cursor: pointer;
@@ -71,11 +61,11 @@ defineEmits<{ (e: 'open'): void }>()
 
 .create-card:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-4px);
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(59, 130, 246, 0.1);
+    0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .create-card:active {
@@ -92,22 +82,22 @@ defineEmits<{ (e: 'open'): void }>()
 .card-icon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
 }
 
 .card-badge {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--primary-blue);
+  color: var(--color-accent-primary);
   letter-spacing: 0.02em;
 }
 
@@ -121,7 +111,7 @@ defineEmits<{ (e: 'open'): void }>()
 .card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.02em;
   line-height: 1.3;
@@ -130,14 +120,14 @@ defineEmits<{ (e: 'open'): void }>()
 .card-subtitle {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   margin: 0;
   letter-spacing: -0.01em;
 }
 
 .card-description {
   font-size: 0.8125rem;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.5;
   opacity: 0.8;
@@ -164,7 +154,7 @@ defineEmits<{ (e: 'open'): void }>()
 .action-text {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--primary-blue);
+  color: var(--color-accent-primary);
   letter-spacing: 0.01em;
 }
 
@@ -175,9 +165,9 @@ defineEmits<{ (e: 'open'): void }>()
   right: 0;
   bottom: 0;
   background: linear-gradient(135deg,
-    rgba(59, 130, 246, 0.05) 0%,
+    rgba(255, 255, 255, 0.05) 0%,
     transparent 50%,
-    rgba(59, 130, 246, 0.02) 100%);
+    rgba(255, 255, 255, 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 20px;

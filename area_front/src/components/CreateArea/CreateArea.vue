@@ -52,7 +52,7 @@
             <div class="service-selector">
               <div class="selector-header">
                 <div class="selector-icon">
-                  <v-icon size="24" color="#3b82f6">mdi-play-circle</v-icon>
+                  <v-icon size="24" color="var(--color-accent-primary)">mdi-play-circle</v-icon>
                 </div>
                 <div class="selector-info">
                   <h3 class="selector-title">When this happens</h3>
@@ -97,7 +97,7 @@
             <div class="connection-arrow">
               <div class="arrow-line"></div>
               <div class="arrow-icon">
-                <v-icon size="20" color="#3b82f6">mdi-arrow-down</v-icon>
+                <v-icon size="20" color="var(--color-accent-primary)">mdi-arrow-down</v-icon>
               </div>
               <div class="arrow-line"></div>
             </div>
@@ -105,7 +105,7 @@
             <div class="service-selector">
               <div class="selector-header">
                 <div class="selector-icon">
-                  <v-icon size="24" color="#3b82f6">mdi-lightning-bolt</v-icon>
+                  <v-icon size="24" color="var(--color-accent-primary)">mdi-lightning-bolt</v-icon>
                 </div>
                 <div class="selector-info">
                   <h3 class="selector-title">Then do this</h3>
@@ -197,29 +197,13 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 </script>
 
 <style scoped>
-:root {
-  --primary-blue: #3b82f6;
-  --secondary-purple: #7c3aed;
-  --accent-pink: #ec4899;
-  --dark-bg: #0f1419;
-  --darker-bg: #0a0e13;
-  --light-gray: #9ca3af;
-  --white: #ffffff;
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.1);
-}
 
 .create-area-container {
   position: relative;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100%;
-  background: linear-gradient(135deg,
-    var(--darker-bg) 0%,
-    var(--dark-bg) 25%,
-    #1a1f2e 50%,
-    var(--dark-bg) 75%,
-    var(--darker-bg) 100%);
+  background: var(--gradient-bg-primary);
   border-radius: 24px;
   overflow: hidden;
 }
@@ -228,7 +212,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .main-card {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 24px;
   padding: 0;
   width: 100%;
@@ -242,7 +226,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .card-header {
   padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--spotify-border);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .header-content {
@@ -254,7 +238,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .close-button {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 8px;
   padding: 0.5rem;
   cursor: pointer;
@@ -291,14 +275,14 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .card-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
 }
 
 .card-subtitle {
   font-size: 1rem;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   margin: 0;
   font-weight: 400;
 }
@@ -323,13 +307,13 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 .label-icon {
-  color: #3b82f6 !important;
+  color: var(--color-accent-primary) !important;
 }
 
 .label-text {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--white);
+  color: var(--color-text-primary);
   letter-spacing: -0.01em;
 }
 
@@ -348,17 +332,17 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .input-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   letter-spacing: 0.01em;
 }
 
 .modern-input,
 .modern-textarea {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
   padding: 1rem;
-  color: var(--white);
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 400;
   transition: all 0.2s ease;
@@ -367,14 +351,14 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .modern-input:focus,
 .modern-textarea:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .modern-input::placeholder,
 .modern-textarea::placeholder {
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   opacity: 0.7;
 }
 
@@ -392,7 +376,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .service-selector {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 16px;
   padding: 1.5rem;
   transition: all 0.2s ease;
@@ -427,14 +411,14 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .selector-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--white);
+  color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.01em;
 }
 
 .selector-subtitle {
   font-size: 0.875rem;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -473,12 +457,12 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .service-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--white);
+  color: var(--color-text-primary);
 }
 
 .placeholder-text {
   font-size: 0.875rem;
-  color: var(--light-gray);
+  color: var(--color-text-secondary);
   opacity: 0.7;
   font-style: italic;
 }
@@ -497,7 +481,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .service-item-title {
   font-size: 0.875rem !important;
   font-weight: 500 !important;
-  color: var(--spotify-white) !important;
+  color: var(--color-text-primary) !important;
 }
 
 .connection-arrow {
@@ -510,7 +494,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .arrow-line {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent-primary), transparent);
   opacity: 0.5;
 }
 
@@ -527,7 +511,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .card-actions {
   padding: 1.5rem 2rem;
-  border-top: 1px solid var(--spotify-border);
+  border-top: 1px solid var(--color-border-primary);
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -549,24 +533,24 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .action-btn.secondary {
   background: rgba(255, 255, 255, 0.05);
-  color: var(--light-gray);
-  border: 1px solid var(--border);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-primary);
 }
 
 .action-btn.secondary:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: var(--white);
+  color: var(--color-text-primary);
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #3b82f6, #7c3aed, #ec4899);
+  background: var(--gradient-accent);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: var(--shadow-glow);
 }
 
 .action-btn.primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: var(--shadow-glow);
 }
 
 .action-btn.primary:disabled {
@@ -653,22 +637,22 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 :deep(.v-field--variant-outlined .v-field__outline) {
-  color: var(--spotify-border);
+  color: var(--color-border-primary);
 }
 
 :deep(.v-field--focused .v-field__outline) {
-  color: #3b82f6;
+  color: var(--color-accent-primary);
 }
 
 :deep(.v-list) {
   background: rgba(0, 0, 0, 0.8) !important;
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
 }
 
 :deep(.v-list-item) {
-  color: var(--spotify-white) !important;
+  color: var(--color-text-primary) !important;
 }
 
 :deep(.v-list-item:hover) {
@@ -688,7 +672,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .create-area-container::-webkit-scrollbar-thumb,
 .main-card::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3b82f6, #7c3aed, #ec4899);
+  background: var(--color-scrollbar-thumb);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -707,6 +691,6 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .create-area-container,
 .main-card {
   scrollbar-width: thin;
-  scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
+  scrollbar-color: var(--color-accent-primary) var(--color-scrollbar-track);
 }
 </style>

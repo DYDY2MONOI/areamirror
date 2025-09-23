@@ -234,8 +234,8 @@ watch(showCreateModal, (isOpen) => {
 
 <style scoped>
 .landing-dark {
-  background: linear-gradient(135deg, #0a0e13 0%, #0f1419 25%, #1a1f2e 50%, #0f1419 75%, #0a0e13 100%);
-  color: white;
+  background: var(--gradient-bg-primary);
+  color: var(--color-text-primary);
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
@@ -303,17 +303,17 @@ watch(showCreateModal, (isOpen) => {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1rem 1.5rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md) var(--spacing-lg);
   backdrop-filter: blur(20px);
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
 }
 
 .search-input-container:focus-within {
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .search-icon {
@@ -326,27 +326,27 @@ watch(showCreateModal, (isOpen) => {
   background: transparent;
   border: none;
   outline: none;
-  color: white;
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 400;
 }
 
 .search-input::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-secondary);
 }
 
 .search-filter-btn {
   background: transparent;
   border: none;
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: 1rem;
+  transition: var(--transition-normal);
+  margin-left: var(--spacing-md);
 }
 
 .search-filter-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-hover-bg);
 }
 
 .search-suggestions {
@@ -359,26 +359,26 @@ watch(showCreateModal, (isOpen) => {
 
 .suggestion-label {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .suggestion-chip {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  color: white;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
   backdrop-filter: blur(20px);
 }
 
 .suggestion-chip:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-focus);
   transform: translateY(-1px);
 }
 
@@ -411,35 +411,35 @@ watch(showCreateModal, (isOpen) => {
 }
 
 .card-1 {
-  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  background: var(--gradient-accent);
   top: 10%;
   left: 5%;
   animation-delay: 0s;
 }
 
 .card-2 {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-light));
   top: 20%;
   right: 10%;
   animation-delay: 1s;
 }
 
 .card-3 {
-  background: linear-gradient(135deg, #ec4899, #3b82f6);
+  background: linear-gradient(135deg, var(--color-accent-tertiary), var(--color-accent-light));
   top: 60%;
   left: 15%;
   animation-delay: 2s;
 }
 
 .card-4 {
-  background: linear-gradient(135deg, #3b82f6, #7c3aed);
+  background: var(--gradient-accent);
   top: 70%;
   right: 20%;
   animation-delay: 3s;
 }
 
 .card-5 {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-light));
   top: 40%;
   left: 50%;
   animation-delay: 4s;
@@ -470,70 +470,70 @@ watch(showCreateModal, (isOpen) => {
 .user-name {
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .user-status {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-weight: 400;
 }
 
 .filter-tabs {
   display: flex;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 0.25rem;
+  gap: var(--spacing-sm);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-primary);
 }
 
 .filter-tab {
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-weight: 500;
   font-size: 0.875rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
 }
 
 .filter-tab.active {
-  background: linear-gradient(135deg, #3b82f6, #7c3aed);
-  color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: var(--gradient-accent);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-glow);
 }
 
 .filter-tab:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  background: var(--color-hover-bg);
+  color: var(--color-text-primary);
 }
 
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .action-btn-icon {
   width: 40px;
   height: 40px;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-primary);
 }
 
 .action-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-hover-bg);
   transform: translateY(-1px);
 }
 
@@ -557,14 +557,14 @@ watch(showCreateModal, (isOpen) => {
 .section-title {
   font-weight: 800;
   font-size: 2rem;
-  color: white;
+  color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .section-subtitle {
   font-size: 1rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   margin: 0;
   font-weight: 400;
 }
@@ -572,29 +572,29 @@ watch(showCreateModal, (isOpen) => {
 .view-all-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: white;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
   font-weight: 500;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
   backdrop-filter: blur(20px);
 }
 
 .view-all-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-secondary);
   transform: translateY(-1px);
 }
 .chips-row :deep(.v-chip) {
   font-weight: 600;
 }
 .gradient-avatar {
-  background: linear-gradient(135deg, #3b82f6, #7c3aed, #ec4899);
+  background: var(--gradient-accent);
 }
 .cards-grid {
   display: grid;
@@ -653,14 +653,14 @@ watch(showCreateModal, (isOpen) => {
     animation: none !important;
   }
 }
-.gradient-red { background: linear-gradient(135deg, #ef4444, #f97316); }
-.gradient-green { background: linear-gradient(135deg, #10b981, #06b6d4); }
-.gradient-blue { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
-.gradient-pink { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-.gradient-indigo { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-.gradient-crimson { background: linear-gradient(135deg, #dc2626, #ec4899); }
-.gradient-teal { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-.gradient-orange { background: linear-gradient(135deg, #f97316, #ec4899); }
+.gradient-red { background: var(--color-area-red); }
+.gradient-green { background: var(--color-area-green); }
+.gradient-blue { background: var(--color-area-blue); }
+.gradient-pink { background: var(--color-area-pink); }
+.gradient-indigo { background: var(--color-area-blue); }
+.gradient-crimson { background: var(--color-area-red); }
+.gradient-teal { background: var(--color-area-green); }
+.gradient-orange { background: var(--color-area-orange); }
 .card-title { margin-top: 12px; font-weight: 800; font-size: 20px; }
 .card-subtitle { color: rgba(255,255,255,0.85); font-weight: 700; }
 .card-description { color: rgba(255,255,255,0.7); }
@@ -775,23 +775,23 @@ html, body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  background: var(--color-scrollbar-track);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3b82f6, #7c3aed, #ec4899);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-scrollbar-thumb);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2563eb, #6d28d9, #db2777);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+  background: var(--color-scrollbar-thumb-hover);
+  box-shadow: var(--shadow-glow);
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #1d4ed8, #5b21b6, #be185d);
+  background: var(--color-scrollbar-thumb-active);
 }
 
 * {
@@ -809,13 +809,13 @@ body.modal-open {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(10, 14, 19, 0.9), rgba(26, 31, 46, 0.8));
+  background: var(--gradient-bg-modal);
   backdrop-filter: blur(12px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--spacing-xl);
 }
 
 .custom-modal-content {
@@ -848,7 +848,7 @@ body.modal-open {
 }
 
 .custom-modal-content::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #1d4ed8, #5b21b6, #be185d);
+  background: var(--color-scrollbar-thumb-active);
 }
 
 .custom-modal-content {

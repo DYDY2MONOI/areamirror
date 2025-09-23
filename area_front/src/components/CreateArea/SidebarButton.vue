@@ -1,7 +1,7 @@
 <template>
   <v-list-item rounded class="sidebar-button" @click="$emit('open')">
     <template #prepend>
-      <v-icon color="#3b82f6" size="24">mdi-plus-circle</v-icon>
+      <v-icon color="var(--color-accent-primary)" size="24">mdi-plus-circle</v-icon>
     </template>
     <v-list-item-title class="button-text">Create Area</v-list-item-title>
   </v-list-item>
@@ -19,12 +19,12 @@ defineEmits<{ (e: 'open'): void }>()
 }
 
 .sidebar-button:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--color-hover-bg);
 }
 
 .button-text {
   font-weight: 500;
-  color: white;
+  color: var(--color-text-primary);
 }
 </style>
 
