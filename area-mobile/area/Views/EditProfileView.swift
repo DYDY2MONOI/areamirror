@@ -26,10 +26,40 @@ struct EditProfileView: View {
     let onDismiss: () -> Void
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                AppGradients.background
-                    .ignoresSafeArea()
+        ZStack {
+            AppGradients.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                HStack {
+                    Button(action: {
+                        onDismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.3))
+                            )
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Edit Profile")
+                        .font(AppTextStyles.title)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Color.clear
+                        .frame(width: 32, height: 32)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
                 
                 ScrollView {
                     VStack(spacing: 0) {
@@ -392,17 +422,6 @@ struct EditProfileView: View {
                         .padding(.bottom, 20)
                     }
                 }
-            }
-        }
-        .navigationTitle("Edit Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
-                    onDismiss()
-                }
-                .foregroundColor(AppColors.primaryBlue)
             }
         }
         .onAppear {
