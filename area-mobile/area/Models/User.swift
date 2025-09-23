@@ -65,10 +65,18 @@ struct RegisterRequest: Codable {
 struct ProfileUpdateRequest: Codable {
     let firstName: String?
     let lastName: String?
+    let phone: String?
+    let country: String?
+    let currentPassword: String?
+    let newPassword: String?
     
     enum CodingKeys: String, CodingKey {
         case firstName = "first_name"
         case lastName = "last_name"
+        case phone
+        case country
+        case currentPassword = "current_password"
+        case newPassword = "new_password"
     }
 }
 

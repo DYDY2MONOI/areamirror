@@ -231,13 +231,17 @@ class AuthService: ObservableObject {
         }.resume()
     }
     
-    func updateProfile(firstName: String?, lastName: String?) {
+    func updateProfile(firstName: String?, lastName: String?, phone: String?, country: String?, currentPassword: String?, newPassword: String?) {
         isLoading = true
         errorMessage = nil
         
         let updateRequest = ProfileUpdateRequest(
             firstName: firstName,
-            lastName: lastName
+            lastName: lastName,
+            phone: phone,
+            country: country,
+            currentPassword: currentPassword,
+            newPassword: newPassword
         )
         
         guard let url = URL(string: "\(baseURL)/profile") else {

@@ -11,8 +11,17 @@ struct EditProfileView: View {
     @StateObject private var authService = AuthService.shared
     @State private var firstName = ""
     @State private var lastName = ""
+    @State private var phone = ""
+    @State private var country = ""
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var showCurrentPassword = false
+    @State private var showNewPassword = false
+    @State private var showConfirmPassword = false
     @State private var showAlert = false
     @State private var showSuccessAlert = false
+    @State private var isChangingPassword = false
     
     let onDismiss: () -> Void
     
@@ -86,7 +95,63 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
-                                        .submitLabel(.done)
+                                        .submitLabel(.next)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppColors.darkBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                        )
+                                )
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Phone")
+                                    .font(AppTextStyles.caption)
+                                    .foregroundColor(.gray)
+                                
+                                HStack(spacing: 12) {
+                                    Image(systemName: "phone")
+                                        .foregroundColor(.gray)
+                                        .frame(width: 20)
+                                    
+                                    TextField("Enter your phone number", text: $phone)
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .foregroundColor(.white)
+                                        .keyboardType(.phonePad)
+                                        .submitLabel(.next)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(AppColors.darkBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                        )
+                                )
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Country")
+                                    .font(AppTextStyles.caption)
+                                    .foregroundColor(.gray)
+                                
+                                HStack(spacing: 12) {
+                                    Image(systemName: "globe")
+                                        .foregroundColor(.gray)
+                                        .frame(width: 20)
+                                    
+                                    TextField("Enter your country", text: $country)
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .foregroundColor(.white)
+                                        .autocapitalization(.words)
+                                        .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 16)
@@ -134,6 +199,155 @@ struct EditProfileView: View {
                                     .foregroundColor(.gray)
                             }
                             .padding(.top, 8)
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.3))
+                                .padding(.vertical, 20)
+                            
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Text("Change Password")
+                                        .font(AppTextStyles.subtitle)
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        isChangingPassword.toggle()
+                                    }) {
+                                        Text(isChangingPassword ? "Cancel" : "Change")
+                                            .font(AppTextStyles.caption)
+                                            .foregroundColor(AppColors.primaryBlue)
+                                    }
+                                }
+                                
+                                if isChangingPassword {
+                                    VStack(spacing: 16) {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Current Password")
+                                                .font(AppTextStyles.caption)
+                                                .foregroundColor(.gray)
+                                            
+                                            HStack(spacing: 12) {
+                                                Image(systemName: "lock")
+                                                    .foregroundColor(.gray)
+                                                    .frame(width: 20)
+                                                
+                                                if showCurrentPassword {
+                                                    TextField("Current password", text: $currentPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.next)
+                                                } else {
+                                                    SecureField("Current password", text: $currentPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.next)
+                                                }
+                                                
+                                                Button(action: {
+                                                    showCurrentPassword.toggle()
+                                                }) {
+                                                    Image(systemName: showCurrentPassword ? "eye" : "eye.slash")
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 16)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(AppColors.darkBackground)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                                    )
+                                            )
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("New Password")
+                                                .font(AppTextStyles.caption)
+                                                .foregroundColor(.gray)
+                                            
+                                            HStack(spacing: 12) {
+                                                Image(systemName: "lock")
+                                                    .foregroundColor(.gray)
+                                                    .frame(width: 20)
+                                                
+                                                if showNewPassword {
+                                                    TextField("New password", text: $newPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.next)
+                                                } else {
+                                                    SecureField("New password", text: $newPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.next)
+                                                }
+                                                
+                                                Button(action: {
+                                                    showNewPassword.toggle()
+                                                }) {
+                                                    Image(systemName: showNewPassword ? "eye" : "eye.slash")
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 16)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(AppColors.darkBackground)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                                    )
+                                            )
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Confirm New Password")
+                                                .font(AppTextStyles.caption)
+                                                .foregroundColor(.gray)
+                                            
+                                            HStack(spacing: 12) {
+                                                Image(systemName: "lock")
+                                                    .foregroundColor(.gray)
+                                                    .frame(width: 20)
+                                                
+                                                if showConfirmPassword {
+                                                    TextField("Confirm new password", text: $confirmPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.done)
+                                                } else {
+                                                    SecureField("Confirm new password", text: $confirmPassword)
+                                                        .textFieldStyle(PlainTextFieldStyle())
+                                                        .foregroundColor(.white)
+                                                        .submitLabel(.done)
+                                                }
+                                                
+                                                Button(action: {
+                                                    showConfirmPassword.toggle()
+                                                }) {
+                                                    Image(systemName: showConfirmPassword ? "eye" : "eye.slash")
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 16)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(AppColors.darkBackground)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                                    )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                         .padding(.horizontal, 24)
                         
@@ -177,16 +391,6 @@ struct EditProfileView: View {
         .onAppear {
             loadCurrentProfile()
         }
-        .onChange(of: authService.errorMessage) { errorMessage in
-            if let error = errorMessage {
-                showAlert = true
-            }
-        }
-        .onChange(of: authService.isLoading) { isLoading in
-            if !isLoading && authService.errorMessage == nil {
-                showSuccessAlert = true
-            }
-        }
         .onTapGesture {
             hideKeyboard()
         }
@@ -213,6 +417,8 @@ struct EditProfileView: View {
     private func loadCurrentProfile() {
         firstName = authService.currentUser?.firstName ?? ""
         lastName = authService.currentUser?.lastName ?? ""
+        phone = authService.currentUser?.phone ?? ""
+        country = authService.currentUser?.country ?? ""
     }
     
     private func saveProfile() {
@@ -222,9 +428,33 @@ struct EditProfileView: View {
             return
         }
         
+        if isChangingPassword {
+            guard !currentPassword.isEmpty && !newPassword.isEmpty && !confirmPassword.isEmpty else {
+                authService.errorMessage = "Please fill in all password fields"
+                showAlert = true
+                return
+            }
+            
+            guard newPassword == confirmPassword else {
+                authService.errorMessage = "New passwords do not match"
+                showAlert = true
+                return
+            }
+            
+            guard newPassword.count >= 6 else {
+                authService.errorMessage = "New password must be at least 6 characters"
+                showAlert = true
+                return
+            }
+        }
+        
         authService.updateProfile(
             firstName: firstName.isEmpty ? nil : firstName,
-            lastName: lastName.isEmpty ? nil : lastName
+            lastName: lastName.isEmpty ? nil : lastName,
+            phone: phone.isEmpty ? nil : phone,
+            country: country.isEmpty ? nil : country,
+            currentPassword: isChangingPassword ? currentPassword : nil,
+            newPassword: isChangingPassword ? newPassword : nil
         )
     }
     
