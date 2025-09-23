@@ -171,4 +171,120 @@ class AuthService: ObservableObject {
     func getAuthToken() -> String? {
         return UserDefaults.standard.string(forKey: "authToken")
     }
+    
+    func updateProfile(firstName: String?, lastName: String?) {
+        isLoading = true
+        errorMessage = nil
+        
+        let updateRequest = ProfileUpdateRequest(
+            firstName: firstName,
+            lastName: lastName
+        )
+        
+        guard let url = URL(string: "\(baseURL)/profile") else {
+            errorMessage = "Invalid URL"
+            isLoading = false
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        do {
+            request.httpBody = try JSONEncoder().encode(updateRequest)
+        } catch {
+            errorMessage = "Error encoding data"
+            isLoading = false
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                if let error = error {
+                    self?.errorMessage = "Network error: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    self?.errorMessage = "No data received"
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        do {
+                            let profileResponse = try JSONDecoder().decode(ProfileResponse.self, from: data)
+                            self?.currentUser = profileResponse.user
+                            self?.errorMessage = nil
+                        } catch {
+                            self?.errorMessage = "Error decoding response: \(error.localizedDescription)"
+                        }
+                    } else {
+                        do {
+                            let errorResponse = try JSONDecoder().decode([String: String].self, from: data)
+                            self?.errorMessage = errorResponse["error"] ?? "Profile update error"
+                        } catch {
+                            let responseString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                            self?.errorMessage = "Profile update error: \(responseString)"
+                        }
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    func fetchProfile() {
+        guard let url = URL(string: "\(baseURL)/profile") else {
+            errorMessage = "Invalid URL"
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.errorMessage = "Network error: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    self?.errorMessage = "No data received"
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        do {
+                            let profileResponse = try JSONDecoder().decode(ProfileResponse.self, from: data)
+                            self?.currentUser = profileResponse.user
+                            self?.errorMessage = nil
+                        } catch {
+                            self?.errorMessage = "Error decoding response"
+                        }
+                    } else {
+                        do {
+                            let errorResponse = try JSONDecoder().decode([String: String].self, from: data)
+                            self?.errorMessage = errorResponse["error"] ?? "Profile fetch error"
+                        } catch {
+                            self?.errorMessage = "Profile fetch error"
+                        }
+                    }
+                }
+            }
+        }.resume()
+    }
 }

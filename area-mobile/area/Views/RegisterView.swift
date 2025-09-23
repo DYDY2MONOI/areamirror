@@ -88,8 +88,18 @@ struct RegisterView: View {
             }
         }
         .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            hideKeyboard()
         }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onEnded { _ in
+                    hideKeyboard()
+                }
+        )
+    }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
     private func performRegister() {
@@ -231,11 +241,15 @@ struct RegisterForm: View {
                     TextField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.next)
                 } else {
                     SecureField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.next)
                 }
                 
@@ -266,11 +280,15 @@ struct RegisterForm: View {
                     TextField("Confirm Password", text: $confirmPassword)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.done)
                 } else {
                     SecureField("Confirm Password", text: $confirmPassword)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.done)
                 }
                 
