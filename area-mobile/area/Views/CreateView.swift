@@ -141,6 +141,8 @@ struct CreateView: View {
                                 
                                 TextField("My Automation Area", text: $areaName)
                                     .textFieldStyle(PlainTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 16)
@@ -161,6 +163,8 @@ struct CreateView: View {
                                 
                                 TextField("Describe what this area does...", text: $areaDescription, axis: .vertical)
                                     .textFieldStyle(PlainTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
                                     .foregroundColor(.white)
                                     .lineLimit(3...6)
                                     .padding(.horizontal, 16)

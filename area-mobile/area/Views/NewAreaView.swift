@@ -45,6 +45,8 @@ struct NewAreaView: View {
                             
                             TextField("Enter area name", text: $areaName)
                                 .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
                         }
                         .padding(.horizontal, 20)
                         
@@ -55,6 +57,8 @@ struct NewAreaView: View {
                             
                             TextField("Describe what this area does", text: $areaDescription, axis: .vertical)
                                 .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
                                 .lineLimit(3...6)
                         }
                         .padding(.horizontal, 20)

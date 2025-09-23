@@ -64,11 +64,15 @@ struct LoginForm: View {
                     TextField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.done)
                 } else {
                     SecureField("Password", text: $password)
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.white)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .submitLabel(.done)
                 }
                 

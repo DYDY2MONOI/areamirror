@@ -212,10 +212,10 @@ struct EditProfileView: View {
                                     
                                     Text(authService.currentUser?.email ?? "")
                                         .foregroundColor(.gray)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 16)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
                                         .fill(AppColors.darkBackground.opacity(0.5))

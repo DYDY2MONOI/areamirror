@@ -26,6 +26,8 @@ struct SearchView: View {
                         
                         TextField("Search areas, services...", text: $searchText)
                             .textFieldStyle(PlainTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
                             .foregroundColor(.white)
                             .onSubmit {
                                 performSearch()
