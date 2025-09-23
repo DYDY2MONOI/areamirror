@@ -60,37 +60,41 @@
                 </div>
               </div>
 
-              <div class="service-dropdown">
-                <v-select
-                  v-model="form.actionService"
-                  :items="appItems"
-                  item-title="title"
-                  item-value="value"
-                  placeholder="Select action service"
-                  class="modern-select"
-                  variant="outlined"
-                  hide-details
-                >
-                  <template #selection="{ item }">
-                    <div class="selected-service" v-if="item.raw">
-                      <div class="service-avatar">
-                        <img :src="item.raw.icon" :alt="item.raw.title" class="service-icon" />
-                      </div>
-                      <span class="service-name">{{ item.raw.title }}</span>
+              <div class="service-selection">
+                <div v-if="!form.actionService" class="service-grid">
+                  <div
+                    v-for="item in appItems.slice(0, 8)"
+                    :key="item.value"
+                    class="service-card"
+                    @click="selectTrigger(item.value)"
+                  >
+                    <div class="service-card-icon">
+                      <img :src="item.icon" :alt="item.title" class="service-icon" />
                     </div>
-                    <span v-else class="placeholder-text">Select service</span>
-                  </template>
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props" class="service-item">
-                      <template #prepend>
-                        <div class="service-avatar">
-                          <img :src="item.raw.icon" :alt="item.raw.title" class="service-icon" />
-                        </div>
-                      </template>
-                      <v-list-item-title class="service-item-title">{{ item.raw.title }}</v-list-item-title>
-                    </v-list-item>
-                  </template>
-                </v-select>
+                    <span class="service-card-name">{{ item.title }}</span>
+                  </div>
+                  <div class="service-card more-services" @click="showAllTriggerServices = true">
+                    <div class="service-card-icon">
+                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                    </div>
+                    <span class="service-card-name">More...</span>
+                  </div>
+                </div>
+
+                <div v-else class="selected-service-display">
+                  <div class="selected-service-card">
+                    <div class="service-avatar">
+                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                    </div>
+                    <div class="service-info">
+                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                      <span class="service-type">Trigger Service</span>
+                    </div>
+                    <button class="change-service-btn" @click="form.actionService = ''">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -113,37 +117,41 @@
                 </div>
               </div>
 
-              <div class="service-dropdown">
-                <v-select
-                  v-model="form.reactionService"
-                  :items="appItems"
-                  item-title="title"
-                  item-value="value"
-                  placeholder="Select reaction service"
-                  class="modern-select"
-                  variant="outlined"
-                  hide-details
-                >
-                  <template #selection="{ item }">
-                    <div class="selected-service" v-if="item.raw">
-                      <div class="service-avatar">
-                        <img :src="item.raw.icon" :alt="item.raw.title" class="service-icon" />
-                      </div>
-                      <span class="service-name">{{ item.raw.title }}</span>
+              <div class="service-selection">
+                <div v-if="!form.reactionService" class="service-grid">
+                  <div
+                    v-for="item in appItems.slice(0, 8)"
+                    :key="item.value"
+                    class="service-card"
+                    @click="selectReaction(item.value)"
+                  >
+                    <div class="service-card-icon">
+                      <img :src="item.icon" :alt="item.title" class="service-icon" />
                     </div>
-                    <span v-else class="placeholder-text">Select service</span>
-                  </template>
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props" class="service-item">
-                      <template #prepend>
-                        <div class="service-avatar">
-                          <img :src="item.raw.icon" :alt="item.raw.title" class="service-icon" />
-                        </div>
-                      </template>
-                      <v-list-item-title class="service-item-title">{{ item.raw.title }}</v-list-item-title>
-                    </v-list-item>
-                  </template>
-                </v-select>
+                    <span class="service-card-name">{{ item.title }}</span>
+                  </div>
+                  <div class="service-card more-services" @click="showAllReactionServices = true">
+                    <div class="service-card-icon">
+                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                    </div>
+                    <span class="service-card-name">More...</span>
+                  </div>
+                </div>
+
+                <div v-else class="selected-service-display">
+                  <div class="selected-service-card">
+                    <div class="service-avatar">
+                      <img :src="getIconUrl(apps.find(a => a.name === form.reactionService)?.icon || '')" :alt="getServiceName(form.reactionService)" class="service-icon" />
+                    </div>
+                    <div class="service-info">
+                      <span class="service-name">{{ getServiceName(form.reactionService) }}</span>
+                      <span class="service-type">Action Service</span>
+                    </div>
+                    <button class="change-service-btn" @click="form.reactionService = ''">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -165,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import appsJson from '../../assets/apps.json'
 
 type AppDef = { name: string; icon: string }
@@ -192,6 +200,25 @@ const isFormValid = computed(() => {
          form.actionService !== '' &&
          form.reactionService !== ''
 })
+
+const showAllTriggerServices = ref(false)
+const showAllReactionServices = ref(false)
+
+
+const selectTrigger = (serviceId: string) => {
+  form.actionService = serviceId
+  showAllTriggerServices.value = false
+}
+
+const selectReaction = (serviceId: string) => {
+  form.reactionService = serviceId
+  showAllReactionServices.value = false
+}
+
+const getServiceName = (serviceId: string) => {
+  const service = appItems.value.find(item => item.value === serviceId)
+  return service?.title || ''
+}
 
 defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 </script>
@@ -632,6 +659,159 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   }
 }
 
+/* Service Selection Styles */
+.service-selection {
+  width: 100%;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  background: rgba(26, 31, 46, 0.6);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.service-card:hover {
+  background: rgba(26, 31, 46, 0.8);
+  border-color: var(--color-border-focus);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.service-card.more-services {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.service-card.more-services:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.service-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.service-card-icon .service-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.service-card-name {
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.selected-service-display {
+  margin-top: 16px;
+}
+
+.selected-service-card {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(26, 31, 46, 0.8);
+  border: 2px solid var(--color-accent-primary);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-glow);
+}
+
+.service-info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.service-name {
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  display: block;
+}
+
+.service-type {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
+}
+
+.change-service-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.change-service-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 768px) {
+  .service-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .service-card {
+    padding: 12px 8px;
+  }
+
+  .service-card-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 6px;
+  }
+
+  .service-card-icon .service-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .service-card-name {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .service-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 :deep(.v-field__outline) {
   --v-field-border-opacity: 0.1;
 }
@@ -645,7 +825,7 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 :deep(.v-list) {
-  background: rgba(0, 0, 0, 0.8) !important;
+  background: var(--color-bg-card) !important;
   backdrop-filter: blur(20px);
   border: 1px solid var(--color-border-primary);
   border-radius: 12px;
@@ -656,7 +836,27 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 :deep(.v-list-item:hover) {
-  background: rgba(29, 185, 84, 0.1) !important;
+  background: var(--color-hover-bg) !important;
+}
+
+:deep(.v-field__input) {
+  color: var(--color-text-primary) !important;
+}
+
+:deep(.v-field__outline) {
+  color: var(--color-border-primary) !important;
+}
+
+:deep(.v-field--focused .v-field__outline) {
+  color: var(--color-accent-primary) !important;
+}
+
+:deep(.v-select .v-field__input) {
+  color: var(--color-text-primary) !important;
+}
+
+:deep(.v-select .v-field__outline) {
+  color: var(--color-border-primary) !important;
 }
 
 </style>
