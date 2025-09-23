@@ -71,62 +71,51 @@
   scrollbar-color: var(--color-accent-primary) var(--color-scrollbar-track);
 }
 
-*::-webkit-scrollbar {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-*::-webkit-scrollbar-track {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar-track {
   background: var(--color-scrollbar-track);
   border-radius: var(--radius-sm);
 }
 
-*::-webkit-scrollbar-thumb {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar-thumb {
   background: var(--color-scrollbar-thumb);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border-primary);
   transition: var(--transition-normal);
 }
 
-*::-webkit-scrollbar-thumb:hover {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar-thumb:hover {
   background: var(--color-scrollbar-thumb-hover);
   box-shadow: var(--shadow-glow);
 }
 
-*::-webkit-scrollbar-thumb:active {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar-thumb:active {
   background: var(--color-scrollbar-thumb-active);
 }
 
-*::-webkit-scrollbar-corner {
+*:not(.v-list):not(.v-menu):not(.v-overlay):not(.v-dialog)::-webkit-scrollbar-corner {
   background: var(--color-scrollbar-track);
 }
 
-/* Specific scrollbar styling for different elements */
-.v-list::-webkit-scrollbar,
-.v-navigation-drawer::-webkit-scrollbar,
-.v-dialog::-webkit-scrollbar,
-.v-overlay__content::-webkit-scrollbar {
+.v-navigation-drawer::-webkit-scrollbar {
   width: 6px;
 }
 
-.v-list::-webkit-scrollbar-thumb,
-.v-navigation-drawer::-webkit-scrollbar-thumb,
-.v-dialog::-webkit-scrollbar-thumb,
-.v-overlay__content::-webkit-scrollbar-thumb {
+.v-navigation-drawer::-webkit-scrollbar-thumb {
   background: var(--color-scrollbar-thumb);
   border-radius: var(--radius-sm);
   border: none;
 }
 
-.v-list::-webkit-scrollbar-track,
-.v-navigation-drawer::-webkit-scrollbar-track,
-.v-dialog::-webkit-scrollbar-track,
-.v-overlay__content::-webkit-scrollbar-track {
+.v-navigation-drawer::-webkit-scrollbar-track {
   background: transparent;
 }
-
-/* Custom scrollbar for main content areas */
 .content::-webkit-scrollbar,
+
 .main-content::-webkit-scrollbar {
   width: 10px;
 }
@@ -144,7 +133,6 @@
   border-radius: var(--radius-md);
 }
 
-/* Smooth scrolling for all elements */
 html {
   scroll-behavior: smooth;
 }
