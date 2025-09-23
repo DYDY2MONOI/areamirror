@@ -67,6 +67,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -95,6 +96,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -123,6 +125,8 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .keyboardType(.phonePad)
+                                        .autocapitalization(.none)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -151,6 +155,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -237,11 +242,15 @@ struct EditProfileView: View {
                                                     TextField("Current password", text: $currentPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 } else {
                                                     SecureField("Current password", text: $currentPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 }
                                                 
@@ -278,11 +287,15 @@ struct EditProfileView: View {
                                                     TextField("New password", text: $newPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 } else {
                                                     SecureField("New password", text: $newPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 }
                                                 
@@ -319,11 +332,15 @@ struct EditProfileView: View {
                                                     TextField("Confirm new password", text: $confirmPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.done)
                                                 } else {
                                                     SecureField("Confirm new password", text: $confirmPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.done)
                                                 }
                                                 
