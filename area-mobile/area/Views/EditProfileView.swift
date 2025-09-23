@@ -408,6 +408,16 @@ struct EditProfileView: View {
         .onAppear {
             loadCurrentProfile()
         }
+        .onChange(of: authService.errorMessage) { errorMessage in
+            if let error = errorMessage {
+                showAlert = true
+            }
+        }
+        .onChange(of: authService.isLoading) { isLoading in
+            if !isLoading && authService.errorMessage == nil {
+                showSuccessAlert = true
+            }
+        }
         .onTapGesture {
             hideKeyboard()
         }
@@ -473,6 +483,13 @@ struct EditProfileView: View {
             currentPassword: isChangingPassword ? currentPassword : nil,
             newPassword: isChangingPassword ? newPassword : nil
         )
+        
+        if isChangingPassword {
+            currentPassword = ""
+            newPassword = ""
+            confirmPassword = ""
+            isChangingPassword = false
+        }
     }
     
     private func hideKeyboard() {
