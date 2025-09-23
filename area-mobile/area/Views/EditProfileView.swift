@@ -26,10 +26,40 @@ struct EditProfileView: View {
     let onDismiss: () -> Void
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                AppGradients.background
-                    .ignoresSafeArea()
+        ZStack {
+            AppGradients.background
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                HStack {
+                    Button(action: {
+                        onDismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.3))
+                            )
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Edit Profile")
+                        .font(AppTextStyles.title)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Color.clear
+                        .frame(width: 32, height: 32)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
                 
                 ScrollView {
                     VStack(spacing: 0) {
@@ -67,6 +97,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -95,6 +126,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -123,6 +155,8 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .keyboardType(.phonePad)
+                                        .autocapitalization(.none)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -151,6 +185,7 @@ struct EditProfileView: View {
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .foregroundColor(.white)
                                         .autocapitalization(.words)
+                                        .disableAutocorrection(true)
                                         .submitLabel(.next)
                                 }
                                 .padding(.horizontal, 16)
@@ -237,11 +272,15 @@ struct EditProfileView: View {
                                                     TextField("Current password", text: $currentPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 } else {
                                                     SecureField("Current password", text: $currentPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 }
                                                 
@@ -278,11 +317,15 @@ struct EditProfileView: View {
                                                     TextField("New password", text: $newPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 } else {
                                                     SecureField("New password", text: $newPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.next)
                                                 }
                                                 
@@ -319,11 +362,15 @@ struct EditProfileView: View {
                                                     TextField("Confirm new password", text: $confirmPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.done)
                                                 } else {
                                                     SecureField("Confirm new password", text: $confirmPassword)
                                                         .textFieldStyle(PlainTextFieldStyle())
                                                         .foregroundColor(.white)
+                                                        .autocapitalization(.none)
+                                                        .disableAutocorrection(true)
                                                         .submitLabel(.done)
                                                 }
                                                 
@@ -377,19 +424,18 @@ struct EditProfileView: View {
                 }
             }
         }
-        .navigationTitle("Edit Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
-                    onDismiss()
-                }
-                .foregroundColor(AppColors.primaryBlue)
-            }
-        }
         .onAppear {
             loadCurrentProfile()
+        }
+        .onChange(of: authService.errorMessage) { errorMessage in
+            if let error = errorMessage {
+                showAlert = true
+            }
+        }
+        .onChange(of: authService.isLoading) { isLoading in
+            if !isLoading && authService.errorMessage == nil {
+                showSuccessAlert = true
+            }
         }
         .onTapGesture {
             hideKeyboard()
@@ -456,6 +502,13 @@ struct EditProfileView: View {
             currentPassword: isChangingPassword ? currentPassword : nil,
             newPassword: isChangingPassword ? newPassword : nil
         )
+        
+        if isChangingPassword {
+            currentPassword = ""
+            newPassword = ""
+            confirmPassword = ""
+            isChangingPassword = false
+        }
     }
     
     private func hideKeyboard() {

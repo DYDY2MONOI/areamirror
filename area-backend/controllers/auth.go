@@ -33,8 +33,12 @@ type RegisterRequest struct {
 }
 
 type ProfileUpdateRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Phone          string `json:"phone"`
+	Country        string `json:"country"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword    string `json:"new_password"`
 }
 
 func init() {
@@ -186,6 +190,26 @@ func UpdateProfile(c *gin.Context) {
 	}
 	if req.LastName != "" {
 		updates["last_name"] = req.LastName
+	}
+	if req.Phone != "" {
+		updates["phone"] = req.Phone
+	}
+	if req.Country != "" {
+		updates["country"] = req.Country
+	}
+	
+	if req.CurrentPassword != "" && req.NewPassword != "" {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Mot de passe actuel incorrect"})
+			return
+		}
+		
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors du hashage du nouveau mot de passe"})
+			return
+		}
+		updates["password"] = string(hashedPassword)
 	}
 
 	if err := database.DB.Model(&user).Updates(updates).Error; err != nil {
