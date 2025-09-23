@@ -1,0 +1,184 @@
+[
+  {
+    "name": "Gmail",
+    "icon": "gmail.png"
+  },
+  {
+    "name": "Discord",
+    "icon": "discord.png"
+  },
+  {
+    "name": "Spotify",
+    "icon": "spotify.png"
+  },
+  {
+    "name": "Twitter",
+    "icon": "twitter.png"
+  },
+  {
+    "name": "Google Drive",
+    "icon": "google-drive.png"
+  },
+  {
+    "name": "GitHub",
+    "icon": "github.png"
+  },
+  {
+    "name": "Notion",
+    "icon": "notion.png"
+  },
+  {
+    "name": "Slack",
+    "icon": "slack.png"
+  },
+  {
+    "name": "Trello",
+    "icon": "trello.png"
+  },
+  {
+    "name": "Facebook",
+    "icon": "facebook.png"
+  },
+  {
+    "name": "Instagram",
+    "icon": "instagram.png"
+  },
+  {
+    "name": "LinkedIn",
+    "icon": "linkedin.png"
+  },
+  {
+    "name": "Outlook",
+    "icon": "outlook.png"
+  },
+  {
+    "name": "YouTube",
+    "icon": "youtube.png"
+  },
+  {
+    "name": "Reddit",
+    "icon": "reddit.png"
+  },
+  {
+    "name": "Dropbox",
+    "icon": "dropbox.png"
+  },
+  {
+    "name": "Google Calendar",
+    "icon": "google-calendar.png"
+  },
+  {
+    "name": "Microsoft Teams",
+    "icon": "microsoft-teams.png"
+  },
+  {
+    "name": "Zoom",
+    "icon": "zoom.png"
+  },
+  {
+    "name": "Asana",
+    "icon": "asana.png"
+  },
+  {
+    "name": "Bitbucket",
+    "icon": "bitbucket.png"
+  },
+  {
+    "name": "Drive",
+    "icon": "drive.png"
+  },
+  {
+    "name": "Calendar",
+    "icon": "calendar.png"
+  },
+  {
+    "name": "Evernote",
+    "icon": "evernote.png"
+  },
+  {
+    "name": "Pocket",
+    "icon": "pocket.png"
+  },
+  {
+    "name": "Pinterest",
+    "icon": "pinterest.png"
+  },
+  {
+    "name": "Messenger",
+    "icon": "messenger.png"
+  },
+  {
+    "name": "Apple Music",
+    "icon": "apple-music.png"
+  },
+  {
+    "name": "SoundCloud",
+    "icon": "soundcloud.png"
+  },
+  {
+    "name": "Steam",
+    "icon": "steam.png"
+  },
+  {
+    "name": "Twitch",
+    "icon": "twitch.png"
+  },
+  {
+    "name": "WhatsApp",
+    "icon": "whatsapp.png"
+  },
+  {
+    "name": "Google Sheets",
+    "icon": "google-sheets.png"
+  },
+  {
+    "name": "Google Docs",
+    "icon": "google-docs.png"
+  },
+  {
+    "name": "Google Forms",
+    "icon": "google-forms.png"
+  },
+  {
+    "name": "Jira",
+    "icon": "jira.png"
+  },
+  {
+    "name": "Medium",
+    "icon": "medium.png"
+  },
+  {
+    "name": "Paypal",
+    "icon": "paypal.png"
+  },
+  {
+    "name": "RSS",
+    "icon": "rss.png"
+  },
+  {
+    "name": "Weather",
+    "icon": "weather.png"
+  },
+  {
+    "name": "Calendar",
+    "icon": "calendar.png"
+  },
+  {
+    "name": "Files",
+    "icon": "files.png"
+  },
+  {
+    "name": "Tasks",
+    "icon": "tasks.png"
+  },
+  {
+    "name": "Reminders",
+    "icon": "reminders.png"
+  },
+  {
+    "name": "Notes",
+    "icon": "notes.png"
+  }
+]
+
+

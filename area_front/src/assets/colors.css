@@ -1,0 +1,67 @@
+:root {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #111111;
+  --color-bg-tertiary: #1a1a1a;
+  --color-bg-card: rgba(255, 255, 255, 0.05);
+  --color-bg-card-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-modal: rgba(0, 0, 0, 0.9);
+  --color-bg-modal-secondary: rgba(26, 26, 26, 0.8);
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+
+  --color-accent-primary: #333333;
+  --color-accent-secondary: #555555;
+  --color-accent-tertiary: #777777;
+  --color-accent-light: #999999;
+
+  --color-border-primary: rgba(255, 255, 255, 0.1);
+  --color-border-secondary: rgba(255, 255, 255, 0.2);
+  --color-border-focus: rgba(255, 255, 255, 0.3);
+
+  --color-hover-bg: rgba(255, 255, 255, 0.1);
+  --color-focus-ring: rgba(255, 255, 255, 0.1);
+  --color-shadow-primary: rgba(0, 0, 0, 0.3);
+  --color-shadow-secondary: rgba(255, 255, 255, 0.1);
+
+  --color-area-red: linear-gradient(135deg, #ef4444, #f97316);
+  --color-area-green: linear-gradient(135deg, #10b981, #06b6d4);
+  --color-area-blue: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --color-area-pink: linear-gradient(135deg, #ec4899, #f43f5e);
+  --color-area-orange: linear-gradient(135deg, #f97316, #ec4899);
+
+  --gradient-bg-primary: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 25%, var(--color-bg-tertiary) 50%, var(--color-bg-secondary) 75%, var(--color-bg-primary) 100%);
+  --gradient-bg-modal: linear-gradient(135deg, var(--color-bg-modal), var(--color-bg-modal-secondary));
+  --gradient-accent: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary), var(--color-accent-tertiary));
+  --gradient-text: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+
+  --color-scrollbar-track: rgba(255, 255, 255, 0.05);
+  --color-scrollbar-thumb: linear-gradient(180deg, var(--color-accent-primary), var(--color-accent-secondary), var(--color-accent-tertiary));
+  --color-scrollbar-thumb-hover: linear-gradient(180deg, #444444, #666666, #888888);
+  --color-scrollbar-thumb-active: linear-gradient(180deg, #222222, #444444, #666666);
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 50%;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 8px rgba(255, 255, 255, 0.2);
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}

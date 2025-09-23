@@ -14,6 +14,12 @@ struct User: Codable, Identifiable {
     let lastName: String?
     let createdAt: String?
     let updatedAt: String?
+    let phone: String?
+    let birthday: String?
+    let gender: String?
+    let country: String?
+    let lang: String?
+    let loginProvider: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -22,6 +28,12 @@ struct User: Codable, Identifiable {
         case lastName = "last_name"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case phone
+        case birthday
+        case gender
+        case country
+        case lang
+        case loginProvider = "login_provider"
     }
 }
 

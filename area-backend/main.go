@@ -35,6 +35,7 @@ func main() {
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
+	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 
 	r.GET("/users", controllers.GetUsers)
 	r.GET("/users/:id", controllers.GetUser)
@@ -71,6 +72,12 @@ func main() {
 	r.PATCH("/areas/:id/toggle", controllers.ToggleArea)
 
 	r.GET("/user/:id/areas", controllers.GetUserAreas)
+
+	r.POST("/user/:id/applets", controllers.CreateApplet)
+	r.GET("/user/:id/applets", controllers.GetApplets)
+	r.GET("/user/:id/applets/:id", controllers.GetApplet)
+	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
+	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
 
 	r.Run()
 }
