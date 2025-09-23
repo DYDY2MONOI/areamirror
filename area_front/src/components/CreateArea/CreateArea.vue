@@ -52,7 +52,7 @@
             <div class="service-selector">
               <div class="selector-header">
                 <div class="selector-icon">
-                  <v-icon size="24" color="var(--color-accent-primary)">mdi-play-circle</v-icon>
+                  <v-icon size="24" color="#3b82f6">mdi-play-circle</v-icon>
                 </div>
                 <div class="selector-info">
                   <h3 class="selector-title">When this happens</h3>
@@ -97,7 +97,7 @@
             <div class="connection-arrow">
               <div class="arrow-line"></div>
               <div class="arrow-icon">
-                <v-icon size="20" color="var(--color-accent-primary)">mdi-arrow-down</v-icon>
+                <v-icon size="20" color="#3b82f6">mdi-arrow-down</v-icon>
               </div>
               <div class="arrow-line"></div>
             </div>
@@ -105,7 +105,7 @@
             <div class="service-selector">
               <div class="selector-header">
                 <div class="selector-icon">
-                  <v-icon size="24" color="var(--color-accent-primary)">mdi-lightning-bolt</v-icon>
+                  <v-icon size="24" color="#3b82f6">mdi-lightning-bolt</v-icon>
                 </div>
                 <div class="selector-info">
                   <h3 class="selector-title">Then do this</h3>
@@ -659,38 +659,4 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   background: rgba(29, 185, 84, 0.1) !important;
 }
 
-.create-area-container::-webkit-scrollbar,
-.main-card::-webkit-scrollbar {
-  width: 8px;
-}
-
-.create-area-container::-webkit-scrollbar-track,
-.main-card::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-
-.create-area-container::-webkit-scrollbar-thumb,
-.main-card::-webkit-scrollbar-thumb {
-  background: var(--color-scrollbar-thumb);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.create-area-container::-webkit-scrollbar-thumb:hover,
-.main-card::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2563eb, #6d28d9, #db2777);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-}
-
-.create-area-container::-webkit-scrollbar-thumb:active,
-.main-card::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #1d4ed8, #5b21b6, #be185d);
-}
-
-.create-area-container,
-.main-card {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-accent-primary) var(--color-scrollbar-track);
-}
 </style>

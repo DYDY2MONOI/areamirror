@@ -1,7 +1,7 @@
 <template>
   <v-list-item rounded class="sidebar-button" @click="$emit('open')">
     <template #prepend>
-      <v-icon color="var(--color-accent-primary)" size="24">mdi-plus-circle</v-icon>
+      <v-icon color="#3b82f6" size="24">mdi-plus-circle</v-icon>
     </template>
     <v-list-item-title class="button-text">Create Area</v-list-item-title>
   </v-list-item>
