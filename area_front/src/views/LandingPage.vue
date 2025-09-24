@@ -12,20 +12,45 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <SidebarButton tooltip="Create" @open="showCreateModal = true" />
+        <SidebarButton tooltip="Create" @open="() => requireAuth(() => showCreateModal = true)" />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-book-open-variant" class="text-white" rounded></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-book-open-variant"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => {})"
+            ></v-list-item>
           </template>
         </v-tooltip>
         <v-tooltip text="Profile" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-account-circle" class="text-white" rounded to="/login"></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-account-circle"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => {})"
+            ></v-list-item>
           </template>
         </v-tooltip>
 
         <v-spacer></v-spacer>
-        <v-tooltip text="Déconnexion" location="end" v-if="isAuthenticated">
+
+        <v-tooltip text="Connexion" location="end" v-if="!isAuthenticated">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-login"
+              class="text-white"
+              rounded
+              @click="goToLogin"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip text="Sign Out" location="end" v-if="isAuthenticated">
           <template #activator="{ props }">
             <v-list-item
               v-bind="props"
@@ -56,10 +81,10 @@
           </div>
           <div class="search-suggestions">
             <span class="suggestion-label">Popular:</span>
-            <button class="suggestion-chip">Gmail</button>
-            <button class="suggestion-chip">Discord</button>
-            <button class="suggestion-chip">Spotify</button>
-            <button class="suggestion-chip">GitHub</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Gmail</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Discord</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Spotify</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">GitHub</button>
           </div>
         </div>
       </div>
@@ -77,16 +102,16 @@
           </div>
         </div>
         <div class="filter-tabs">
-          <button class="filter-tab active">All</button>
-          <button class="filter-tab">My AREAs</button>
-          <button class="filter-tab">Popular</button>
-          <button class="filter-tab">Templates</button>
+          <button class="filter-tab active" @click="requireAuth(() => {})">All</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">My AREAs</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Popular</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Templates</button>
         </div>
         <div class="action-buttons">
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-magnify</v-icon>
           </button>
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-bell-outline</v-icon>
           </button>
         </div>
@@ -99,7 +124,7 @@
           <h2 class="section-title">Popular AREAs</h2>
           <p class="section-subtitle">Most used automation templates</p>
         </div>
-        <button class="view-all-btn">
+        <button class="view-all-btn" @click="requireAuth(() => {})">
           <span>View All</span>
           <v-icon size="16">mdi-arrow-right</v-icon>
         </button>
@@ -219,7 +244,7 @@
           </div>
         </div>
         <div class="cards-grid">
-          <CardButton @open="showCreateModal = true" />
+          <CardButton @open="() => requireAuth(() => showCreateModal = true)" />
         </div>
       </div>
     </v-container>
@@ -233,8 +258,8 @@
         <div class="logout-icon-container">
           <v-icon size="32" color="white">mdi-logout</v-icon>
         </div>
-        <h3 class="logout-title">Déconnexion</h3>
-        <p class="logout-message">Vous serez redirigé vers la page de connexion</p>
+        <h3 class="logout-title">Sign Out</h3>
+        <p class="logout-message">You will be redirected to the sign in page</p>
       </div>
 
       <div class="logout-modal-actions">
@@ -243,14 +268,14 @@
           variant="outlined"
           @click="showLogoutDialog = false"
         >
-          Annuler
+          Cancel
         </v-btn>
         <v-btn
           class="logout-confirm-btn"
           variant="flat"
           @click="confirmLogout"
         >
-          Se déconnecter
+          Sign Out
         </v-btn>
       </div>
     </div>
@@ -279,8 +304,20 @@ onMounted(async () => {
 
 
 watch(isAuthenticated, (newValue) => {
-  console.log('État d\'authentification changé:', newValue)
+  console.log('Authentication state changed:', newValue)
 })
+
+const goToLogin = () => {
+  router.push('/login')
+}
+
+const requireAuth = (action: () => void) => {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  action()
+}
 
 const confirmLogout = async () => {
   try {
@@ -288,7 +325,7 @@ const confirmLogout = async () => {
     showLogoutDialog.value = false
     router.push('/login')
   } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error)
+    console.error('Error during sign out:', error)
   }
 }
 

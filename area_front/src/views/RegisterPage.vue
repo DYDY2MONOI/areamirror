@@ -135,17 +135,17 @@ const error = ref('')
 
 const handleRegister = async () => {
   if (!form.value.email || !form.value.password) {
-    error.value = 'Veuillez remplir tous les champs obligatoires'
+    error.value = 'Please fill in all required fields'
     return
   }
 
   if (form.value.password !== confirmPassword.value) {
-    error.value = 'Les mots de passe ne correspondent pas'
+    error.value = 'Passwords do not match'
     return
   }
 
   if (form.value.password.length < 6) {
-    error.value = 'Le mot de passe doit contenir au moins 6 caractères'
+    error.value = 'Password must contain at least 6 characters'
     return
   }
 
@@ -156,7 +156,7 @@ const handleRegister = async () => {
     await authService.register(form.value)
     router.push('/')
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Erreur lors de l\'inscription'
+    error.value = err instanceof Error ? err.message : 'Registration error'
   } finally {
     loading.value = false
   }

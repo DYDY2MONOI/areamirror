@@ -61,6 +61,21 @@
             <div v-if="loading" class="loading-spinner"></div>
             <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
           </button>
+
+          <!-- Séparateur -->
+          <div class="divider">
+            <span class="divider-text">or</span>
+          </div>
+
+          <!-- Bouton Guest -->
+          <button
+            type="button"
+            @click="continueAsGuest"
+            class="guest-button"
+          >
+            <v-icon size="20" class="guest-icon">mdi-account-outline</v-icon>
+            <span>Continue as Guest</span>
+          </button>
         </form>
 
         <div class="login-footer">
@@ -93,7 +108,7 @@ const error = ref('')
 
 const handleLogin = async () => {
   if (!form.value.email || !form.value.password) {
-    error.value = 'Veuillez remplir tous les champs'
+    error.value = 'Please fill in all fields'
     return
   }
 
@@ -104,10 +119,14 @@ const handleLogin = async () => {
     await authService.login(form.value)
     router.push('/')
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Erreur de connexion'
+    error.value = err instanceof Error ? err.message : 'Connection error'
   } finally {
     loading.value = false
   }
+}
+
+const continueAsGuest = () => {
+  router.push('/')
 }
 </script>
 
@@ -383,6 +402,76 @@ const handleLogin = async () => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Séparateur */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-primary);
+}
+
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-primary);
+}
+
+.divider-text {
+  padding: 0 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--color-bg-card);
+}
+
+/* Bouton Guest */
+.guest-button {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 2px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.guest-button:hover {
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-secondary);
+  transform: translateY(-1px);
+}
+
+.guest-button:active {
+  transform: translateY(0);
+}
+
+.guest-icon {
+  color: var(--color-text-secondary);
+  transition: var(--transition-normal);
+}
+
+.guest-button:hover .guest-icon {
+  color: var(--color-accent-primary);
+  transform: scale(1.1);
 }
 
 .login-footer {
