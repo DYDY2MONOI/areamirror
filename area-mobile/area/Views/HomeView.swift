@@ -32,14 +32,7 @@ struct HomeView: View {
                     VStack(spacing: 0) {
                         VStack(spacing: 20) {
                             HStack {
-                                Circle()
-                                    .fill(OptimizedGradients.primaryGradient)
-                                    .frame(width: 32, height: 32)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .font(.system(size: 16))
-                                            .foregroundColor(.white)
-                                    )
+                                ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
                                 
                                 Spacer()
                                 

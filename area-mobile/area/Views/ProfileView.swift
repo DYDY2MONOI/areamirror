@@ -23,15 +23,7 @@ struct ProfileView: View {
                     ScrollView {
                         VStack(spacing: 24) {
                             VStack(spacing: 16) {
-                                Circle()
-                                    .fill(AppGradients.button)
-                                    .frame(width: 80, height: 80)
-                                    .overlay(
-                                        Text(authService.currentUser?.firstName?.prefix(1).uppercased() ?? "U")
-                                            .font(.title)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.white)
-                                    )
+                                ProfileAvatar(size: 80, user: authService.currentUser)
                                 
                                 VStack(spacing: 4) {
                                     Text("\(authService.currentUser?.firstName ?? "") \(authService.currentUser?.lastName ?? "")")

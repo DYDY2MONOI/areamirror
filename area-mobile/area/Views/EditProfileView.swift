@@ -480,11 +480,9 @@ struct EditProfileView: View {
     }
     
     private func getFullImageURL(_ imagePath: String) -> URL? {
-        // Si le chemin commence par "uploads/", construire l'URL complète
         if imagePath.hasPrefix("uploads/") {
             return URL(string: "\(AppConfig.baseURL)/\(imagePath)")
         }
-        // Sinon, utiliser le chemin tel quel (URL complète)
         return URL(string: imagePath)
     }
     

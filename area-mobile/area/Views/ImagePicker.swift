@@ -72,15 +72,7 @@ struct ProfileImagePicker: View {
                             .frame(width: 80, height: 80)
                             .clipShape(Circle())
                     } else {
-                        Circle()
-                            .fill(OptimizedGradients.primaryGradient)
-                            .frame(width: 80, height: 80)
-                            .overlay(
-                                Text(authService.currentUser?.firstName?.prefix(1).uppercased() ?? "U")
-                                    .font(.title)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                            )
+                        ProfileAvatar(size: 80, user: authService.currentUser)
                     }
                     
                     Circle()

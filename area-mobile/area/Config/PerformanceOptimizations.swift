@@ -125,7 +125,6 @@ extension View {
     
     func performanceOptimized() -> some View {
         self
-            // Optimisations légères pour éviter les problèmes d'affichage
             .compositingGroup()
     }
 }
