@@ -12,15 +12,53 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <SidebarButton tooltip="Create" @open="showCreateModal = true" />
+        <SidebarButton tooltip="Create" @open="() => requireAuth(() => showCreateModal = true)" />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-book-open-variant" class="text-white" rounded></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-book-open-variant"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => {})"
+            ></v-list-item>
           </template>
         </v-tooltip>
         <v-tooltip text="Profile" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-account-circle" class="text-white" rounded to="/login"></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-account-circle"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => {})"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-spacer></v-spacer>
+
+        <v-tooltip text="Connexion" location="end" v-if="!isAuthenticated">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-login"
+              class="text-white"
+              rounded
+              @click="goToLogin"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip text="Sign Out" location="end" v-if="isAuthenticated">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-logout"
+              class="text-white"
+              rounded
+              @click="showLogoutDialog = true"
+            ></v-list-item>
           </template>
         </v-tooltip>
       </v-list>
@@ -43,10 +81,10 @@
           </div>
           <div class="search-suggestions">
             <span class="suggestion-label">Popular:</span>
-            <button class="suggestion-chip">Gmail</button>
-            <button class="suggestion-chip">Discord</button>
-            <button class="suggestion-chip">Spotify</button>
-            <button class="suggestion-chip">GitHub</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Gmail</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Discord</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Spotify</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">GitHub</button>
           </div>
         </div>
       </div>
@@ -64,16 +102,16 @@
           </div>
         </div>
         <div class="filter-tabs">
-          <button class="filter-tab active">All</button>
-          <button class="filter-tab">My AREAs</button>
-          <button class="filter-tab">Popular</button>
-          <button class="filter-tab">Templates</button>
+          <button class="filter-tab active" @click="requireAuth(() => {})">All</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">My AREAs</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Popular</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Templates</button>
         </div>
         <div class="action-buttons">
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-magnify</v-icon>
           </button>
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-bell-outline</v-icon>
           </button>
         </div>
@@ -86,7 +124,7 @@
           <h2 class="section-title">Popular AREAs</h2>
           <p class="section-subtitle">Most used automation templates</p>
         </div>
-        <button class="view-all-btn">
+        <button class="view-all-btn" @click="requireAuth(() => {})">
           <span>View All</span>
           <v-icon size="16">mdi-arrow-right</v-icon>
         </button>
@@ -206,10 +244,40 @@
           </div>
         </div>
         <div class="cards-grid">
-          <CardButton @open="showCreateModal = true" />
+          <CardButton @open="() => requireAuth(() => showCreateModal = true)" />
         </div>
       </div>
     </v-container>
+    </div>
+  </div>
+
+  <!-- Dialog de confirmation de déconnexion -->
+  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
+    <div class="custom-modal-content logout-modal" @click.stop>
+      <div class="logout-modal-header">
+        <div class="logout-icon-container">
+          <v-icon size="32" color="white">mdi-logout</v-icon>
+        </div>
+        <h3 class="logout-title">Sign Out</h3>
+        <p class="logout-message">You will be redirected to the sign in page</p>
+      </div>
+
+      <div class="logout-modal-actions">
+        <v-btn
+          class="logout-cancel-btn"
+          variant="outlined"
+          @click="showLogoutDialog = false"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          class="logout-confirm-btn"
+          variant="flat"
+          @click="confirmLogout"
+        >
+          Sign Out
+        </v-btn>
+      </div>
     </div>
   </div>
 
@@ -219,9 +287,47 @@
 import CreateArea from '../components/CreateArea/CreateArea.vue'
 import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
+
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
+const showLogoutDialog = ref(false)
+
+const { isAuthenticated, logout, refreshProfile } = useAuth()
+const router = useRouter()
+
+onMounted(async () => {
+  await refreshProfile()
+})
+
+
+watch(isAuthenticated, (newValue) => {
+  console.log('Authentication state changed:', newValue)
+})
+
+const goToLogin = () => {
+  router.push('/login')
+}
+
+const requireAuth = (action: () => void) => {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  action()
+}
+
+const confirmLogout = async () => {
+  try {
+    await logout()
+    showLogoutDialog.value = false
+    router.push('/login')
+  } catch (error) {
+    console.error('Error during sign out:', error)
+  }
+}
 
 watch(showCreateModal, (isOpen) => {
   if (isOpen) {
@@ -826,6 +932,128 @@ body.modal-open {
 .custom-modal-content {
   scrollbar-width: thin;
   scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
+}
+
+/* Styles pour le modal de déconnexion - Cohérent avec CreateArea */
+.logout-modal {
+  max-width: 400px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.logout-modal-header {
+  padding: 2rem;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.logout-icon-container {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.logout-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logout-message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.logout-modal-actions {
+  padding: 1.5rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.logout-cancel-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-transform: none;
+  transition: var(--transition-normal);
+}
+
+.logout-cancel-btn:hover {
+  background: var(--color-hover-bg) !important;
+  border-color: var(--color-border-secondary) !important;
+  transform: translateY(-1px);
+}
+
+.logout-confirm-btn {
+  background: var(--gradient-accent) !important;
+  color: var(--color-text-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-transform: none;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-glow);
+}
+
+.logout-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .logout-modal {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .logout-modal-header {
+    padding: 1.5rem;
+  }
+
+  .logout-icon-container {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.75rem;
+  }
+
+  .logout-title {
+    font-size: 1.25rem;
+  }
+
+  .logout-message {
+    font-size: 0.875rem;
+  }
+
+  .logout-modal-actions {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    flex-direction: column;
+  }
+
+  .logout-cancel-btn,
+  .logout-confirm-btn {
+    width: 100%;
+  }
 }
 </style>
 
