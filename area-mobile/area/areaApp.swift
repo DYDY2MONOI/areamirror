@@ -9,9 +9,19 @@ import SwiftUI
 
 @main
 struct areaApp: App {
+    @StateObject private var performanceManager = PerformanceManager()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            PerformanceOptimizedView {
+                ContentView()
+            }
+            .environmentObject(performanceManager)
+            .onAppear {
+                if AppPerformanceConfig.enableHighPerformanceMode {
+                    performanceManager.enableHighPerformanceMode()
+                }
+            }
         }
     }
 }

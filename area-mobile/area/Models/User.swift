@@ -20,6 +20,7 @@ struct User: Codable, Identifiable {
     let country: String?
     let lang: String?
     let loginProvider: String?
+    let profileImage: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -34,6 +35,7 @@ struct User: Codable, Identifiable {
         case country
         case lang
         case loginProvider = "login_provider"
+        case profileImage = "profile_image"
     }
 }
 

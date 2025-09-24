@@ -22,6 +22,8 @@ struct EditProfileView: View {
     @State private var showAlert = false
     @State private var showSuccessAlert = false
     @State private var isChangingPassword = false
+    @State private var selectedImage: UIImage?
+    @State private var profileImage: UIImage?
     
     let onDismiss: () -> Void
     
@@ -64,15 +66,7 @@ struct EditProfileView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         VStack(spacing: 16) {
-                            Circle()
-                                .fill(AppGradients.button)
-                                .frame(width: 80, height: 80)
-                                .overlay(
-                                    Text(authService.currentUser?.firstName?.prefix(1).uppercased() ?? "U")
-                                        .font(.title)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                )
+                            ProfileImagePicker(selectedImage: $selectedImage)
                             
                             Text("Edit Profile")
                                 .font(AppTextStyles.title)
@@ -465,6 +459,22 @@ struct EditProfileView: View {
         lastName = authService.currentUser?.lastName ?? ""
         phone = authService.currentUser?.phone ?? ""
         country = authService.currentUser?.country ?? ""
+        
+        if let profileImageURL = authService.currentUser?.profileImage,
+           let url = URL(string: profileImageURL) {
+            loadImageFromURL(url)
+        }
+    }
+    
+    private func loadImageFromURL(_ url: URL) {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data, let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self.profileImage = image
+                    self.selectedImage = image
+                }
+            }
+        }.resume()
     }
     
     private func saveProfile() {
@@ -492,6 +502,10 @@ struct EditProfileView: View {
                 showAlert = true
                 return
             }
+        }
+        
+        if let selectedImage = selectedImage, selectedImage != profileImage {
+            authService.uploadProfileImage(selectedImage)
         }
         
         authService.updateProfile(

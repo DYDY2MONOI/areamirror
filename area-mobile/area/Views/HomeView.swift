@@ -27,11 +27,7 @@ struct HomeView: View {
                         VStack(spacing: 20) {
                             HStack {
                                 Circle()
-                                    .fill(LinearGradient(
-                                        colors: [Color.blue, Color.purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ))
+                                    .fill(OptimizedGradients.primaryGradient)
                                     .frame(width: 32, height: 32)
                                     .overlay(
                                         Image(systemName: "person.fill")
@@ -86,11 +82,7 @@ struct HomeView: View {
                                         subtitle: "Get started",
                                         description: "Connect your favorite services",
                                         icon: "plus.circle.fill",
-                                        gradient: LinearGradient(
-                                            colors: [AppColors.primaryBlue, AppColors.secondaryPurple],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
+                                        gradient: OptimizedGradients.primaryGradient,
                                         type: .create,
                                         action: { showNewArea = true }
                                     ),
@@ -99,11 +91,7 @@ struct HomeView: View {
                                         subtitle: "Gmail automation",
                                         description: "Automate your important emails",
                                         icon: "envelope.badge.fill",
-                                        gradient: LinearGradient(
-                                            colors: [Color.blue.opacity(0.8), Color.cyan.opacity(0.6)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
+                                        gradient: OptimizedGradients.blueGradient,
                                         type: .create,
                                         action: { print("Email Template") }
                                     ),
@@ -112,11 +100,7 @@ struct HomeView: View {
                                         subtitle: "Social networks",
                                         description: "Automate your posts and shares",
                                         icon: "share.and.arrow.up.fill",
-                                        gradient: LinearGradient(
-                                            colors: [Color.purple.opacity(0.8), Color.pink.opacity(0.6)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
+                                        gradient: OptimizedGradients.purpleGradient,
                                         type: .create,
                                         action: { print("Social Template") }
                                     )

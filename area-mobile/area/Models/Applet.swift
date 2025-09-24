@@ -32,11 +32,7 @@ extension Applet {
             subtitle: "Auto notification",
             description: "Send Discord message when you receive important emails",
             icon: "envelope.fill",
-            gradient: LinearGradient(
-                colors: [Color.red.opacity(0.8), Color.orange.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.orangeGradient,
             type: .create,
             action: { print("Gmail → Discord") }
         ),
@@ -45,11 +41,7 @@ extension Applet {
             subtitle: "Auto sharing",
             description: "Automatically tweet your favorite tracks",
             icon: "music.note",
-            gradient: LinearGradient(
-                colors: [Color.green.opacity(0.8), Color.blue.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.greenGradient,
             type: .create,
             action: { print("Spotify → Twitter") }
         ),
@@ -58,11 +50,7 @@ extension Applet {
             subtitle: "Dev notifications",
             description: "Notify team on Slack about new commits",
             icon: "hammer.fill",
-            gradient: LinearGradient(
-                colors: [Color.purple.opacity(0.8), Color.pink.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.purpleGradient,
             type: .create,
             action: { print("GitHub → Slack") }
         ),
@@ -72,11 +60,7 @@ extension Applet {
             subtitle: "Daily reminder",
             description: "Get weather forecast every morning on Telegram",
             icon: "cloud.sun.fill",
-            gradient: LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.cyan.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.blueGradient,
             type: .create,
             action: { print("Weather → Telegram") }
         ),
@@ -85,11 +69,7 @@ extension Applet {
             subtitle: "Auto backup",
             description: "Automatically backup your Instagram stories",
             icon: "camera.fill",
-            gradient: LinearGradient(
-                colors: [Color.pink.opacity(0.8), Color.purple.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.purpleGradient,
             type: .create,
             action: { print("Instagram → Dropbox") }
         ),
@@ -98,11 +78,7 @@ extension Applet {
             subtitle: "Auto documentation",
             description: "Automatically add new videos to your knowledge base",
             icon: "play.rectangle.fill",
-            gradient: LinearGradient(
-                colors: [Color.red.opacity(0.8), Color.orange.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+            gradient: OptimizedGradients.orangeGradient,
             type: .create,
             action: { print("YouTube → Notion") }
         )

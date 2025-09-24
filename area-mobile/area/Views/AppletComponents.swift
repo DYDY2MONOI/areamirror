@@ -67,6 +67,7 @@ struct AppletCard: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
+        .performanceOptimized()
     }
 }
 
@@ -82,7 +83,7 @@ struct AppletSection: View {
                 .padding(.horizontal, 20)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                LazyHStack(spacing: 16) {
                     ForEach(applets) { applet in
                         AppletCard(applet: applet)
                     }
@@ -90,6 +91,7 @@ struct AppletSection: View {
                 .padding(.horizontal, 20)
             }
         }
+        .performanceOptimized()
     }
 }
 

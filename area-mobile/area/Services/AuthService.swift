@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import UIKit
 
 class AuthService: ObservableObject {
     static let shared = AuthService()
@@ -296,6 +297,77 @@ class AuthService: ObservableObject {
                         } catch {
                             let responseString = String(data: data, encoding: .utf8) ?? "Unknown error"
                             self?.errorMessage = "Profile update error: \(responseString)"
+                        }
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    func uploadProfileImage(_ image: UIImage) {
+        isLoading = true
+        errorMessage = nil
+        
+        guard let url = URL(string: "\(baseURL)/profile/image") else {
+            errorMessage = "Invalid URL"
+            isLoading = false
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        
+        // Add image data
+        if let imageData = image.jpegData(compressionQuality: 0.8) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"image\"; filename=\"profile.jpg\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+            body.append(imageData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                if let error = error {
+                    self?.errorMessage = "Network error: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    self?.errorMessage = "No data received"
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        do {
+                            let profileResponse = try JSONDecoder().decode(ProfileResponse.self, from: data)
+                            self?.currentUser = profileResponse.user
+                            self?.errorMessage = nil
+                        } catch {
+                            self?.errorMessage = "Error decoding response: \(error.localizedDescription)"
+                        }
+                    } else {
+                        do {
+                            let errorResponse = try JSONDecoder().decode([String: String].self, from: data)
+                            self?.errorMessage = errorResponse["error"] ?? "Image upload error"
+                        } catch {
+                            let responseString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                            self?.errorMessage = "Image upload error: \(responseString)"
                         }
                     }
                 }
