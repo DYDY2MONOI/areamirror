@@ -12,15 +12,53 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <SidebarButton tooltip="Create" @open="showCreateModal = true" />
+        <SidebarButton tooltip="Create" @open="() => requireAuth(() => showCreateModal = true)" />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-book-open-variant" class="text-white" rounded></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-book-open-variant"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => {})"
+            ></v-list-item>
           </template>
         </v-tooltip>
         <v-tooltip text="Profile" location="end">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-account-circle" class="text-white" rounded to="/login"></v-list-item>
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-account-circle"
+              class="text-white"
+              rounded
+              @click="requireAuth(() => router.push('/profile'))"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-spacer></v-spacer>
+
+        <v-tooltip text="Connexion" location="end" v-if="!isAuthenticated">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-login"
+              class="text-white"
+              rounded
+              @click="goToLogin"
+            ></v-list-item>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip text="Sign Out" location="end" v-if="isAuthenticated">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-logout"
+              class="text-white"
+              rounded
+              @click="showLogoutDialog = true"
+            ></v-list-item>
           </template>
         </v-tooltip>
       </v-list>
@@ -43,10 +81,10 @@
           </div>
           <div class="search-suggestions">
             <span class="suggestion-label">Popular:</span>
-            <button class="suggestion-chip">Gmail</button>
-            <button class="suggestion-chip">Discord</button>
-            <button class="suggestion-chip">Spotify</button>
-            <button class="suggestion-chip">GitHub</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Gmail</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Discord</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">Spotify</button>
+            <button class="suggestion-chip" @click="requireAuth(() => {})">GitHub</button>
           </div>
         </div>
       </div>
@@ -54,26 +92,48 @@
 
     <v-container class="pt-6 pb-4">
       <div class="d-flex align-center justify-space-between">
-        <div class="user-section">
+        <div class="user-section" v-if="isAuthenticated">
           <v-avatar size="48" class="gradient-avatar">
             <v-icon color="white">mdi-account</v-icon>
           </v-avatar>
           <div class="user-info">
-            <span class="user-name">Alex Johnson</span>
+            <span class="user-name">{{ currentUser?.first_name || 'User' }} {{ currentUser?.last_name || 'Name' }}</span>
             <span class="user-status">Premium Member</span>
           </div>
         </div>
+
+        <div class="guest-section" v-else>
+          <div class="guest-content">
+            <div class="guest-icon">
+              <v-icon size="32" color="white">mdi-account-plus</v-icon>
+            </div>
+            <div class="guest-text">
+              <h3 class="guest-title">Join AREA Today</h3>
+              <p class="guest-subtitle">Start automating your workflow</p>
+            </div>
+          </div>
+          <div class="guest-actions">
+            <button class="guest-btn primary" @click="goToLogin">
+              <v-icon size="16">mdi-login</v-icon>
+              <span>Sign In</span>
+            </button>
+            <button class="guest-btn secondary" @click="router.push('/register')">
+              <v-icon size="16">mdi-account-plus</v-icon>
+              <span>Join Us</span>
+            </button>
+          </div>
+        </div>
         <div class="filter-tabs">
-          <button class="filter-tab active">All</button>
-          <button class="filter-tab">My AREAs</button>
-          <button class="filter-tab">Popular</button>
-          <button class="filter-tab">Templates</button>
+          <button class="filter-tab active" @click="requireAuth(() => {})">All</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">My AREAs</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Popular</button>
+          <button class="filter-tab" @click="requireAuth(() => {})">Templates</button>
         </div>
         <div class="action-buttons">
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-magnify</v-icon>
           </button>
-          <button class="action-btn-icon">
+          <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-bell-outline</v-icon>
           </button>
         </div>
@@ -86,7 +146,7 @@
           <h2 class="section-title">Popular AREAs</h2>
           <p class="section-subtitle">Most used automation templates</p>
         </div>
-        <button class="view-all-btn">
+        <button class="view-all-btn" @click="requireAuth(() => {})">
           <span>View All</span>
           <v-icon size="16">mdi-arrow-right</v-icon>
         </button>
@@ -206,10 +266,40 @@
           </div>
         </div>
         <div class="cards-grid">
-          <CardButton @open="showCreateModal = true" />
+          <CardButton @open="() => requireAuth(() => showCreateModal = true)" />
         </div>
       </div>
     </v-container>
+    </div>
+  </div>
+
+  <!-- Dialog de confirmation de déconnexion -->
+  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
+    <div class="custom-modal-content logout-modal" @click.stop>
+      <div class="logout-modal-header">
+        <div class="logout-icon-container">
+          <v-icon size="32" color="white">mdi-logout</v-icon>
+        </div>
+        <h3 class="logout-title">Sign Out</h3>
+        <p class="logout-message">You will be redirected to the sign in page</p>
+      </div>
+
+      <div class="logout-modal-actions">
+        <v-btn
+          class="logout-cancel-btn"
+          variant="outlined"
+          @click="showLogoutDialog = false"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          class="logout-confirm-btn"
+          variant="flat"
+          @click="confirmLogout"
+        >
+          Sign Out
+        </v-btn>
+      </div>
     </div>
   </div>
 
@@ -219,9 +309,48 @@
 import CreateArea from '../components/CreateArea/CreateArea.vue'
 import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
+
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
+const showLogoutDialog = ref(false)
+
+const { isAuthenticated, currentUser, logout, refreshProfile } = useAuth()
+const router = useRouter()
+
+onMounted(async () => {
+  await refreshProfile()
+})
+
+
+watch(isAuthenticated, (newValue) => {
+  console.log('Authentication state changed:', newValue)
+  console.log('Current user:', currentUser.value)
+})
+
+const goToLogin = () => {
+  router.push('/login')
+}
+
+const requireAuth = (action: () => void) => {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  action()
+}
+
+const confirmLogout = async () => {
+  try {
+    await logout()
+    showLogoutDialog.value = false
+    router.push('/login')
+  } catch (error) {
+    console.error('Error during sign out:', error)
+  }
+}
 
 watch(showCreateModal, (isOpen) => {
   if (isOpen) {
@@ -477,6 +606,93 @@ watch(showCreateModal, (isOpen) => {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
   font-weight: 400;
+}
+
+/* Section Guest */
+.guest-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.guest-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.guest-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-glow);
+}
+
+.guest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.guest-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.guest-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  margin: 0;
+}
+
+.guest-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.guest-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  border: 2px solid transparent;
+}
+
+.guest-btn.primary {
+  background: var(--gradient-accent);
+  color: var(--color-text-primary);
+  border-color: transparent;
+}
+
+.guest-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 16px -5px rgba(6, 182, 212, 0.4);
+}
+
+.guest-btn.secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-primary);
+}
+
+.guest-btn.secondary:hover {
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-secondary);
+  transform: translateY(-1px);
 }
 
 .filter-tabs {
@@ -735,6 +951,27 @@ watch(showCreateModal, (isOpen) => {
     padding: 0.875rem 1rem;
   }
 
+  .guest-section {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .guest-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .guest-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .guest-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .search-suggestions {
     gap: 0.5rem;
   }
@@ -826,6 +1063,128 @@ body.modal-open {
 .custom-modal-content {
   scrollbar-width: thin;
   scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
+}
+
+/* Styles pour le modal de déconnexion - Cohérent avec CreateArea */
+.logout-modal {
+  max-width: 400px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.logout-modal-header {
+  padding: 2rem;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.logout-icon-container {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.logout-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logout-message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.logout-modal-actions {
+  padding: 1.5rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.logout-cancel-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-transform: none;
+  transition: var(--transition-normal);
+}
+
+.logout-cancel-btn:hover {
+  background: var(--color-hover-bg) !important;
+  border-color: var(--color-border-secondary) !important;
+  transform: translateY(-1px);
+}
+
+.logout-confirm-btn {
+  background: var(--gradient-accent) !important;
+  color: var(--color-text-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-transform: none;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-glow);
+}
+
+.logout-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .logout-modal {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .logout-modal-header {
+    padding: 1.5rem;
+  }
+
+  .logout-icon-container {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.75rem;
+  }
+
+  .logout-title {
+    font-size: 1.25rem;
+  }
+
+  .logout-message {
+    font-size: 0.875rem;
+  }
+
+  .logout-modal-actions {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    flex-direction: column;
+  }
+
+  .logout-cancel-btn,
+  .logout-confirm-btn {
+    width: 100%;
+  }
 }
 </style>
 

@@ -1,49 +1,24 @@
 <template>
-  <div class="register-page">
-    <div class="register-background">
+  <div class="login-page">
+    <div class="login-background">
       <div class="geometric-shape shape-1"></div>
       <div class="geometric-shape shape-2"></div>
       <div class="geometric-shape shape-3"></div>
     </div>
 
-    <div class="register-container">
-      <div class="register-card">
-        <div class="register-header">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
           <div class="logo-container">
             <div class="logo-icon">
-              <v-icon size="32" color="white">mdi-account-plus</v-icon>
+              <v-icon size="32" color="white">mdi-vector-square</v-icon>
             </div>
           </div>
-          <h1 class="register-title">Create Account</h1>
-          <p class="register-subtitle">Join AREA and start automating</p>
+          <h1 class="login-title">Welcome Back</h1>
+          <p class="login-subtitle">Sign in to your AREA account</p>
         </div>
 
-        <form class="register-form" @submit.prevent="handleRegister">
-          <div class="form-row">
-            <div class="form-group">
-              <div class="input-container">
-                <v-icon class="input-icon" size="20">mdi-account-outline</v-icon>
-                <input
-                  v-model="form.first_name"
-                  type="text"
-                  class="form-input"
-                  placeholder="First name"
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="input-container">
-                <v-icon class="input-icon" size="20">mdi-account-outline</v-icon>
-                <input
-                  v-model="form.last_name"
-                  type="text"
-                  class="form-input"
-                  placeholder="Last name"
-                />
-              </div>
-            </div>
-          </div>
-
+        <form class="login-form" @submit.prevent="handleLogin">
           <div class="form-group">
             <div class="input-container">
               <v-icon class="input-icon" size="20">mdi-email-outline</v-icon>
@@ -72,20 +47,6 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <div class="input-container">
-              <v-icon class="input-icon" size="20">mdi-lock-check-outline</v-icon>
-              <input
-                v-model="confirmPassword"
-                type="password"
-                required
-                class="form-input"
-                placeholder="Confirm password"
-                :class="{ 'error': error && form.password !== confirmPassword }"
-              />
-            </div>
-          </div>
-
           <div v-if="error" class="error-message">
             <v-icon size="16" class="error-icon">mdi-alert-circle</v-icon>
             {{ error }}
@@ -94,19 +55,34 @@
           <button
             type="submit"
             :disabled="loading"
-            class="register-button"
+            class="login-button"
             :class="{ 'loading': loading }"
           >
             <div v-if="loading" class="loading-spinner"></div>
-            <span>{{ loading ? 'Creating account...' : 'Create Account' }}</span>
+            <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+          </button>
+
+          <!-- Séparateur -->
+          <div class="divider">
+            <span class="divider-text">or</span>
+          </div>
+
+          <!-- Bouton Guest -->
+          <button
+            type="button"
+            @click="continueAsGuest"
+            class="guest-button"
+          >
+            <v-icon size="20" class="guest-icon">mdi-account-outline</v-icon>
+            <span>Continue as Guest</span>
           </button>
         </form>
 
-        <div class="register-footer">
+        <div class="login-footer">
           <p class="footer-text">
-            Already have an account?
-            <router-link to="/login" class="footer-link">
-              Sign in here
+            Don't have an account?
+            <router-link to="/register" class="footer-link">
+              Create one here
             </router-link>
           </p>
         </div>
@@ -118,34 +94,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService, type RegisterRequest } from '@/services/auth'
+import { authService, type LoginRequest } from '@/services/auth'
 
 const router = useRouter()
 
-const form = ref<RegisterRequest>({
+const form = ref<LoginRequest>({
   email: '',
-  password: '',
-  first_name: '',
-  last_name: ''
+  password: ''
 })
 
-const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const handleRegister = async () => {
+const handleLogin = async () => {
   if (!form.value.email || !form.value.password) {
-    error.value = 'Please fill in all required fields'
-    return
-  }
-
-  if (form.value.password !== confirmPassword.value) {
-    error.value = 'Passwords do not match'
-    return
-  }
-
-  if (form.value.password.length < 6) {
-    error.value = 'Password must contain at least 6 characters'
+    error.value = 'Please fill in all fields'
     return
   }
 
@@ -153,18 +116,22 @@ const handleRegister = async () => {
   error.value = ''
 
   try {
-    await authService.register(form.value)
+    await authService.login(form.value)
     router.push('/')
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Registration error'
+    error.value = err instanceof Error ? err.message : 'Connection error'
   } finally {
     loading.value = false
   }
 }
+
+const continueAsGuest = () => {
+  router.push('/')
+}
 </script>
 
 <style scoped>
-.register-page {
+.login-page {
   min-height: 100vh;
   background: var(--gradient-bg-primary);
   display: flex;
@@ -174,7 +141,7 @@ const handleRegister = async () => {
   overflow: hidden;
 }
 
-.register-background {
+.login-background {
   position: absolute;
   top: 0;
   left: 0;
@@ -224,15 +191,15 @@ const handleRegister = async () => {
   50% { transform: translateY(-20px) rotate(5deg); }
 }
 
-.register-container {
+.login-container {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 480px;
+  max-width: 420px;
   padding: 2rem;
 }
 
-.register-card {
+.login-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-2xl);
@@ -256,7 +223,7 @@ const handleRegister = async () => {
   }
 }
 
-.register-header {
+.login-header {
   text-align: center;
   margin-bottom: 2.5rem;
 }
@@ -283,7 +250,7 @@ const handleRegister = async () => {
   50% { transform: scale(1.05); }
 }
 
-.register-title {
+.login-title {
   font-size: 2rem;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -295,22 +262,15 @@ const handleRegister = async () => {
   background-clip: text;
 }
 
-.register-subtitle {
+.login-subtitle {
   font-size: 1rem;
   color: var(--color-text-secondary);
   margin: 0;
   font-weight: 400;
 }
 
-.register-form {
+.login-form {
   margin-bottom: 2rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .form-group {
@@ -395,7 +355,7 @@ const handleRegister = async () => {
   }
 }
 
-.register-button {
+.login-button {
   width: 100%;
   padding: 1rem;
   background: var(--gradient-accent);
@@ -412,18 +372,18 @@ const handleRegister = async () => {
   box-shadow: var(--shadow-glow);
 }
 
-.register-button:hover:not(:disabled) {
+.login-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
     var(--shadow-glow),
     0 10px 20px -5px rgba(6, 182, 212, 0.5);
 }
 
-.register-button:active:not(:disabled) {
+.login-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.register-button:disabled {
+.login-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
@@ -444,7 +404,77 @@ const handleRegister = async () => {
   to { transform: rotate(360deg); }
 }
 
-.register-footer {
+/* Séparateur */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-primary);
+}
+
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-primary);
+}
+
+.divider-text {
+  padding: 0 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--color-bg-card);
+}
+
+/* Bouton Guest */
+.guest-button {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 2px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.guest-button:hover {
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-secondary);
+  transform: translateY(-1px);
+}
+
+.guest-button:active {
+  transform: translateY(0);
+}
+
+.guest-icon {
+  color: var(--color-text-secondary);
+  transition: var(--transition-normal);
+}
+
+.guest-button:hover .guest-icon {
+  color: var(--color-accent-primary);
+  transform: scale(1.1);
+}
+
+.login-footer {
   text-align: center;
 }
 
@@ -482,26 +512,21 @@ const handleRegister = async () => {
 }
 
 @media (max-width: 480px) {
-  .register-container {
+  .login-container {
     padding: 1rem;
   }
 
-  .register-card {
+  .login-card {
     padding: 2rem 1.5rem;
   }
 
-  .register-title {
+  .login-title {
     font-size: 1.75rem;
   }
 
   .logo-icon {
     width: 56px;
     height: 56px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 0;
   }
 
   .form-input {
@@ -516,15 +541,13 @@ const handleRegister = async () => {
 @media (prefers-reduced-motion: reduce) {
   .geometric-shape,
   .logo-icon,
-  .register-card,
+  .login-card,
   .error-message {
     animation: none !important;
   }
 
-  .register-button:hover:not(:disabled) {
+  .login-button:hover:not(:disabled) {
     transform: none;
   }
 }
 </style>
-
-
