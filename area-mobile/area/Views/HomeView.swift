@@ -13,8 +13,14 @@ struct HomeView: View {
     @State private var selectedTab = 0
     let onLogout: () -> Void
     
-    private let popularAreas = Array(Applet.sampleApplets.prefix(3))
-    private let recommendedAreas = Array(Applet.sampleApplets.dropFirst(3))
+    private let popularAreas = Applet.testApplets
+    private let recommendedAreas = Applet.testApplets
+    
+    init(onLogout: @escaping () -> Void) {
+        self.onLogout = onLogout
+        print("HomeView init - popularAreas count: \(popularAreas.count)")
+        print("HomeView init - recommendedAreas count: \(recommendedAreas.count)")
+    }
     
     var body: some View {
         GeometryReader { geometry in

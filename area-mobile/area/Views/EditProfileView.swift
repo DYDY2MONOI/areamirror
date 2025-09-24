@@ -460,9 +460,11 @@ struct EditProfileView: View {
         phone = authService.currentUser?.phone ?? ""
         country = authService.currentUser?.country ?? ""
         
-        if let profileImageURL = authService.currentUser?.profileImage,
-           let url = URL(string: profileImageURL) {
-            loadImageFromURL(url)
+        if let profileImagePath = authService.currentUser?.profileImage {
+            let fullURL = getFullImageURL(profileImagePath)
+            if let url = fullURL {
+                loadImageFromURL(url)
+            }
         }
     }
     
@@ -475,6 +477,15 @@ struct EditProfileView: View {
                 }
             }
         }.resume()
+    }
+    
+    private func getFullImageURL(_ imagePath: String) -> URL? {
+        // Si le chemin commence par "uploads/", construire l'URL complète
+        if imagePath.hasPrefix("uploads/") {
+            return URL(string: "\(AppConfig.baseURL)/\(imagePath)")
+        }
+        // Sinon, utiliser le chemin tel quel (URL complète)
+        return URL(string: imagePath)
     }
     
     private func saveProfile() {

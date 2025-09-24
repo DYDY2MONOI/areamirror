@@ -81,9 +81,12 @@ struct AppletSection: View {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.white)
                 .padding(.horizontal, 20)
+                .onAppear {
+                    print("AppletSection '\(title)' rendering with \(applets.count) applets")
+                }
             
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 16) {
+                HStack(spacing: 16) {
                     ForEach(applets) { applet in
                         AppletCard(applet: applet)
                     }
