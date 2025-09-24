@@ -22,6 +22,7 @@ type User struct {
 	Lang               string      `json:"lang" gorm:"default:'fr'"`
 	PasswordResetToken *string     `json:"-" gorm:"index"`
 	LoginProvider      string      `json:"login_provider" gorm:"default:'email'"`
+	ProfileImage       *string     `json:"profile_image"`
 
 	Areas []Area `json:"areas,omitempty" gorm:"foreignKey:UserID"`
 }

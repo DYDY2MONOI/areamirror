@@ -36,6 +36,9 @@ func main() {
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
+	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
+	
+	r.Static("/uploads", "./uploads")
 
 	r.GET("/users", controllers.GetUsers)
 	r.GET("/users/:id", controllers.GetUser)

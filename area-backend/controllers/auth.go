@@ -3,8 +3,12 @@ package controllers
 import (
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,6 +97,7 @@ func Register(c *gin.Context) {
 			"email":      user.Email,
 			"first_name": user.FirstName,
 			"last_name":  user.LastName,
+			"profile_image": user.ProfileImage,
 		},
 	})
 }
@@ -130,6 +135,7 @@ func Login(c *gin.Context) {
 			"email":      user.Email,
 			"first_name": user.FirstName,
 			"last_name":  user.LastName,
+			"profile_image": user.ProfileImage,
 		},
 	})
 }
@@ -161,6 +167,7 @@ func GetProfile(c *gin.Context) {
 			"country":    user.Country,
 			"lang":       user.Lang,
 			"login_provider": user.LoginProvider,
+			"profile_image": user.ProfileImage,
 		},
 	})
 }
@@ -236,6 +243,7 @@ func UpdateProfile(c *gin.Context) {
 			"country":    user.Country,
 			"lang":       user.Lang,
 			"login_provider": user.LoginProvider,
+			"profile_image": user.ProfileImage,
 		},
 	})
 }
@@ -282,4 +290,94 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("userEmail", claims.Email)
 		c.Next()
 	}
+}
+
+func UploadProfileImage(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Utilisateur non authentifié"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Aucun fichier image fourni"})
+		return
+	}
+	defer file.Close()
+
+	contentType := header.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Le fichier doit être une image"})
+		return
+	}
+
+	if header.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "L'image ne doit pas dépasser 5MB"})
+		return
+	}
+
+	uploadDir := "uploads/profile_images"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création du dossier"})
+		return
+	}
+
+	ext := filepath.Ext(header.Filename)
+	filename := fmt.Sprintf("profile_%d_%d%s", userID, time.Now().Unix(), ext)
+	filepath := filepath.Join(uploadDir, filename)
+
+	dst, err := os.Create(filepath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la création du fichier"})
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la sauvegarde du fichier"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Utilisateur non trouvé"})
+		return
+	}
+
+	if user.ProfileImage != nil && *user.ProfileImage != "" {
+		oldPath := *user.ProfileImage
+		if strings.HasPrefix(oldPath, "uploads/") {
+			os.Remove(oldPath)
+		}
+	}
+
+	profileImagePath := filepath
+	if err := database.DB.Model(&user).Update("profile_image", profileImagePath).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la mise à jour du profil"})
+		return
+	}
+
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération du profil"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
+			"phone":      user.Phone,
+			"birthday":   user.Birthday,
+			"gender":     user.Gender,
+			"country":    user.Country,
+			"lang":       user.Lang,
+			"login_provider": user.LoginProvider,
+			"profile_image": user.ProfileImage,
+		},
+	})
 }
