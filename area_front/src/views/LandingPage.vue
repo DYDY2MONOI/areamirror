@@ -31,7 +31,7 @@
               prepend-icon="mdi-account-circle"
               class="text-white"
               rounded
-              @click="requireAuth(() => {})"
+              @click="requireAuth(() => router.push('/profile'))"
             ></v-list-item>
           </template>
         </v-tooltip>
@@ -92,13 +92,35 @@
 
     <v-container class="pt-6 pb-4">
       <div class="d-flex align-center justify-space-between">
-        <div class="user-section">
+        <div class="user-section" v-if="isAuthenticated">
           <v-avatar size="48" class="gradient-avatar">
             <v-icon color="white">mdi-account</v-icon>
           </v-avatar>
           <div class="user-info">
-            <span class="user-name">Alex Johnson</span>
+            <span class="user-name">{{ currentUser?.first_name || 'User' }} {{ currentUser?.last_name || 'Name' }}</span>
             <span class="user-status">Premium Member</span>
+          </div>
+        </div>
+
+        <div class="guest-section" v-else>
+          <div class="guest-content">
+            <div class="guest-icon">
+              <v-icon size="32" color="white">mdi-account-plus</v-icon>
+            </div>
+            <div class="guest-text">
+              <h3 class="guest-title">Join AREA Today</h3>
+              <p class="guest-subtitle">Start automating your workflow</p>
+            </div>
+          </div>
+          <div class="guest-actions">
+            <button class="guest-btn primary" @click="goToLogin">
+              <v-icon size="16">mdi-login</v-icon>
+              <span>Sign In</span>
+            </button>
+            <button class="guest-btn secondary" @click="router.push('/register')">
+              <v-icon size="16">mdi-account-plus</v-icon>
+              <span>Join Us</span>
+            </button>
           </div>
         </div>
         <div class="filter-tabs">
@@ -295,7 +317,7 @@ const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
 
-const { isAuthenticated, logout, refreshProfile } = useAuth()
+const { isAuthenticated, currentUser, logout, refreshProfile } = useAuth()
 const router = useRouter()
 
 onMounted(async () => {
@@ -305,6 +327,7 @@ onMounted(async () => {
 
 watch(isAuthenticated, (newValue) => {
   console.log('Authentication state changed:', newValue)
+  console.log('Current user:', currentUser.value)
 })
 
 const goToLogin = () => {
@@ -585,6 +608,93 @@ watch(showCreateModal, (isOpen) => {
   font-weight: 400;
 }
 
+/* Section Guest */
+.guest-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.guest-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.guest-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-glow);
+}
+
+.guest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.guest-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.guest-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  margin: 0;
+}
+
+.guest-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.guest-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  border: 2px solid transparent;
+}
+
+.guest-btn.primary {
+  background: var(--gradient-accent);
+  color: var(--color-text-primary);
+  border-color: transparent;
+}
+
+.guest-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 16px -5px rgba(6, 182, 212, 0.4);
+}
+
+.guest-btn.secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-primary);
+}
+
+.guest-btn.secondary:hover {
+  background: var(--color-hover-bg);
+  border-color: var(--color-border-secondary);
+  transform: translateY(-1px);
+}
+
 .filter-tabs {
   display: flex;
   gap: var(--spacing-sm);
@@ -839,6 +949,27 @@ watch(showCreateModal, (isOpen) => {
 
   .search-input-container {
     padding: 0.875rem 1rem;
+  }
+
+  .guest-section {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .guest-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .guest-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .guest-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .search-suggestions {
