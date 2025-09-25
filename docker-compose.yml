@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: area_db
+      POSTGRES_USER: area_user
+      POSTGRES_PASSWORD: area_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - area_network
+
+  backend:
+    build:
+      context: ./area-backend
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_USER: area_user
+      DB_PASSWORD: area_password
+      DB_NAME: area_db
+      JWT_SECRET: your_jwt_secret_key_here
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    networks:
+      - area_network
+    volumes:
+      - ./area-backend/uploads:/root/uploads
+
+  frontend:
+    build:
+      context: ./area_front
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+      - database
+    networks:
+      - area_network
+
+volumes:
+  postgres_data:
+
+networks:
+  area_network:
+    driver: bridge
