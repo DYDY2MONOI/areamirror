@@ -3,15 +3,14 @@ name: mirror
 on: push
 
 env:
-  MIRROR_URL: "git@github.com:DYDY2MONOI/areamirror.git"
+  MIRROR_URL: "git@github.com:EpitechPGE3-2025/G-DEV-500-PAR-5-1-area-19.git"
 
 jobs:
   push_to_mirror:
     name: Push to mirror
     runs-on: ubuntu-latest
 
-    if: github.repository != 'DYDY2MONOI/areamirror' && github.ref == 'refs/heads/main'
-    
+    if: github.repository != 'EpitechPGE3-2025/G-DEV-500-PAR-5-1-area-19.git' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
