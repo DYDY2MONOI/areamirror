@@ -11,8 +11,8 @@ struct NewAreaView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var areaName = ""
     @State private var areaDescription = ""
-    @State private var selectedActionService: Service?
-    @State private var selectedReactionService: Service?
+    @State private var selectedActions: [Service] = []
+    @State private var selectedReactions: [Service] = []
     @State private var showingActionSelection = false
     @State private var showingReactionSelection = false
     @State private var showingSuccessAlert = false
@@ -65,63 +65,75 @@ struct NewAreaView: View {
                         
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Action Service")
+                                Text("Action Services")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.white)
                                 
                                 Spacer()
                                 
-                                if let service = selectedActionService {
-                                    Button(action: {
-                                        showingActionSelection = true
-                                    }) {
-                                        HStack(spacing: 8) {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 3)
-                                                    .fill(service.color == .white ? Color.gray : service.color)
-                                                    .frame(width: 16, height: 16)
-                                                
-                                                Image(service.icon)
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: 14, height: 14)
-                                                    .colorMultiply(service.color == .white ? .white : service.color)
-                                            }
-                                            Text(service.name)
-                                                .foregroundColor(.white)
-                                            Image(systemName: "chevron.right")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 12))
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.gray.opacity(0.2))
-                                        )
+                                Button(action: {
+                                    showingActionSelection = true
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "plus")
+                                        Text("Add Action")
                                     }
-                                } else {
-                                    Button(action: {
-                                        showingActionSelection = true
-                                    }) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "plus")
-                                            Text("Select Action Service")
-                                        }
-                                        .foregroundColor(AppColors.primaryBlue)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(AppColors.primaryBlue, lineWidth: 1)
-                                        )
-                                    }
+                                    .foregroundColor(AppColors.primaryBlue)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(AppColors.primaryBlue, lineWidth: 1)
+                                    )
                                 }
                             }
                             
-                            Text("The service that triggers the action")
+                            Text("Services that trigger actions")
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
+                            
+                            if selectedActions.isEmpty {
+                                Text("No actions selected")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                                    .italic()
+                                    .padding(.vertical, 8)
+                            } else {
+                                ForEach(Array(selectedActions.enumerated()), id: \.offset) { index, service in
+                                    HStack {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(service.color == .white ? Color.gray : service.color)
+                                                .frame(width: 16, height: 16)
+                                            
+                                            Image(service.icon)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 14, height: 14)
+                                                .colorMultiply(service.color == .white ? .white : service.color)
+                                        }
+                                        
+                                        Text(service.name)
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            selectedActions.remove(at: index)
+                                        }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 16))
+                                        }
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.gray.opacity(0.2))
+                                    )
+                                }
+                            }
                         }
                         .padding(.horizontal, 20)
                         
@@ -132,63 +144,75 @@ struct NewAreaView: View {
                         
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Reaction Service")
+                                Text("Reaction Services")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.white)
                                 
                                 Spacer()
                                 
-                                if let service = selectedReactionService {
-                                    Button(action: {
-                                        showingReactionSelection = true
-                                    }) {
-                                        HStack(spacing: 8) {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 3)
-                                                    .fill(service.color == .white ? Color.gray : service.color)
-                                                    .frame(width: 16, height: 16)
-                                                
-                                                Image(service.icon)
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: 14, height: 14)
-                                                    .colorMultiply(service.color == .white ? .white : service.color)
-                                            }
-                                            Text(service.name)
-                                                .foregroundColor(.white)
-                                            Image(systemName: "chevron.right")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 12))
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.gray.opacity(0.2))
-                                        )
+                                Button(action: {
+                                    showingReactionSelection = true
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "plus")
+                                        Text("Add Reaction")
                                     }
-                                } else {
-                                    Button(action: {
-                                        showingReactionSelection = true
-                                    }) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "plus")
-                                            Text("Select Reaction Service")
-                                        }
-                                        .foregroundColor(AppColors.primaryBlue)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(AppColors.primaryBlue, lineWidth: 1)
-                                        )
-                                    }
+                                    .foregroundColor(AppColors.primaryBlue)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(AppColors.primaryBlue, lineWidth: 1)
+                                    )
                                 }
                             }
                             
-                            Text("The service that performs the reaction")
+                            Text("Services that perform reactions")
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
+                            
+                            if selectedReactions.isEmpty {
+                                Text("No reactions selected")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                                    .italic()
+                                    .padding(.vertical, 8)
+                            } else {
+                                ForEach(Array(selectedReactions.enumerated()), id: \.offset) { index, service in
+                                    HStack {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(service.color == .white ? Color.gray : service.color)
+                                                .frame(width: 16, height: 16)
+                                            
+                                            Image(service.icon)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 14, height: 14)
+                                                .colorMultiply(service.color == .white ? .white : service.color)
+                                        }
+                                        
+                                        Text(service.name)
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            selectedReactions.remove(at: index)
+                                        }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundColor(.red)
+                                                .font(.system(size: 16))
+                                        }
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.gray.opacity(0.2))
+                                    )
+                                }
+                            }
                         }
                         .padding(.horizontal, 20)
                         
@@ -228,15 +252,15 @@ struct NewAreaView: View {
             }
         }
         .sheet(isPresented: $showingActionSelection) {
-            ServiceSelectionSheet(
-                title: "Select Action Service",
-                selectedService: $selectedActionService
+            MultiServiceSelectionSheet(
+                title: "Select Action Services",
+                selectedServices: $selectedActions
             )
         }
         .sheet(isPresented: $showingReactionSelection) {
-            ServiceSelectionSheet(
-                title: "Select Reaction Service",
-                selectedService: $selectedReactionService
+            MultiServiceSelectionSheet(
+                title: "Select Reaction Services",
+                selectedServices: $selectedReactions
             )
         }
         .alert("AREA Created!", isPresented: $showingSuccessAlert) {
@@ -251,15 +275,15 @@ struct NewAreaView: View {
     private var canCreateArea: Bool {
         !areaName.isEmpty && 
         !areaDescription.isEmpty && 
-        selectedActionService != nil && 
-        selectedReactionService != nil
+        !selectedActions.isEmpty && 
+        !selectedReactions.isEmpty
     }
     
     private func createArea() {
         print("Creating AREA: \(areaName)")
         print("Description: \(areaDescription)")
-        print("Action: \(selectedActionService?.name ?? "None")")
-        print("Reaction: \(selectedReactionService?.name ?? "None")")
+        print("Actions: \(selectedActions.map { $0.name }.joined(separator: ", "))")
+        print("Reactions: \(selectedReactions.map { $0.name }.joined(separator: ", "))")
         
         showingSuccessAlert = true
     }
@@ -275,6 +299,110 @@ struct CustomTextFieldStyle: TextFieldStyle {
                     .fill(Color.gray.opacity(0.2))
             )
             .foregroundColor(.white)
+    }
+}
+
+struct MultiServiceSelectionSheet: View {
+    let title: String
+    @Binding var selectedServices: [Service]
+    @Environment(\.presentationMode) var presentationMode
+    
+    let availableServices = Service.availableServices
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(availableServices, id: \.id) { service in
+                            ServiceRow(
+                                service: service,
+                                isSelected: selectedServices.contains { $0.name == service.name },
+                                onToggle: {
+                                    if selectedServices.contains(where: { $0.name == service.name }) {
+                                        selectedServices.removeAll { $0.name == service.name }
+                                    } else {
+                                        selectedServices.append(service)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(AppColors.primaryBlue)
+                }
+            }
+        }
+    }
+}
+
+struct ServiceRow: View {
+    let service: Service
+    let isSelected: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(service.color == .white ? Color.gray : service.color)
+                        .frame(width: 40, height: 40)
+                    
+                    Image(service.icon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                        .colorMultiply(.white)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(service.name)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    Text("Service description")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(isSelected ? AppColors.primaryBlue : .gray)
+                    .font(.system(size: 24))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? AppColors.primaryBlue : Color.clear, lineWidth: 2)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
