@@ -52,7 +52,7 @@ type Action struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
 	Service Service `json:"service,omitempty"`
-	Areas   []Area  `json:"areas,omitempty" gorm:"foreignKey:ActionID"`
+	Areas   []Area  `json:"areas,omitempty" gorm:"many2many:area_actions;"`
 }
 
 type Reaction struct {
@@ -66,14 +66,12 @@ type Reaction struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
 	Service Service `json:"service,omitempty"`
-	Areas   []Area  `json:"areas,omitempty" gorm:"foreignKey:ReactionID"`
+	Areas   []Area  `json:"areas,omitempty" gorm:"many2many:area_reactions;"`
 }
 
 type Area struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	UserID      uint           `json:"user_id" gorm:"not null"`
-	ActionID    uint           `json:"action_id" gorm:"not null"`
-	ReactionID  uint           `json:"reaction_id" gorm:"not null"`
 	Name        string         `json:"name" gorm:"not null"`
 	Description string         `json:"description"`
 	IsActive    bool           `json:"is_active" gorm:"default:true"`
@@ -81,7 +79,7 @@ type Area struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
-	User     User     `json:"user,omitempty"`
-	Action   Action   `json:"action,omitempty"`
-	Reaction Reaction `json:"reaction,omitempty"`
+	User      User       `json:"user,omitempty"`
+	Actions   []Action   `json:"actions,omitempty" gorm:"many2many:area_actions;"`
+	Reactions []Reaction `json:"reactions,omitempty" gorm:"many2many:area_reactions;"`
 }
