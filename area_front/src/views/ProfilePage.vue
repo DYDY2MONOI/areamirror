@@ -318,7 +318,7 @@ onMounted(async () => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  background: var(--gradient-bg-primary);
   position: relative;
   overflow-x: hidden;
 }
@@ -342,7 +342,7 @@ onMounted(async () => {
 .shape {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(45deg, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.1));
+  background: linear-gradient(45deg, rgba(87, 128, 232, 0.1), rgba(135, 81, 209, 0.1));
   filter: blur(2px);
   animation: float 8s ease-in-out infinite;
 }
@@ -393,8 +393,8 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 30% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
-              radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+  background: radial-gradient(circle at 30% 20%, rgba(87, 128, 232, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
 @keyframes float {
@@ -442,7 +442,7 @@ onMounted(async () => {
   font-weight: 800;
   color: white;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6);
+  background: var(--gradient-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -470,8 +470,8 @@ onMounted(async () => {
 .info-card,
 .stats-card,
 .actions-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
   border-radius: 24px;
   padding: 2rem;
   backdrop-filter: blur(20px);
@@ -502,7 +502,7 @@ onMounted(async () => {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  background: var(--gradient-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -510,12 +510,12 @@ onMounted(async () => {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+  box-shadow: var(--shadow-glow);
 }
 
 .profile-avatar:hover:not(.uploading) {
   transform: scale(1.1);
-  box-shadow: 0 20px 40px rgba(6, 182, 212, 0.4);
+  box-shadow: 0 20px 40px rgba(87, 128, 232, 0.4);
 }
 
 .profile-avatar.uploading {
@@ -614,7 +614,7 @@ onMounted(async () => {
 }
 
 .badge.premium {
-  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  background: var(--gradient-accent);
   color: white;
 }
 
@@ -639,7 +639,7 @@ onMounted(async () => {
 }
 
 .title-icon {
-  color: #06b6d4;
+  color: var(--color-accent-primary);
 }
 
 .section-description {
@@ -675,7 +675,7 @@ onMounted(async () => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  background: var(--gradient-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -728,7 +728,7 @@ onMounted(async () => {
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  background: var(--gradient-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -773,14 +773,14 @@ onMounted(async () => {
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  background: var(--gradient-accent);
   color: white;
-  box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 10px 30px rgba(87, 128, 232, 0.3);
 }
 
 .action-btn.primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 20px 40px rgba(6, 182, 212, 0.4);
+  box-shadow: 0 20px 40px rgba(87, 128, 232, 0.4);
 }
 
 .action-btn.secondary {
