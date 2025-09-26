@@ -147,7 +147,7 @@ class AuthService {
 
   async fetchProfile(): Promise<User> {
     if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
+      throw new Error('Authentication token missing')
     }
 
     try {
@@ -213,15 +213,15 @@ class AuthService {
 
   async uploadProfileImage(imageFile: File): Promise<User> {
     if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
+      throw new Error('Authentication token missing')
     }
 
     try {
-      console.log('📸 Service: Début de l\'upload d\'image')
+      console.log('📸 Service: Starting image upload')
       const formData = new FormData()
       formData.append('image', imageFile)
 
-      console.log('📸 Service: Envoi vers', `${BASE_URL}/profile/image`)
+      console.log('📸 Service: Sending to', `${BASE_URL}/profile/image`)
       const response = await fetch(`${BASE_URL}/profile/image`, {
         method: 'POST',
         headers: {
@@ -230,20 +230,20 @@ class AuthService {
         body: formData,
       })
 
-      console.log('📸 Service: Réponse reçue', response.status)
+      console.log('📸 Service: Response received', response.status)
       const data: ProfileResponse = await response.json()
-      console.log('📸 Service: Données reçues', data)
+      console.log('📸 Service: Data received', data)
 
       if (!response.ok) {
-        throw new Error(data.user ? 'Erreur lors de l\'upload de l\'image' : 'Erreur d\'upload')
+        throw new Error(data.user ? 'Error uploading image' : 'Upload error')
       }
 
       this.user = data.user
       this.storeUser(data.user)
-      console.log('📸 Service: Upload terminé avec succès')
+      console.log('📸 Service: Upload completed successfully')
       return data.user
     } catch (error) {
-      console.error('📸 Service: Erreur lors de l\'upload:', error)
+      console.error('📸 Service: Error during upload:', error)
       throw error
     }
   }
@@ -270,7 +270,7 @@ class AuthService {
     new_password?: string
   }): Promise<void> {
     if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
+      throw new Error('Authentication token missing')
     }
 
     try {
@@ -285,7 +285,7 @@ class AuthService {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || 'Erreur lors de la mise à jour du profil')
+        throw new Error(errorData.message || 'Error updating profile')
       }
 
       const updatedUser = await response.json()

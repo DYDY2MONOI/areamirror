@@ -10,35 +10,33 @@
       <div class="profile-header">
         <button class="back-button" @click="goBack">
           <v-icon size="20">mdi-arrow-left</v-icon>
-          <span>Retour</span>
+          <span>Back</span>
         </button>
-        <h1 class="profile-title">Modifier le Profil</h1>
+        <h1 class="profile-title">Edit Profile</h1>
         <div class="header-spacer"></div>
       </div>
 
       <div class="profile-card">
           <div class="profile-section">
-            <h3 class="section-title">Photo de Profil</h3>
+            <h3 class="section-title">Profile Photo</h3>
             <div class="avatar-section">
-              <div class="profile-avatar">
+              <div class="profile-avatar" @click="handleImageUpload" :class="{ 'uploading': isUploading }">
                 <img
                   v-if="profileImageUrl"
                   :src="profileImageUrl"
-                  alt="Photo de profil"
+                  alt="Profile picture"
                   class="profile-image"
                 />
                 <v-icon v-else size="48" color="white">mdi-account</v-icon>
                 <div v-if="isUploading" class="upload-overlay">
                   <v-progress-circular indeterminate size="24" color="white"></v-progress-circular>
                 </div>
+                <div v-else class="change-overlay">
+                  <v-icon size="20" color="white">mdi-camera</v-icon>
+                  <span class="change-text">Change</span>
+                </div>
               </div>
-              <div class="upload-controls">
-                <button class="upload-button" @click="handleImageUpload" :disabled="isUploading">
-                  <v-icon size="20">mdi-camera</v-icon>
-                  <span>{{ isUploading ? 'Upload en cours...' : 'Changer la photo' }}</span>
-                </button>
-                <p class="upload-hint">Cliquez pour sélectionner une image (PNG, JPG, max 5MB)</p>
-              </div>
+              <p class="upload-hint">Click on the photo to change it (PNG, JPG, max 5MB)</p>
               <input
                 ref="fileInput"
                 type="file"
@@ -55,57 +53,57 @@
 
         <form @submit.prevent="handleSave" class="edit-form">
           <div class="profile-section">
-            <h3 class="section-title">Informations Personnelles</h3>
+            <h3 class="section-title">Personal Information</h3>
 
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Prénom</label>
+                <label class="form-label">First Name</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-account-outline</v-icon>
                   <input
                     v-model="form.first_name"
                     type="text"
                     class="form-input"
-                    placeholder="Votre prénom"
+                    placeholder="Your first name"
                   />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Nom</label>
+                <label class="form-label">Last Name</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-account-outline</v-icon>
                   <input
                     v-model="form.last_name"
                     type="text"
                     class="form-input"
-                    placeholder="Votre nom"
+                    placeholder="Your last name"
                   />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Téléphone</label>
+                <label class="form-label">Phone</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-phone-outline</v-icon>
                   <input
                     v-model="form.phone"
                     type="tel"
                     class="form-input"
-                    placeholder="Votre numéro de téléphone"
+                    placeholder="Your phone number"
                   />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Pays</label>
+                <label class="form-label">Country</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-earth-outline</v-icon>
                   <input
                     v-model="form.country"
                     type="text"
                     class="form-input"
-                    placeholder="Votre pays"
+                    placeholder="Your country"
                   />
                 </div>
               </div>
@@ -113,44 +111,44 @@
           </div>
 
           <div class="profile-section">
-            <h3 class="section-title">Changer le Mot de Passe</h3>
+            <h3 class="section-title">Change Password</h3>
 
             <div class="password-section">
               <div class="form-group">
-                <label class="form-label">Mot de passe actuel</label>
+                <label class="form-label">Current Password</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-lock-outline</v-icon>
                   <input
                     v-model="passwordForm.current_password"
                     type="password"
                     class="form-input"
-                    placeholder="Votre mot de passe actuel"
+                    placeholder="Your current password"
                   />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Nouveau mot de passe</label>
+                <label class="form-label">New Password</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-lock-outline</v-icon>
                   <input
                     v-model="passwordForm.new_password"
                     type="password"
                     class="form-input"
-                    placeholder="Nouveau mot de passe"
+                    placeholder="New password"
                   />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Confirmer le nouveau mot de passe</label>
+                <label class="form-label">Confirm New Password</label>
                 <div class="input-container">
                   <v-icon class="input-icon" size="20">mdi-lock-check-outline</v-icon>
                   <input
                     v-model="passwordForm.confirm_password"
                     type="password"
                     class="form-input"
-                    placeholder="Confirmer le nouveau mot de passe"
+                    placeholder="Confirm new password"
                   />
                 </div>
               </div>
@@ -170,12 +168,12 @@
           <div class="action-buttons">
             <button type="button" class="cancel-button" @click="goBack">
               <v-icon size="20">mdi-close</v-icon>
-              <span>Annuler</span>
+              <span>Cancel</span>
             </button>
             <button type="submit" class="save-button" :disabled="isLoading">
               <div v-if="isLoading" class="loading-spinner"></div>
               <v-icon v-else size="20">mdi-check</v-icon>
-              <span>{{ isLoading ? 'Sauvegarde...' : 'Sauvegarder' }}</span>
+              <span>{{ isLoading ? 'Saving...' : 'Save' }}</span>
             </button>
           </div>
         </form>
@@ -224,17 +222,15 @@ const onFileSelected = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
 
-  console.log('📸 Fichier sélectionné:', file)
-
   if (!file) return
 
   if (!file.type.startsWith('image/')) {
-    uploadError.value = 'Veuillez sélectionner un fichier image valide'
+    uploadError.value = 'Please select a valid image file'
     return
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    uploadError.value = 'L\'image ne doit pas dépasser 5MB'
+    uploadError.value = 'Image must not exceed 5MB'
     return
   }
 
@@ -242,23 +238,17 @@ const onFileSelected = async (event: Event) => {
     isUploading.value = true
     uploadError.value = null
 
-    console.log('📸 Début de l\'upload...')
     await uploadProfileImage(file)
-    console.log('📸 Upload terminé avec succès')
-
-    const newImageUrl = getProfileImageUrl()
-    console.log('📸 Nouvelle URL d\'image:', newImageUrl)
-    profileImageUrl.value = newImageUrl
+    profileImageUrl.value = getProfileImageUrl()
 
     if (target) {
       target.value = ''
     }
 
-    successMessage.value = 'Photo de profil mise à jour avec succès !'
+    successMessage.value = 'Profile photo updated successfully!'
     setTimeout(() => successMessage.value = '', 3000)
   } catch (error) {
-    console.error('📸 Erreur lors de l\'upload:', error)
-    uploadError.value = error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image'
+    uploadError.value = error instanceof Error ? error.message : 'Error uploading image'
   } finally {
     isUploading.value = false
   }
@@ -270,17 +260,17 @@ const handleSave = async () => {
 
   if (passwordForm.value.current_password || passwordForm.value.new_password || passwordForm.value.confirm_password) {
     if (!passwordForm.value.current_password || !passwordForm.value.new_password || !passwordForm.value.confirm_password) {
-      error.value = 'Veuillez remplir tous les champs du mot de passe'
+      error.value = 'Please fill in all password fields'
       return
     }
 
     if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
-      error.value = 'Les nouveaux mots de passe ne correspondent pas'
+      error.value = 'New passwords do not match'
       return
     }
 
     if (passwordForm.value.new_password.length < 6) {
-      error.value = 'Le nouveau mot de passe doit contenir au moins 6 caractères'
+      error.value = 'New password must contain at least 6 characters'
       return
     }
   }
@@ -297,7 +287,7 @@ const handleSave = async () => {
 
     await updateProfile(updateData)
 
-    successMessage.value = 'Profil mis à jour avec succès !'
+    successMessage.value = 'Profile updated successfully!'
     setTimeout(() => {
       successMessage.value = ''
       router.push('/profile')
@@ -309,7 +299,7 @@ const handleSave = async () => {
       confirm_password: ''
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du profil'
+    error.value = err instanceof Error ? err.message : 'Error updating profile'
   }
 }
 
@@ -479,14 +469,15 @@ onMounted(async () => {
 
 .avatar-section {
   display: flex;
-  align-items: flex-start;
-  gap: 2rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: var(--radius-full);
   background: var(--gradient-accent);
   display: flex;
@@ -495,6 +486,19 @@ onMounted(async () => {
   position: relative;
   box-shadow: var(--shadow-glow);
   overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.profile-avatar:hover:not(.uploading) {
+  transform: scale(1.05);
+  box-shadow:
+    var(--shadow-glow),
+    0 10px 20px -5px rgba(6, 182, 212, 0.5);
+}
+
+.profile-avatar.uploading {
+  cursor: not-allowed;
 }
 
 .profile-image {
@@ -517,47 +521,40 @@ onMounted(async () => {
   border-radius: var(--radius-full);
 }
 
-.upload-controls {
+.change-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.upload-button {
-  display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  background: var(--gradient-accent);
-  border: none;
-  border-radius: var(--radius-lg);
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  opacity: 0;
   transition: var(--transition-normal);
-  box-shadow: var(--shadow-glow);
 }
 
-.upload-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow:
-    var(--shadow-glow),
-    0 10px 20px -5px rgba(6, 182, 212, 0.5);
+.profile-avatar:hover .change-overlay {
+  opacity: 1;
 }
 
-.upload-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+.change-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 0.25rem;
 }
+
 
 .upload-hint {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.4;
+  text-align: center;
 }
 
 .form-grid {
@@ -739,13 +736,8 @@ onMounted(async () => {
   }
 
   .avatar-section {
-    flex-direction: column;
     align-items: center;
     text-align: center;
-  }
-
-  .upload-controls {
-    align-items: center;
   }
 
   .form-grid,

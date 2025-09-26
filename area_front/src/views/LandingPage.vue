@@ -7,7 +7,7 @@
           <img
             v-if="getProfileImageUrl()"
             :src="getProfileImageUrl() || ''"
-            alt="Photo de profil"
+            alt="Profile picture"
             class="sidebar-profile-image"
           />
           <v-icon v-else color="white" size="20">mdi-account</v-icon>
@@ -113,7 +113,7 @@
             <img
               v-if="getProfileImageUrl()"
               :src="getProfileImageUrl() || ''"
-              alt="Photo de profil"
+              alt="Profile picture"
               class="profile-image"
             />
             <v-icon v-else color="white">mdi-account</v-icon>
