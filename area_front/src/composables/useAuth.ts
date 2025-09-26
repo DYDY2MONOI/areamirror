@@ -36,16 +36,21 @@ export function useAuth() {
   }
 
   const register = async (userData: { email: string; password: string; first_name?: string; last_name?: string }) => {
+    console.log('🔄 Composable: Début de l\'enregistrement')
     isLoading.value = true
     try {
+      console.log('🔄 Composable: Appel du service authService.register')
       const response = await authService.register(userData)
-      // Synchroniser l'état global avec le service
+      console.log('✅ Composable: Service terminé, mise à jour de l\'état')
       isAuthenticated.value = authService.isAuthenticated
       currentUser.value = authService.currentUser
+      console.log('✅ Composable: État mis à jour', { isAuthenticated: isAuthenticated.value, currentUser: currentUser.value })
       return response
     } catch (error) {
+      console.error('❌ Composable: Erreur capturée', error)
       throw error
     } finally {
+      console.log('🏁 Composable: Fin du processus')
       isLoading.value = false
     }
   }
@@ -77,6 +82,35 @@ export function useAuth() {
     }
   }
 
+    const uploadProfileImage = async (imageFile: File) => {
+    isLoading.value = true
+    try {
+      const updatedUser = await authService.uploadProfileImage(imageFile)
+      currentUser.value = updatedUser
+      return updatedUser
+    } catch (error) {
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const getProfileImageUrl = () => {
+    return authService.getProfileImageUrl()
+  }
+
+  const updateProfile = async (data: {
+    first_name?: string
+    last_name?: string
+    phone?: string
+    country?: string
+    current_password?: string
+    new_password?: string
+  }) => {
+    await authService.updateProfile(data)
+    await refreshProfile()
+  }
+
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
     currentUser: computed(() => currentUser.value),
@@ -86,6 +120,9 @@ export function useAuth() {
     register,
     logout,
     refreshProfile,
+    uploadProfileImage,
+    getProfileImageUrl,
+    updateProfile,
     initAuth
   }
 }
