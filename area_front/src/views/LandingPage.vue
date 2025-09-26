@@ -1,6 +1,22 @@
 <template>
   <div class="landing-dark">
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
+      <!-- Section utilisateur dans la sidebar -->
+      <div class="sidebar-user-section" v-if="isAuthenticated">
+        <v-avatar size="32" class="sidebar-avatar">
+          <img
+            v-if="getProfileImageUrl()"
+            :src="getProfileImageUrl() || ''"
+            alt="Photo de profil"
+            class="sidebar-profile-image"
+          />
+          <v-icon v-else color="white" size="20">mdi-account</v-icon>
+        </v-avatar>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">{{ currentUser?.first_name || 'User' }}</div>
+        </div>
+      </div>
+
       <v-list class="text-white" density="comfortable" nav lines="false">
         <v-tooltip text="Home" location="end">
           <template #activator="{ props }">
@@ -94,7 +110,13 @@
       <div class="d-flex align-center justify-space-between">
         <div class="user-section" v-if="isAuthenticated">
           <v-avatar size="48" class="gradient-avatar">
-            <v-icon color="white">mdi-account</v-icon>
+            <img
+              v-if="getProfileImageUrl()"
+              :src="getProfileImageUrl() || ''"
+              alt="Photo de profil"
+              class="profile-image"
+            />
+            <v-icon v-else color="white">mdi-account</v-icon>
           </v-avatar>
           <div class="user-info">
             <span class="user-name">{{ currentUser?.first_name || 'User' }} {{ currentUser?.last_name || 'Name' }}</span>
@@ -317,7 +339,7 @@ const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
 
-const { isAuthenticated, currentUser, logout, refreshProfile } = useAuth()
+const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const router = useRouter()
 
 onMounted(async () => {
@@ -600,6 +622,49 @@ watch(showCreateModal, (isOpen) => {
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.sidebar-user-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-avatar {
+  background: var(--gradient-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.sidebar-profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-status {

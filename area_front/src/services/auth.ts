@@ -11,6 +11,7 @@ export interface User {
   country?: string
   lang?: string
   login_provider?: string
+  profile_image?: string
 }
 
 export interface AuthResponse {
@@ -96,26 +97,42 @@ class AuthService {
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
+    console.log('🔐 Service: Début de l\'enregistrement', userData)
     try {
+      console.log('🌐 Service: Envoi de la requête vers', `${BASE_URL}${API_ENDPOINTS.REGISTER}`)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+
       const response = await fetch(`${BASE_URL}${API_ENDPOINTS.REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
+      console.log('📡 Service: Réponse reçue', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'inscription' }))
+        console.error('❌ Service: Erreur HTTP', errorData)
         throw new Error(errorData.error || `Erreur HTTP ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('✅ Service: Données reçues', data)
       this.handleSuccessfulAuth(data)
       return data
     } catch (error) {
+      console.error('💥 Service: Erreur capturée', error)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.')
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('La requête a expiré. Le serveur met trop de temps à répondre.')
       }
       throw error
     }
@@ -159,34 +176,6 @@ class AuthService {
     }
   }
 
-  async updateProfile(updateData: ProfileUpdateRequest): Promise<User> {
-    if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
-    }
-
-    try {
-      const response = await fetch(`${BASE_URL}${API_ENDPOINTS.PROFILE}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.token}`,
-        },
-        body: JSON.stringify(updateData),
-      })
-
-      const data: ProfileResponse = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.user ? 'Erreur lors de la mise à jour du profil' : 'Erreur de mise à jour')
-      }
-
-      this.user = data.user
-      this.storeUser(data.user)
-      return data.user
-    } catch (error) {
-      throw error
-    }
-  }
 
   private handleSuccessfulAuth(authResponse: AuthResponse): void {
     this.token = authResponse.token
@@ -219,6 +208,92 @@ class AuthService {
     } catch {
       await this.logout()
       return false
+    }
+  }
+
+  async uploadProfileImage(imageFile: File): Promise<User> {
+    if (!this.token) {
+      throw new Error('Token d\'authentification manquant')
+    }
+
+    try {
+      console.log('📸 Service: Début de l\'upload d\'image')
+      const formData = new FormData()
+      formData.append('image', imageFile)
+
+      console.log('📸 Service: Envoi vers', `${BASE_URL}/profile/image`)
+      const response = await fetch(`${BASE_URL}/profile/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+        },
+        body: formData,
+      })
+
+      console.log('📸 Service: Réponse reçue', response.status)
+      const data: ProfileResponse = await response.json()
+      console.log('📸 Service: Données reçues', data)
+
+      if (!response.ok) {
+        throw new Error(data.user ? 'Erreur lors de l\'upload de l\'image' : 'Erreur d\'upload')
+      }
+
+      this.user = data.user
+      this.storeUser(data.user)
+      console.log('📸 Service: Upload terminé avec succès')
+      return data.user
+    } catch (error) {
+      console.error('📸 Service: Erreur lors de l\'upload:', error)
+      throw error
+    }
+  }
+
+  getProfileImageUrl(): string | null {
+    if (!this.user?.profile_image) {
+      return null
+    }
+
+    // Si l'URL commence par "uploads/", on ajoute l'URL de base
+    if (this.user.profile_image.startsWith('uploads/')) {
+      return `${BASE_URL}/${this.user.profile_image}`
+    }
+
+    return this.user.profile_image
+  }
+
+  async updateProfile(data: {
+    first_name?: string
+    last_name?: string
+    phone?: string
+    country?: string
+    current_password?: string
+    new_password?: string
+  }): Promise<void> {
+    if (!this.token) {
+      throw new Error('Token d\'authentification manquant')
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: JSON.stringify(data)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Erreur lors de la mise à jour du profil')
+      }
+
+      const updatedUser = await response.json()
+      this.user = updatedUser.user
+      this.storeUser(updatedUser.user)
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error)
+      throw error
     }
   }
 }

@@ -7,7 +7,6 @@
     </div>
 
     <div class="profile-container">
-      <!-- Header -->
       <div class="profile-header">
         <button class="back-button" @click="goBack">
           <v-icon size="20">mdi-arrow-left</v-icon>
@@ -21,11 +20,31 @@
         <div class="profile-section">
           <div class="avatar-section">
             <div class="profile-avatar">
-              <v-icon size="48" color="white">mdi-account</v-icon>
+              <img
+                v-if="profileImageUrl"
+                :src="profileImageUrl"
+                alt="Photo de profil"
+                class="profile-image"
+              />
+              <v-icon v-else size="48" color="white">mdi-account</v-icon>
+              <div v-if="isUploading" class="upload-overlay">
+                <v-progress-circular indeterminate size="24" color="white"></v-progress-circular>
+              </div>
             </div>
-            <button class="edit-avatar-btn" @click="requireAuth(() => {})">
+            <button class="edit-avatar-btn" @click="handleImageUpload" :disabled="isUploading">
               <v-icon size="16">mdi-camera</v-icon>
             </button>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              @change="onFileSelected"
+              style="display: none"
+            />
+          </div>
+
+          <div v-if="uploadError" class="error-message">
+            {{ uploadError }}
           </div>
 
           <div class="profile-info">
@@ -96,19 +115,19 @@
         <div class="profile-section">
           <h3 class="section-title">Account Actions</h3>
           <div class="actions-grid">
-            <button class="action-button primary" @click="requireAuth(() => {})">
+            <button class="action-button primary" @click="editProfile">
               <v-icon size="20">mdi-pencil</v-icon>
               <span>Edit Profile</span>
             </button>
-            <button class="action-button secondary" @click="requireAuth(() => {})">
+            <button class="action-button secondary" @click="changePassword">
               <v-icon size="20">mdi-key</v-icon>
               <span>Change Password</span>
             </button>
-            <button class="action-button secondary" @click="requireAuth(() => {})">
+            <button class="action-button secondary" @click="manageNotifications">
               <v-icon size="20">mdi-bell</v-icon>
               <span>Notifications</span>
             </button>
-            <button class="action-button danger" @click="requireAuth(() => {})">
+            <button class="action-button danger" @click="deleteAccount">
               <v-icon size="20">mdi-delete</v-icon>
               <span>Delete Account</span>
             </button>
@@ -120,12 +139,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { currentUser, isAuthenticated } = useAuth()
+const { currentUser, isAuthenticated, uploadProfileImage, getProfileImageUrl, refreshProfile, isLoading } = useAuth()
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const profileImageUrl = ref<string | null>(null)
+const isUploading = ref(false)
+const uploadError = ref<string | null>(null)
 
 const goBack = () => {
   router.push('/')
@@ -148,6 +172,85 @@ const formatDate = (dateString?: string) => {
     day: 'numeric'
   })
 }
+
+const handleImageUpload = () => {
+  requireAuth(() => {
+    fileInput.value?.click()
+  })
+}
+
+const onFileSelected = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // Vérifier le type de fichier
+  if (!file.type.startsWith('image/')) {
+    uploadError.value = 'Veuillez sélectionner un fichier image valide'
+    return
+  }
+
+  // Vérifier la taille (5MB max)
+  if (file.size > 5 * 1024 * 1024) {
+    uploadError.value = 'L\'image ne doit pas dépasser 5MB'
+    return
+  }
+
+  try {
+    isUploading.value = true
+    uploadError.value = null
+
+    await uploadProfileImage(file)
+
+    // Mettre à jour l'URL de l'image
+    profileImageUrl.value = getProfileImageUrl()
+
+    // Réinitialiser l'input
+    if (target) {
+      target.value = ''
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'upload:', error)
+    uploadError.value = error instanceof Error ? error.message : 'Erreur lors de l\'upload de l\'image'
+  } finally {
+    isUploading.value = false
+  }
+}
+
+const editProfile = () => {
+  requireAuth(() => {
+    router.push('/profile/edit')
+  })
+}
+
+const changePassword = () => {
+  requireAuth(() => {
+    // TODO: Implémenter le changement de mot de passe
+    console.log('Changement de mot de passe')
+  })
+}
+
+const manageNotifications = () => {
+  requireAuth(() => {
+    // TODO: Implémenter la gestion des notifications
+    console.log('Gestion des notifications')
+  })
+}
+
+const deleteAccount = () => {
+  requireAuth(() => {
+    // TODO: Implémenter la suppression du compte
+    console.log('Suppression du compte')
+  })
+}
+
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    await refreshProfile()
+    profileImageUrl.value = getProfileImageUrl()
+  }
+})
 </script>
 
 <style scoped>
@@ -317,6 +420,38 @@ const formatDate = (dateString?: string) => {
   justify-content: center;
   position: relative;
   box-shadow: var(--shadow-glow);
+  overflow: hidden;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-full);
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  text-align: center;
 }
 
 .edit-avatar-btn {
@@ -336,10 +471,16 @@ const formatDate = (dateString?: string) => {
   transition: var(--transition-normal);
 }
 
-.edit-avatar-btn:hover {
+.edit-avatar-btn:hover:not(:disabled) {
   background: var(--color-hover-bg);
   border-color: var(--color-border-secondary);
   transform: scale(1.1);
+}
+
+.edit-avatar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .profile-info {
