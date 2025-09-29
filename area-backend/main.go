@@ -37,7 +37,9 @@ func main() {
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
-	
+	r.POST("/profile/github/link", controllers.AuthMiddleware(), controllers.LinkGitHubAccount)
+	r.DELETE("/profile/github/unlink", controllers.AuthMiddleware(), controllers.UnlinkGitHubAccount)
+
 	r.Static("/uploads", "./uploads")
 
 	r.GET("/users", controllers.GetUsers)

@@ -23,6 +23,8 @@ type User struct {
 	PasswordResetToken *string     `json:"-" gorm:"index"`
 	LoginProvider      string      `json:"login_provider" gorm:"default:'email'"`
 	ProfileImage       *string     `json:"profile_image"`
+	GitHubID            *string     `json:"github_id" gorm:"uniqueIndex"`
+	GitHubUsername      *string     `json:"github_username"`
 
 	Areas []Area `json:"areas,omitempty" gorm:"foreignKey:UserID"`
 }

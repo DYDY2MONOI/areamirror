@@ -25,6 +25,8 @@ services:
       DB_PASSWORD: area_password
       DB_NAME: area_db
       JWT_SECRET: your_jwt_secret_key_here
+      GITHUB_CLIENT_ID: Ov23liQ7GPEEWs0hVzyM
+      GITHUB_CLIENT_SECRET: d20831e34517a30903d8166a67d7aee11969be99
     ports:
       - "8080:8080"
     depends_on:
