@@ -35,17 +35,6 @@
             ></v-list-item>
           </template>
         </v-tooltip>
-        <v-tooltip text="GitHub Link" location="end">
-          <template #activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              prepend-icon="mdi-github"
-              class="text-white"
-              rounded
-              @click="requireAuth(() => router.push('/github-link'))"
-            ></v-list-item>
-          </template>
-        </v-tooltip>
 
         <v-spacer></v-spacer>
 
