@@ -36,16 +36,21 @@ export function useAuth() {
   }
 
   const register = async (userData: { email: string; password: string; first_name?: string; last_name?: string }) => {
+    console.log('🔄 Composable: Début de l\'enregistrement')
     isLoading.value = true
     try {
+      console.log('🔄 Composable: Appel du service authService.register')
       const response = await authService.register(userData)
-      // Synchroniser l'état global avec le service
+      console.log('✅ Composable: Service terminé, mise à jour de l\'état')
       isAuthenticated.value = authService.isAuthenticated
       currentUser.value = authService.currentUser
+      console.log('✅ Composable: État mis à jour', { isAuthenticated: isAuthenticated.value, currentUser: currentUser.value })
       return response
     } catch (error) {
+      console.error('❌ Composable: Erreur capturée', error)
       throw error
     } finally {
+      console.log('🏁 Composable: Fin du processus')
       isLoading.value = false
     }
   }
@@ -96,6 +101,7 @@ export function useAuth() {
       console.error('GitHub unlink error:', error)
       throw error
     }
+
   }
 
   return {
@@ -109,6 +115,9 @@ export function useAuth() {
     refreshProfile,
     linkGitHubAccount,
     unlinkGitHubAccount,
+    uploadProfileImage,
+    getProfileImageUrl,
+    updateProfile,
     initAuth
   }
 }

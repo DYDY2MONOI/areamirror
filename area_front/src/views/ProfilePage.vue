@@ -1,117 +1,205 @@
 <template>
   <div class="profile-page">
-    <div class="profile-background">
-      <div class="geometric-shape shape-1"></div>
-      <div class="geometric-shape shape-2"></div>
-      <div class="geometric-shape shape-3"></div>
+    <div class="animated-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+      </div>
+      <div class="gradient-overlay"></div>
     </div>
 
-    <div class="profile-container">
-      <!-- Header -->
-      <div class="profile-header">
-        <button class="back-button" @click="goBack">
-          <v-icon size="20">mdi-arrow-left</v-icon>
-          <span>Back</span>
-        </button>
-        <h1 class="profile-title">Profile</h1>
-        <div class="header-spacer"></div>
+    <div class="page-header">
+      <button class="back-btn" @click="goBack">
+        <v-icon size="20">mdi-arrow-left</v-icon>
+        <span>Back to Dashboard</span>
+      </button>
+      <div class="header-content">
+        <h1 class="page-title">My Profile</h1>
+        <p class="page-subtitle">Manage your account information and preferences</p>
+      </div>
+    </div>
+
+    <div class="content-container">
+      <div class="profile-overview">
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="avatar-section">
+              <div class="profile-avatar" @click="handleImageUpload" :class="{ 'uploading': isUploading }">
+                <img
+                  v-if="profileImageUrl"
+                  :src="profileImageUrl"
+                  alt="Profile picture"
+                  class="profile-image"
+                />
+                <div v-else class="default-avatar">
+                  <v-icon size="48" color="white">mdi-account</v-icon>
+                </div>
+                <div v-if="isUploading" class="upload-overlay">
+                  <v-progress-circular indeterminate size="32" color="white" width="3"></v-progress-circular>
+                </div>
+                <div v-else class="change-overlay">
+                  <div class="change-content">
+                    <v-icon size="20" color="white">mdi-camera-plus</v-icon>
+                    <span class="change-text">Change</span>
+                  </div>
+                </div>
+              </div>
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                @change="onFileSelected"
+                style="display: none"
+              />
+            </div>
+            <div class="profile-info">
+              <h2 class="profile-name">{{ currentUser?.first_name || 'User' }} {{ currentUser?.last_name || 'Name' }}</h2>
+              <p class="profile-email">{{ currentUser?.email || 'user@example.com' }}</p>
+              <div class="profile-badges">
+                <span class="badge premium">
+                  <v-icon size="16">mdi-crown</v-icon>
+                  Premium Member
+                </span>
+                <span class="badge verified">
+                  <v-icon size="16">mdi-check-circle</v-icon>
+                  Verified
+                </span>
+              </div>
+            </div>
+          </div>
+          <div v-if="uploadError" class="error-message">
+            <v-icon size="16">mdi-alert-circle</v-icon>
+            {{ uploadError }}
+          </div>
+        </div>
       </div>
 
-      <div class="profile-card">
-        <div class="profile-section">
-          <div class="avatar-section">
-            <div class="profile-avatar">
-              <v-icon size="48" color="white">mdi-account</v-icon>
-            </div>
-            <button class="edit-avatar-btn" @click="requireAuth(() => {})">
-              <v-icon size="16">mdi-camera</v-icon>
-            </button>
+      <div class="info-section">
+        <div class="info-card">
+          <div class="card-header">
+            <h3 class="section-title">
+              <v-icon size="24" class="title-icon">mdi-account-details</v-icon>
+              Personal Information
+            </h3>
+            <p class="section-description">Your account details and membership information</p>
           </div>
-
-          <div class="profile-info">
-            <h2 class="profile-name">{{ currentUser?.first_name || 'User' }} {{ currentUser?.last_name || 'Name' }}</h2>
-            <p class="profile-email">{{ currentUser?.email || 'user@example.com' }}</p>
-            <div class="profile-badges">
-              <span class="badge premium">Premium Member</span>
-              <span class="badge verified">Verified</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="profile-section">
-          <h3 class="section-title">Personal Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <label class="info-label">First Name</label>
-              <div class="info-value">{{ currentUser?.first_name || 'Not provided' }}</div>
-            </div>
-            <div class="info-item">
-              <label class="info-label">Last Name</label>
-              <div class="info-value">{{ currentUser?.last_name || 'Not provided' }}</div>
-            </div>
-            <div class="info-item">
-              <label class="info-label">Email Address</label>
-              <div class="info-value">{{ currentUser?.email || 'Not provided' }}</div>
-            </div>
-            <div class="info-item">
-              <label class="info-label">Member Since</label>
-              <div class="info-value">{{ formatDate(currentUser?.created_at) }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="profile-section">
-          <h3 class="section-title">Statistics</h3>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <v-icon size="24" color="white">mdi-vector-square</v-icon>
+          <div class="card-content">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-icon">
+                  <v-icon size="20">mdi-account-outline</v-icon>
+                </div>
+                <div class="info-content">
+                  <label class="info-label">First Name</label>
+                  <div class="info-value">{{ currentUser?.first_name || 'Not provided' }}</div>
+                </div>
               </div>
-              <div class="stat-content">
-                <div class="stat-number">12</div>
-                <div class="stat-label">Active AREAs</div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <v-icon size="20">mdi-account-outline</v-icon>
+                </div>
+                <div class="info-content">
+                  <label class="info-label">Last Name</label>
+                  <div class="info-value">{{ currentUser?.last_name || 'Not provided' }}</div>
+                </div>
               </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <v-icon size="24" color="white">mdi-clock-outline</v-icon>
+              <div class="info-item">
+                <div class="info-icon">
+                  <v-icon size="20">mdi-email-outline</v-icon>
+                </div>
+                <div class="info-content">
+                  <label class="info-label">Email Address</label>
+                  <div class="info-value">{{ currentUser?.email || 'Not provided' }}</div>
+                </div>
               </div>
-              <div class="stat-content">
-                <div class="stat-number">1,247</div>
-                <div class="stat-label">Executions</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <v-icon size="24" color="white">mdi-calendar-check</v-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-number">89%</div>
-                <div class="stat-label">Success Rate</div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <v-icon size="20">mdi-calendar-plus</v-icon>
+                </div>
+                <div class="info-content">
+                  <label class="info-label">Member Since</label>
+                  <div class="info-value">{{ formatDate(currentUser?.created_at) }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="profile-section">
-          <h3 class="section-title">Account Actions</h3>
-          <div class="actions-grid">
-            <button class="action-button primary" @click="requireAuth(() => {})">
-              <v-icon size="20">mdi-pencil</v-icon>
-              <span>Edit Profile</span>
-            </button>
-            <button class="action-button secondary" @click="requireAuth(() => {})">
-              <v-icon size="20">mdi-key</v-icon>
-              <span>Change Password</span>
-            </button>
-            <button class="action-button secondary" @click="requireAuth(() => {})">
-              <v-icon size="20">mdi-bell</v-icon>
-              <span>Notifications</span>
-            </button>
-            <button class="action-button danger" @click="requireAuth(() => {})">
-              <v-icon size="20">mdi-delete</v-icon>
-              <span>Delete Account</span>
-            </button>
+      <div class="stats-section">
+        <div class="stats-card">
+          <div class="card-header">
+            <h3 class="section-title">
+              <v-icon size="24" class="title-icon">mdi-chart-line</v-icon>
+              Activity Statistics
+            </h3>
+            <p class="section-description">Your AREA automation performance metrics</p>
+          </div>
+          <div class="card-content">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <v-icon size="24" color="white">mdi-vector-square</v-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">12</div>
+                  <div class="stat-label">Active AREAs</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <v-icon size="24" color="white">mdi-clock-outline</v-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">1,247</div>
+                  <div class="stat-label">Total Executions</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <v-icon size="24" color="white">mdi-calendar-check</v-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">89%</div>
+                  <div class="stat-label">Success Rate</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-section">
+        <div class="actions-card">
+          <div class="card-header">
+            <h3 class="section-title">
+              <v-icon size="24" class="title-icon">mdi-cog</v-icon>
+              Account Management
+            </h3>
+            <p class="section-description">Manage your account settings and preferences</p>
+          </div>
+          <div class="card-content">
+            <div class="actions-grid">
+              <button class="action-btn primary" @click="editProfile">
+                <v-icon size="20">mdi-pencil</v-icon>
+                <span>Edit Profile</span>
+              </button>
+              <button class="action-btn secondary" @click="changePassword">
+                <v-icon size="20">mdi-key</v-icon>
+                <span>Change Password</span>
+              </button>
+              <button class="action-btn secondary" @click="manageNotifications">
+                <v-icon size="20">mdi-bell</v-icon>
+                <span>Notifications</span>
+              </button>
+              <button class="action-btn danger" @click="deleteAccount">
+                <v-icon size="20">mdi-delete</v-icon>
+                <span>Delete Account</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -120,12 +208,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { currentUser, isAuthenticated } = useAuth()
+const { currentUser, isAuthenticated, uploadProfileImage, getProfileImageUrl, refreshProfile, isLoading } = useAuth()
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const profileImageUrl = ref<string | null>(null)
+const isUploading = ref(false)
+const uploadError = ref<string | null>(null)
 
 const goBack = () => {
   router.push('/')
@@ -148,6 +241,78 @@ const formatDate = (dateString?: string) => {
     day: 'numeric'
   })
 }
+
+const handleImageUpload = () => {
+  requireAuth(() => {
+    fileInput.value?.click()
+  })
+}
+
+const onFileSelected = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    uploadError.value = 'Please select a valid image file'
+    return
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    uploadError.value = 'Image must not exceed 5MB'
+    return
+  }
+
+  try {
+    isUploading.value = true
+    uploadError.value = null
+
+    await uploadProfileImage(file)
+
+    profileImageUrl.value = getProfileImageUrl()
+
+    if (target) {
+      target.value = ''
+    }
+  } catch (error) {
+    console.error('Upload error:', error)
+    uploadError.value = error instanceof Error ? error.message : 'Error uploading image'
+  } finally {
+    isUploading.value = false
+  }
+}
+
+const editProfile = () => {
+  requireAuth(() => {
+    router.push('/profile/edit')
+  })
+}
+
+const changePassword = () => {
+  requireAuth(() => {
+    console.log('Change password')
+  })
+}
+
+const manageNotifications = () => {
+  requireAuth(() => {
+    console.log('Manage notifications')
+  })
+}
+
+const deleteAccount = () => {
+  requireAuth(() => {
+    console.log('Delete account')
+  })
+}
+
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    await refreshProfile()
+    profileImageUrl.value = getProfileImageUrl()
+  }
+})
 </script>
 
 <style scoped>
@@ -155,191 +320,264 @@ const formatDate = (dateString?: string) => {
   min-height: 100vh;
   background: var(--gradient-bg-primary);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-.profile-background {
-  position: absolute;
+.animated-background {
+  position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
   z-index: 1;
+  pointer-events: none;
 }
 
-.geometric-shape {
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.shape {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.1;
-  filter: blur(1px);
-  animation: float 6s ease-in-out infinite;
+  background: linear-gradient(45deg, rgba(87, 128, 232, 0.1), rgba(135, 81, 209, 0.1));
+  filter: blur(2px);
+  animation: float 8s ease-in-out infinite;
 }
 
 .shape-1 {
-  width: 200px;
-  height: 200px;
-  background: var(--gradient-accent);
+  width: 300px;
+  height: 300px;
   top: 10%;
-  left: 10%;
+  left: 5%;
   animation-delay: 0s;
 }
 
 .shape-2 {
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(135deg, var(--color-accent-secondary), var(--color-accent-tertiary));
-  top: 60%;
-  right: 15%;
+  width: 200px;
+  height: 200px;
+  top: 20%;
+  right: 10%;
   animation-delay: 2s;
 }
 
 .shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 30%;
+  left: 15%;
+  animation-delay: 4s;
+}
+
+.shape-4 {
+  width: 250px;
+  height: 250px;
+  bottom: 10%;
+  right: 20%;
+  animation-delay: 6s;
+}
+
+.shape-5 {
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, var(--color-accent-tertiary), var(--color-accent-primary));
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
+  top: 50%;
+  left: 50%;
+  animation-delay: 1s;
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 20%, rgba(87, 128, 232, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
+  50% { transform: translateY(-30px) rotate(10deg); }
 }
 
-.profile-container {
+.page-header {
   position: relative;
-  z-index: 2;
-  max-width: 800px;
+  z-index: 10;
+  padding: 2rem 2rem 1rem;
+  max-width: 1200px;
   margin: 0 auto;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.header-content {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.page-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 0.5rem 0;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-weight: 400;
+}
+
+.content-container {
+  position: relative;
+  z-index: 10;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.profile-card,
+.info-card,
+.stats-card,
+.actions-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 24px;
   padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover,
+.info-card:hover,
+.stats-card:hover,
+.actions-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
 }
 
 .profile-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 2px solid var(--color-border-primary);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-primary);
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.back-button:hover {
-  background: var(--color-hover-bg);
-  border-color: var(--color-border-secondary);
-  transform: translateY(-1px);
-}
-
-.profile-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-  letter-spacing: -0.02em;
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.header-spacer {
-  width: 120px;
-}
-
-.profile-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-2xl);
-  padding: 3rem;
-  backdrop-filter: blur(20px);
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  animation: cardSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes cardSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.profile-section {
-  margin-bottom: 3rem;
-}
-
-.profile-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 1.5rem 0;
-  letter-spacing: -0.01em;
+  gap: 2rem;
+  margin-bottom: 1rem;
 }
 
 .avatar-section {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  position: relative;
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: var(--radius-full);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
   background: var(--gradient-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
   box-shadow: var(--shadow-glow);
 }
 
-.edit-avatar-btn {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-card);
-  border: 2px solid var(--color-border-primary);
-  color: var(--color-text-primary);
+.profile-avatar:hover:not(.uploading) {
+  transform: scale(1.1);
+  box-shadow: 0 20px 40px rgba(87, 128, 232, 0.4);
+}
+
+.profile-avatar.uploading {
+  cursor: not-allowed;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.default-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: var(--transition-normal);
 }
 
-.edit-avatar-btn:hover {
-  background: var(--color-hover-bg);
-  border-color: var(--color-border-secondary);
-  transform: scale(1.1);
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.change-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.profile-avatar:hover .change-overlay {
+  opacity: 1;
+}
+
+.change-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.change-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
 }
 
 .profile-info {
@@ -347,16 +585,16 @@ const formatDate = (dateString?: string) => {
 }
 
 .profile-name {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: white;
   margin: 0 0 0.5rem 0;
   letter-spacing: -0.01em;
 }
 
 .profile-email {
-  font-size: 1rem;
-  color: var(--color-text-secondary);
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
 }
 
@@ -366,17 +604,18 @@ const formatDate = (dateString?: string) => {
 }
 
 .badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-md);
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .badge.premium {
   background: var(--gradient-accent);
-  color: var(--color-text-primary);
+  color: white;
 }
 
 .badge.verified {
@@ -385,68 +624,110 @@ const formatDate = (dateString?: string) => {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
+.card-header {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 0.5rem 0;
+}
+
+.title-icon {
+  color: var(--color-accent-primary);
+}
+
+.section-description {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
 .info-item {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem;
-  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s ease;
 }
 
 .info-item:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: var(--color-border-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.info-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--gradient-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.info-content {
+  flex: 1;
 }
 
 .info-label {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text-secondary);
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.25rem;
 }
 
 .info-value {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: white;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
 }
 
 .stat-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: var(--transition-normal);
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s ease;
 }
 
 .stat-card:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: var(--color-border-secondary);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
 }
 
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   background: var(--gradient-accent);
   display: flex;
   align-items: center;
@@ -459,100 +740,111 @@ const formatDate = (dateString?: string) => {
 }
 
 .stat-number {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: white;
   margin-bottom: 0.25rem;
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
 }
 
-.action-button {
+.action-btn {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border: 2px solid var(--color-border-primary);
-  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: all 0.3s ease;
+  border: none;
   text-align: left;
 }
 
-.action-button.primary {
+.action-btn.primary {
   background: var(--gradient-accent);
-  color: var(--color-text-primary);
-  border-color: transparent;
+  color: white;
+  box-shadow: 0 10px 30px rgba(87, 128, 232, 0.3);
 }
 
-.action-button.primary:hover {
+.action-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px rgba(87, 128, 232, 0.4);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
-  box-shadow:
-    var(--shadow-glow),
-    0 10px 20px -5px rgba(6, 182, 212, 0.5);
 }
 
-.action-button.secondary {
-  background: transparent;
-  color: var(--color-text-primary);
-}
-
-.action-button.secondary:hover {
-  background: var(--color-hover-bg);
-  border-color: var(--color-border-secondary);
-  transform: translateY(-1px);
-}
-
-.action-button.danger {
-  background: transparent;
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-.action-button.danger:hover {
+.action-btn.danger {
   background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-top: 1rem;
 }
 
 @media (max-width: 768px) {
-  .profile-container {
+  .page-header {
     padding: 1rem;
   }
 
-  .profile-card {
-    padding: 2rem 1.5rem;
+  .page-title {
+    font-size: 2rem;
   }
 
-  .profile-title {
-    font-size: 2rem;
+  .content-container {
+    padding: 0 1rem 2rem;
+    gap: 1.5rem;
+  }
+
+  .profile-card,
+  .info-card,
+  .stats-card,
+  .actions-card {
+    padding: 1.5rem;
   }
 
   .profile-header {
     flex-direction: column;
+    text-align: center;
     gap: 1rem;
-    text-align: center;
-  }
-
-  .header-spacer {
-    display: none;
-  }
-
-  .avatar-section {
-    flex-direction: column;
-    text-align: center;
   }
 
   .info-grid,
@@ -562,18 +854,18 @@ const formatDate = (dateString?: string) => {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .geometric-shape,
-  .profile-card,
-  .stat-card,
-  .action-button {
-    animation: none !important;
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.75rem;
   }
 
-  .action-button:hover,
-  .stat-card:hover,
-  .back-button:hover {
-    transform: none;
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
   }
 }
 </style>
