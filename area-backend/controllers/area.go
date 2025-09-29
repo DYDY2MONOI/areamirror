@@ -42,36 +42,45 @@ func GetUserAreas(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
-func CreateArea(c *gin.Context) {
-	var input CreateAreaRequest
+type CreateAreaRequest struct {
+	UserID      uint   `json:"user_id" binding:"required"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+	ActionID    uint   `json:"action_id" binding:"required"`
+	ReactionID  uint   `json:"reaction_id" binding:"required"`
+}
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+func CreateArea(c *gin.Context) {
+	var req CreateAreaRequest
+
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var user models.User
-	if err := database.DB.First(&user, input.UserID).Error; err != nil {
+	if err := database.DB.First(&user, req.UserID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Utilisateur non trouvé"})
 		return
 	}
 
 	var action models.Action
-	if err := database.DB.First(&action, input.ActionID).Error; err != nil {
+	if err := database.DB.First(&action, req.ActionID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Action non trouvée"})
 		return
 	}
 
 	var reaction models.Reaction
-	if err := database.DB.First(&reaction, input.ReactionID).Error; err != nil {
+	if err := database.DB.First(&reaction, req.ReactionID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Réaction non trouvée"})
 		return
 	}
 
 	area := models.Area{
-		UserID:      input.UserID,
-		Name:        input.Name,
-		Description: input.Description,
+		UserID:      req.UserID,
+		Name:        req.Name,
+		Description: req.Description,
 		IsActive:    true,
 	}
 
@@ -80,8 +89,15 @@ func CreateArea(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&area).Association("Actions").Append(&action)
-	database.DB.Model(&area).Association("Reactions").Append(&reaction)
+	if err := database.DB.Model(&area).Association("Actions").Append(&action); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Impossible d'associer l'action"})
+		return
+	}
+
+	if err := database.DB.Model(&area).Association("Reactions").Append(&reaction); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Impossible d'associer la réaction"})
+		return
+	}
 
 	database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, area.ID)
 

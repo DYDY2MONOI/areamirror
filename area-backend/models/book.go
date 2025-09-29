@@ -18,14 +18,16 @@ type User struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Phone              *string    `json:"phone" gorm:"uniqueIndex"`
-	Birthday           *time.Time `json:"birthday"`
-	Gender             string     `json:"gender"`
-	Country            string     `json:"country"`
-	Lang               string     `json:"lang" gorm:"default:'fr'"`
-	PasswordResetToken *string    `json:"-" gorm:"index"`
-	LoginProvider      string     `json:"login_provider" gorm:"default:'email'"`
-	ProfileImage       *string    `json:"profile_image"`
+	Phone              *string     `json:"phone" gorm:"uniqueIndex"`
+	Birthday           *time.Time  `json:"birthday"`
+	Gender             string      `json:"gender"`
+	Country            string      `json:"country"`
+	Lang               string      `json:"lang" gorm:"default:'fr'"`
+	PasswordResetToken *string     `json:"-" gorm:"index"`
+	LoginProvider      string      `json:"login_provider" gorm:"default:'email'"`
+	ProfileImage       *string     `json:"profile_image"`
+	GitHubID            *string     `json:"github_id" gorm:"uniqueIndex"`
+	GitHubUsername      *string     `json:"github_username"`
 
 	Areas []Area `json:"areas,omitempty" gorm:"foreignKey:UserID"`
 }
