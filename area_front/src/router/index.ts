@@ -4,6 +4,7 @@ import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
+import EditProfilePage from '../views/EditProfilePage.vue'
 import { authService } from '../services/auth'
 
 const router = createRouter({
@@ -37,6 +38,9 @@ const router = createRouter({
       path: '/auth/github/callback',
       name: 'github-callback',
       component: GitHubCallbackPage,
+      path: '/profile/edit',
+      name: 'edit-profile',
+      component: EditProfilePage,
       meta: { requiresAuth: true }
     },
   ],

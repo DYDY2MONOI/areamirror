@@ -134,6 +134,8 @@ const loading = ref(false)
 const error = ref('')
 
 const handleRegister = async () => {
+  console.log('🚀 Début de la création de compte')
+
   if (!form.value.email || !form.value.password) {
     error.value = 'Please fill in all required fields'
     return
@@ -149,15 +151,20 @@ const handleRegister = async () => {
     return
   }
 
+  console.log('📝 Données valides, démarrage de l\'enregistrement')
   loading.value = true
   error.value = ''
 
   try {
+    console.log('🔄 Appel du service d\'authentification...')
     await authService.register(form.value)
+    console.log('✅ Compte créé avec succès')
     router.push('/')
   } catch (err) {
+    console.error('❌ Erreur lors de la création:', err)
     error.value = err instanceof Error ? err.message : 'Registration error'
   } finally {
+    console.log('🏁 Fin du processus de création')
     loading.value = false
   }
 }
