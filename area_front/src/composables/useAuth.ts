@@ -82,33 +82,26 @@ export function useAuth() {
     }
   }
 
-    const uploadProfileImage = async (imageFile: File) => {
-    isLoading.value = true
+  const linkGitHubAccount = async (code: string) => {
     try {
-      const updatedUser = await authService.uploadProfileImage(imageFile)
-      currentUser.value = updatedUser
-      return updatedUser
+      const result = await authService.linkGitHubAccount(code)
+      await refreshProfile()
+      return result
     } catch (error) {
+      console.error('GitHub link error:', error)
       throw error
-    } finally {
-      isLoading.value = false
     }
   }
 
-  const getProfileImageUrl = () => {
-    return authService.getProfileImageUrl()
-  }
+  const unlinkGitHubAccount = async () => {
+    try {
+      await authService.unlinkGitHubAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('GitHub unlink error:', error)
+      throw error
+    }
 
-  const updateProfile = async (data: {
-    first_name?: string
-    last_name?: string
-    phone?: string
-    country?: string
-    current_password?: string
-    new_password?: string
-  }) => {
-    await authService.updateProfile(data)
-    await refreshProfile()
   }
 
   return {
@@ -120,6 +113,8 @@ export function useAuth() {
     register,
     logout,
     refreshProfile,
+    linkGitHubAccount,
+    unlinkGitHubAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
