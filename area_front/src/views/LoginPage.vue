@@ -67,6 +67,16 @@
             <span class="divider-text">or</span>
           </div>
 
+          <!-- Bouton Google OAuth -->
+          <button
+            type="button"
+            @click="loginWithGoogle"
+            class="oauth-button google-button"
+          >
+            <v-icon size="20" class="oauth-icon">mdi-google</v-icon>
+            <span>Continue with Google</span>
+          </button>
+
           <!-- Bouton Guest -->
           <button
             type="button"
@@ -95,6 +105,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService, type LoginRequest } from '@/services/auth'
+import { initiateGoogleLogin } from '@/utils/google-oauth'
 
 const router = useRouter()
 
@@ -127,6 +138,10 @@ const handleLogin = async () => {
 
 const continueAsGuest = () => {
   router.push('/')
+}
+
+const loginWithGoogle = () => {
+  initiateGoogleLogin()
 }
 </script>
 
@@ -432,6 +447,47 @@ const continueAsGuest = () => {
   font-size: 0.875rem;
   font-weight: 500;
   background: var(--color-bg-card);
+}
+
+/* Bouton OAuth */
+.oauth-button {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.google-button {
+  background: linear-gradient(135deg, #4285f4, #34a853);
+  border-color: #4285f4;
+  color: white;
+}
+
+.google-button:hover {
+  background: linear-gradient(135deg, #3367d6, #2e8b42);
+  border-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.oauth-icon {
+  transition: var(--transition-normal);
+}
+
+.google-button:hover .oauth-icon {
+  transform: scale(1.1);
 }
 
 /* Bouton Guest */

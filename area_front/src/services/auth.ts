@@ -292,6 +292,52 @@ class AuthService {
 
     await this.fetchProfile()
   }
+
+  async linkGoogleAccount(code: string): Promise<{ google_email: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/google/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Google account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkGoogleAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/google/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Google account')
+    }
+
+    await this.fetchProfile()
+  }
     
   async uploadProfileImage(imageFile: File): Promise<User> {
     if (!this.token) {

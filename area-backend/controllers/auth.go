@@ -38,12 +38,12 @@ type RegisterRequest struct {
 }
 
 type ProfileUpdateRequest struct {
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Phone          string `json:"phone"`
-	Country        string `json:"country"`
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	Phone           string `json:"phone"`
+	Country         string `json:"country"`
 	CurrentPassword string `json:"current_password"`
-	NewPassword    string `json:"new_password"`
+	NewPassword     string `json:"new_password"`
 }
 
 type GitHubLinkRequest struct {
@@ -57,11 +57,33 @@ type GitHubTokenResponse struct {
 }
 
 type GitHubUserResponse struct {
-	ID       int    `json:"id"`
-	Login    string `json:"login"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
+	ID        int    `json:"id"`
+	Login     string `json:"login"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
 	AvatarURL string `json:"avatar_url"`
+}
+
+type GoogleLinkRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type GoogleTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+}
+
+type GoogleUserResponse struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
 }
 
 func init() {
@@ -112,10 +134,10 @@ func Register(c *gin.Context) {
 		"message": "User created successfully",
 		"token":   token,
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
+			"id":            user.ID,
+			"email":         user.Email,
+			"first_name":    user.FirstName,
+			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
 		},
 	})
@@ -150,10 +172,10 @@ func Login(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
+			"id":            user.ID,
+			"email":         user.Email,
+			"first_name":    user.FirstName,
+			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
 		},
 	})
@@ -174,21 +196,23 @@ func GetProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
-			"created_at": user.CreatedAt,
-			"updated_at": user.UpdatedAt,
-			"phone":      user.Phone,
-			"birthday":   user.Birthday,
-			"gender":     user.Gender,
-			"country":    user.Country,
-			"lang":       user.Lang,
-			"login_provider": user.LoginProvider,
-			"profile_image": user.ProfileImage,
-			"github_id":  user.GitHubID,
+			"id":              user.ID,
+			"email":           user.Email,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"created_at":      user.CreatedAt,
+			"updated_at":      user.UpdatedAt,
+			"phone":           user.Phone,
+			"birthday":        user.Birthday,
+			"gender":          user.Gender,
+			"country":         user.Country,
+			"lang":            user.Lang,
+			"login_provider":  user.LoginProvider,
+			"profile_image":   user.ProfileImage,
+			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
 		},
 	})
 }
@@ -252,21 +276,23 @@ func UpdateProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
-			"created_at": user.CreatedAt,
-			"updated_at": user.UpdatedAt,
-			"phone":      user.Phone,
-			"birthday":   user.Birthday,
-			"gender":     user.Gender,
-			"country":    user.Country,
-			"lang":       user.Lang,
-			"login_provider": user.LoginProvider,
-			"profile_image": user.ProfileImage,
-			"github_id":  user.GitHubID,
+			"id":              user.ID,
+			"email":           user.Email,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"created_at":      user.CreatedAt,
+			"updated_at":      user.UpdatedAt,
+			"phone":           user.Phone,
+			"birthday":        user.Birthday,
+			"gender":          user.Gender,
+			"country":         user.Country,
+			"lang":            user.Lang,
+			"login_provider":  user.LoginProvider,
+			"profile_image":   user.ProfileImage,
+			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
 		},
 	})
 }
@@ -388,187 +414,357 @@ func UploadProfileImage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":         user.ID,
-			"email":      user.Email,
-			"first_name": user.FirstName,
-			"last_name":  user.LastName,
-			"created_at": user.CreatedAt,
-			"updated_at": user.UpdatedAt,
-			"phone":      user.Phone,
-			"birthday":   user.Birthday,
-			"gender":     user.Gender,
-			"country":    user.Country,
-			"lang":       user.Lang,
-			"login_provider": user.LoginProvider,
-			"profile_image": user.ProfileImage,
-			"github_id":  user.GitHubID,
+			"id":              user.ID,
+			"email":           user.Email,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"created_at":      user.CreatedAt,
+			"updated_at":      user.UpdatedAt,
+			"phone":           user.Phone,
+			"birthday":        user.Birthday,
+			"gender":          user.Gender,
+			"country":         user.Country,
+			"lang":            user.Lang,
+			"login_provider":  user.LoginProvider,
+			"profile_image":   user.ProfileImage,
+			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
 		},
 	})
 }
 
-
 func LinkGitHubAccount(c *gin.Context) {
-userID, exists := c.Get("userID")
-if !exists {
-c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-return
-}
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-var req GitHubLinkRequest
-if err := c.ShouldBindJSON(&req); err != nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-return
-}
+	var req GitHubLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-githubClientID := os.Getenv("GITHUB_CLIENT_ID")
-githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
+	githubClientID := os.Getenv("GITHUB_CLIENT_ID")
+	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
 
-if githubClientID == "" || githubClientSecret == "" {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "GitHub OAuth not configured"})
-return
-}
+	if githubClientID == "" || githubClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "GitHub OAuth not configured"})
+		return
+	}
 
-accessToken, err := exchangeCodeForToken(req.Code, githubClientID, githubClientSecret)
-if err != nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
-return
-}
+	accessToken, err := exchangeCodeForToken(req.Code, githubClientID, githubClientSecret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
 
-githubUser, err := getGitHubUser(accessToken)
-if err != nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get GitHub user"})
-return
-}
+	githubUser, err := getGitHubUser(accessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get GitHub user"})
+		return
+	}
 
-var user models.User
-if err := database.DB.First(&user, userID).Error; err != nil {
-c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-return
-}
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
 
-githubIDStr := fmt.Sprintf("%d", githubUser.ID)
+	githubIDStr := fmt.Sprintf("%d", githubUser.ID)
 
-var existingUser models.User
-if err := database.DB.Where("github_id = ?", githubIDStr).First(&existingUser).Error; err == nil {
-c.JSON(http.StatusConflict, gin.H{"error": "This GitHub account is already linked to another user"})
-return
-}
+	var existingUser models.User
+	if err := database.DB.Where("github_id = ?", githubIDStr).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This GitHub account is already linked to another user"})
+		return
+	}
 
-user.GitHubID = &githubIDStr
-user.GitHubUsername = &githubUser.Login
+	user.GitHubID = &githubIDStr
+	user.GitHubUsername = &githubUser.Login
 
-if err := database.DB.Save(&user).Error; err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link GitHub account"})
-return
-}
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link GitHub account"})
+		return
+	}
 
-c.JSON(http.StatusOK, gin.H{
-"message": "GitHub account linked successfully",
-"github_username": user.GitHubUsername,
-})
+	c.JSON(http.StatusOK, gin.H{
+		"message":         "GitHub account linked successfully",
+		"github_username": user.GitHubUsername,
+	})
 }
 
 func UnlinkGitHubAccount(c *gin.Context) {
-userID, exists := c.Get("userID")
-if !exists {
-c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-return
-}
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-var user models.User
-if err := database.DB.First(&user, userID).Error; err != nil {
-c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-return
-}
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
 
-if user.GitHubID == nil {
-c.JSON(http.StatusBadRequest, gin.H{"error": "No GitHub account linked"})
-return
-}
+	if user.GitHubID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No GitHub account linked"})
+		return
+	}
 
-user.GitHubID = nil
-user.GitHubUsername = nil
+	user.GitHubID = nil
+	user.GitHubUsername = nil
 
-if err := database.DB.Save(&user).Error; err != nil {
-c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink GitHub account"})
-return
-}
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink GitHub account"})
+		return
+	}
 
-c.JSON(http.StatusOK, gin.H{
-"message": "GitHub account unlinked successfully",
-})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "GitHub account unlinked successfully",
+	})
 }
 
 func exchangeCodeForToken(code, clientID, clientSecret string) (string, error) {
-url := "https://github.com/login/oauth/access_token"
+	url := "https://github.com/login/oauth/access_token"
 
-data := map[string]string{
-"client_id":     clientID,
-"client_secret": clientSecret,
-"code":          code,
-}
+	data := map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"code":          code,
+	}
 
-jsonData, err := json.Marshal(data)
-if err != nil {
-return "", err
-}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
 
-req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
-if err != nil {
-return "", err
-}
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
+	if err != nil {
+		return "", err
+	}
 
-req.Header.Set("Accept", "application/json")
-req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
-client := &http.Client{}
-resp, err := client.Do(req)
-if err != nil {
-return "", err
-}
-defer resp.Body.Close()
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-body, err := io.ReadAll(resp.Body)
-if err != nil {
-return "", err
-}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 
-var tokenResp GitHubTokenResponse
-if err := json.Unmarshal(body, &tokenResp); err != nil {
-return "", err
-}
+	var tokenResp GitHubTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return "", err
+	}
 
-return tokenResp.AccessToken, nil
+	return tokenResp.AccessToken, nil
 }
 
 func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
-url := "https://api.github.com/user"
+	url := "https://api.github.com/user"
 
-req, err := http.NewRequest("GET", url, nil)
-if err != nil {
-return nil, err
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var githubUser GitHubUserResponse
+	if err := json.Unmarshal(body, &githubUser); err != nil {
+		return nil, err
+	}
+
+	return &githubUser, nil
 }
 
-req.Header.Set("Authorization", "Bearer "+accessToken)
-req.Header.Set("Accept", "application/vnd.github.v3+json")
+func LinkGoogleAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
-client := &http.Client{}
-resp, err := client.Do(req)
-if err != nil {
-return nil, err
+	var req GoogleLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+
+	if googleClientID == "" || googleClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Google OAuth not configured"})
+		return
+	}
+
+	accessToken, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
+
+	googleUser, err := getGoogleUser(accessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Google user"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existingUser models.User
+	if err := database.DB.Where("google_id = ?", googleUser.ID).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Google account is already linked to another user"})
+		return
+	}
+
+	user.GoogleID = &googleUser.ID
+	user.GoogleEmail = &googleUser.Email
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Google account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Google account linked successfully",
+		"google_email": user.GoogleEmail,
+	})
 }
-defer resp.Body.Close()
 
-body, err := io.ReadAll(resp.Body)
-if err != nil {
-return nil, err
+func UnlinkGoogleAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.GoogleID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Google account linked"})
+		return
+	}
+
+	user.GoogleID = nil
+	user.GoogleEmail = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Google account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Google account unlinked successfully",
+	})
 }
 
-var githubUser GitHubUserResponse
-if err := json.Unmarshal(body, &githubUser); err != nil {
-return nil, err
+func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (string, error) {
+	url := "https://oauth2.googleapis.com/token"
+
+	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "http://localhost:3000/callback"
+	}
+
+	data := map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"code":          code,
+		"grant_type":    "authorization_code",
+		"redirect_uri":  redirectURI,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var tokenResp GoogleTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return "", err
+	}
+
+	return tokenResp.AccessToken, nil
 }
 
-return &githubUser, nil
+func getGoogleUser(accessToken string) (*GoogleUserResponse, error) {
+	url := "https://www.googleapis.com/oauth2/v2/userinfo"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var googleUser GoogleUserResponse
+	if err := json.Unmarshal(body, &googleUser); err != nil {
+		return nil, err
+	}
+
+	return &googleUser, nil
 }

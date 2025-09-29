@@ -236,7 +236,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, linkGitHubAccount, unlinkGitHubAccount } = useAuth()
+const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount } = useAuth()
 
 const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
@@ -315,6 +315,18 @@ const linkService = async (serviceId: string) => {
       const githubAuthUrl = `${service.authUrl}?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}`
 
       window.location.href = githubAuthUrl
+    } else if (serviceId === 'google') {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your_google_client_id_here'
+
+      if (!googleClientId || googleClientId === 'your_google_client_id_here') {
+        errorMessages.value[serviceId] = 'Google OAuth not configured. Please set the VITE_GOOGLE_CLIENT_ID environment variable.'
+        return
+      }
+
+      const redirectUri = encodeURIComponent('http://localhost:3000/callback')
+      const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
+
+      window.location.href = googleAuthUrl
     } else {
       errorMessages.value[serviceId] = `${service.name} integration is not yet implemented.`
     }
@@ -335,6 +347,9 @@ const unlinkService = async (serviceId: string) => {
     if (serviceId === 'github') {
       await unlinkGitHubAccount()
       successMessages.value[serviceId] = 'GitHub account unlinked successfully'
+    } else if (serviceId === 'google') {
+      await unlinkGoogleAccount()
+      successMessages.value[serviceId] = 'Google account unlinked successfully'
     } else {
       errorMessages.value[serviceId] = `${serviceId} unlinking is not yet implemented.`
     }
@@ -355,6 +370,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     if (serviceId === 'github') {
       const result = await linkGitHubAccount(code)
       successMessages.value[serviceId] = 'GitHub account linked successfully!'
+    } else if (serviceId === 'google') {
+      const result = await linkGoogleAccount(code)
+      successMessages.value[serviceId] = 'Google account linked successfully!'
     } else {
       errorMessages.value[serviceId] = `${serviceId} linking is not yet implemented.`
     }

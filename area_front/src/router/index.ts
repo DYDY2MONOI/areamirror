@@ -5,6 +5,9 @@ import RegisterPage from '../views/RegisterPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import ServiceLinkPage from '../views/ServiceLinkPage.vue'
 import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
+import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
+import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
+import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import { authService } from '../services/auth'
 
@@ -15,6 +18,12 @@ const router = createRouter({
       path: '/',
       name: 'landing',
       component: LandingPage,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/callback',
+      name: 'home-callback',
+      component: HomeCallback,
       meta: { requiresAuth: false }
     },
     {
@@ -52,6 +61,18 @@ const router = createRouter({
       name: 'github-callback',
       component: GitHubCallbackPage,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/auth/google/callback',
+      name: 'google-callback',
+      component: GoogleCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/google-oauth-callback',
+      name: 'google-oauth-callback',
+      component: GoogleOAuthCallback,
+      meta: { requiresAuth: false }
     },
     {
       path: '/profile/edit',

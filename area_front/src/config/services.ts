@@ -29,9 +29,9 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     color: '#4285f4',
     description: 'Connect your Google account to access Gmail, Calendar, and Drive',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    callbackPath: '/auth/google/callback',
-    scopes: ['email', 'profile'],
-    isEnabled: false // Not implemented yet
+    callbackPath: '/callback',
+    scopes: ['openid', 'email', 'profile'],
+    isEnabled: true
   },
   {
     id: 'discord',

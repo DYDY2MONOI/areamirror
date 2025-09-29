@@ -39,6 +39,8 @@ func main() {
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
 	r.POST("/profile/github/link", controllers.AuthMiddleware(), controllers.LinkGitHubAccount)
 	r.DELETE("/profile/github/unlink", controllers.AuthMiddleware(), controllers.UnlinkGitHubAccount)
+	r.POST("/profile/google/link", controllers.AuthMiddleware(), controllers.LinkGoogleAccount)
+	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 
 	r.Static("/uploads", "./uploads")
 
