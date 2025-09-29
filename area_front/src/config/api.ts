@@ -1,9 +1,9 @@
 const getApiUrl = () => {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_LOCAL_API === 'true') {
     return 'http://localhost:8080'
   }
 
-  return 'http://10.68.246.178:8080'
+  return 'http://localhost:8080'
 }
 
 export const API_BASE_URL = getApiUrl()

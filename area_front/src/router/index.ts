@@ -3,6 +3,7 @@ import LandingPage from '../views/LandingPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
+import EditProfilePage from '../views/EditProfilePage.vue'
 import { authService } from '../services/auth'
 
 const router = createRouter({
@@ -30,6 +31,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: ProfilePage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile/edit',
+      name: 'edit-profile',
+      component: EditProfilePage,
       meta: { requiresAuth: true }
     },
   ],
