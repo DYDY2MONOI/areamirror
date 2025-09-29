@@ -325,7 +325,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, uploadProfileImage, getProfileImageUrl, refreshProfile, isLoading } = useAuth()
+const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const profileImageUrl = ref<string | null>(null)
@@ -333,6 +333,7 @@ const isUploading = ref(false)
 const uploadError = ref<string | null>(null)
 const errorMessages = ref<Record<string, string>>({})
 const successMessages = ref<Record<string, string>>({})
+const isLoading = ref(false)
 
 const enabledServices = computed(() => getEnabledServices())
 
