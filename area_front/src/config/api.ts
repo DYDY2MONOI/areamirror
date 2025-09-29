@@ -1,9 +1,5 @@
 const getApiUrl = () => {
-  if (import.meta.env.DEV) {
-    return 'http://localhost:8080'
-  }
-
-  return 'http://10.68.246.178:8080'
+  return '/api'
 }
 
 export const API_BASE_URL = getApiUrl()

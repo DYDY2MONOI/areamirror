@@ -11,6 +11,14 @@ export interface User {
   country?: string
   lang?: string
   login_provider?: string
+  github_id?: string
+  github_username?: string
+  google_id?: string
+  google_email?: string
+  discord_id?: string
+  discord_username?: string
+  spotify_id?: string
+  spotify_email?: string
 }
 
 export interface AuthResponse {
@@ -80,8 +88,8 @@ class AuthService {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur de connexion' }))
-        throw new Error(errorData.error || `Erreur HTTP ${response.status}`)
+        const errorData = await response.json().catch(() => ({ error: 'Connection error' }))
+        throw new Error(errorData.error || `HTTP error ${response.status}`)
       }
 
       const data = await response.json()
@@ -89,7 +97,7 @@ class AuthService {
       return data
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.')
+        throw new Error('Unable to connect to server. Please check that the backend is running.')
       }
       throw error
     }
@@ -106,8 +114,8 @@ class AuthService {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur lors de l\'inscription' }))
-        throw new Error(errorData.error || `Erreur HTTP ${response.status}`)
+        const errorData = await response.json().catch(() => ({ error: 'Registration error' }))
+        throw new Error(errorData.error || `HTTP error ${response.status}`)
       }
 
       const data = await response.json()
@@ -115,7 +123,7 @@ class AuthService {
       return data
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.')
+        throw new Error('Unable to connect to server. Please check that the backend is running.')
       }
       throw error
     }
@@ -130,7 +138,7 @@ class AuthService {
 
   async fetchProfile(): Promise<User> {
     if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
+      throw new Error('Authentication token missing')
     }
 
     try {
@@ -145,7 +153,7 @@ class AuthService {
       const data: ProfileResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.user ? 'Erreur lors de la récupération du profil' : 'Erreur de profil')
+        throw new Error(data.user ? 'Error retrieving profile' : 'Profile error')
       }
 
       this.user = data.user
@@ -161,7 +169,7 @@ class AuthService {
 
   async updateProfile(updateData: ProfileUpdateRequest): Promise<User> {
     if (!this.token) {
-      throw new Error('Token d\'authentification manquant')
+      throw new Error('Authentication token missing')
     }
 
     try {
@@ -177,7 +185,7 @@ class AuthService {
       const data: ProfileResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.user ? 'Erreur lors de la mise à jour du profil' : 'Erreur de mise à jour')
+        throw new Error(data.user ? 'Error updating profile' : 'Update error')
       }
 
       this.user = data.user
@@ -220,6 +228,52 @@ class AuthService {
       await this.logout()
       return false
     }
+  }
+
+  async linkGitHubAccount(code: string): Promise<{ github_username: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/github/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link GitHub account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkGitHubAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/github/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink GitHub account')
+    }
+
+    await this.fetchProfile()
   }
 }
 

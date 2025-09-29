@@ -77,6 +77,27 @@ export function useAuth() {
     }
   }
 
+  const linkGitHubAccount = async (code: string) => {
+    try {
+      const result = await authService.linkGitHubAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('GitHub link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkGitHubAccount = async () => {
+    try {
+      await authService.unlinkGitHubAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('GitHub unlink error:', error)
+      throw error
+    }
+  }
+
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
     currentUser: computed(() => currentUser.value),
@@ -86,6 +107,8 @@ export function useAuth() {
     register,
     logout,
     refreshProfile,
+    linkGitHubAccount,
+    unlinkGitHubAccount,
     initAuth
   }
 }
