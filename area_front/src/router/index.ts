@@ -51,6 +51,9 @@ const router = createRouter({
       path: '/auth/github/callback',
       name: 'github-callback',
       component: GitHubCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/profile/edit',
       name: 'edit-profile',
       component: EditProfilePage,

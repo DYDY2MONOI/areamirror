@@ -291,6 +291,7 @@ class AuthService {
     }
 
     await this.fetchProfile()
+  }
     
   async uploadProfileImage(imageFile: File): Promise<User> {
     if (!this.token) {
@@ -339,42 +340,6 @@ class AuthService {
     }
 
     return this.user.profile_image
-  }
-
-  async updateProfile(data: {
-    first_name?: string
-    last_name?: string
-    phone?: string
-    country?: string
-    current_password?: string
-    new_password?: string
-  }): Promise<void> {
-    if (!this.token) {
-      throw new Error('Authentication token missing')
-    }
-
-    try {
-      const response = await fetch(`${BASE_URL}/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.token}`
-        },
-        body: JSON.stringify(data)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Error updating profile')
-      }
-
-      const updatedUser = await response.json()
-      this.user = updatedUser.user
-      this.storeUser(updatedUser.user)
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error)
-      throw error
-    }
   }
 }
 

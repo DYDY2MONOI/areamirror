@@ -101,7 +101,32 @@ export function useAuth() {
       console.error('GitHub unlink error:', error)
       throw error
     }
+  }
 
+  const uploadProfileImage = async (imageFile: File) => {
+    try {
+      const result = await authService.uploadProfileImage(imageFile)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Profile image upload error:', error)
+      throw error
+    }
+  }
+
+  const getProfileImageUrl = () => {
+    return authService.getProfileImageUrl()
+  }
+
+  const updateProfile = async (updateData: any) => {
+    try {
+      const result = await authService.updateProfile(updateData)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Profile update error:', error)
+      throw error
+    }
   }
 
   return {

@@ -42,17 +42,8 @@ func GetUserAreas(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
-type CreateAreaRequest struct {
-	UserID      uint   `json:"user_id" binding:"required"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	ActionID    uint   `json:"action_id" binding:"required"`
-	ReactionID  uint   `json:"reaction_id" binding:"required"`
-}
-
 func CreateArea(c *gin.Context) {
 	var req CreateAreaRequest
-
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
