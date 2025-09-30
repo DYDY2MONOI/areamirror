@@ -185,7 +185,11 @@
 
     <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
       <div class="custom-modal-content" @click.stop>
-        <CreateArea @close="showCreateModal = false" @save="handleAreaCreated" />
+        <CreateArea 
+          :template="selectedArea" 
+          @close="showCreateModal = false" 
+          @save="handleAreaCreated" 
+        />
       </div>
     </div>
 
@@ -329,7 +333,7 @@
         <v-btn
           class="area-modal-create-btn"
           variant="flat"
-          disabled
+          @click="createAreaFromTemplate"
         >
           Use This Area
         </v-btn>

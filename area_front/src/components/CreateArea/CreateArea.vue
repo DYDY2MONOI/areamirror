@@ -171,7 +171,7 @@
                 <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">Calendar Event Trigger</h4>
+                <h4 class="config-title">📅 Calendar Event Trigger</h4>
                 <p class="config-subtitle">Configure when this area should trigger</p>
               </div>
             </div>
@@ -179,32 +179,36 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">Event Time</label>
+                  <label class="input-label">📅 Event Date & Time</label>
                   <input
                     v-model="form.triggerConfig.eventTime"
                     type="datetime-local"
                     class="modern-input"
+                    :min="new Date().toISOString().slice(0, 16)"
                     required
                   />
+                  <small class="input-hint">Select the date and time when you want to be reminded</small>
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">Event Title (Optional)</label>
+                  <label class="input-label">📝 Event Title (Optional)</label>
                   <input
                     v-model="form.triggerConfig.eventTitle"
                     class="modern-input"
-                    placeholder="e.g., Meeting with John"
+                    placeholder="e.g., Meeting with John, Doctor Appointment"
                   />
+                  <small class="input-hint">This will be used in the email subject and body</small>
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">Calendar ID</label>
+                  <label class="input-label">🗓️ Calendar ID</label>
                   <input
                     v-model="form.triggerConfig.calendarId"
                     class="modern-input"
                     placeholder="primary"
                     value="primary"
                   />
+                  <small class="input-hint">Use 'primary' for your main calendar</small>
                 </div>
               </div>
             </div>
@@ -217,7 +221,7 @@
                 <img :src="getIconUrl('gmail.png')" alt="Gmail" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">Gmail Action</h4>
+                <h4 class="config-title">📧 Gmail Action</h4>
                 <p class="config-subtitle">Configure the email to be sent</p>
               </div>
             </div>
@@ -225,28 +229,30 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">To Email</label>
+                  <label class="input-label">📧 Send Email To</label>
                   <input
                     v-model="form.actionConfig.toEmail"
                     type="email"
                     class="modern-input"
-                    placeholder="recipient@example.com"
+                    placeholder="your-email@gmail.com"
                     required
                   />
+                  <small class="input-hint">Enter the email address where you want to receive the reminder</small>
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">Subject</label>
+                  <label class="input-label">📝 Email Subject</label>
                   <input
                     v-model="form.actionConfig.subject"
                     class="modern-input"
                     placeholder="Reminder: {{eventTitle}}"
                     required
                   />
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125; to include the event name</small>
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">Email Body</label>
+                  <label class="input-label">📄 Email Body</label>
                   <textarea
                     v-model="form.actionConfig.body"
                     class="modern-textarea"
@@ -254,6 +260,28 @@
                     rows="4"
                     required
                   ></textarea>
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Preview for Calendar → Gmail -->
+          <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="preview-section">
+            <div class="preview-header">
+              <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
+              <span class="preview-title">Email Preview</span>
+            </div>
+            <div class="preview-content">
+              <div class="email-preview">
+                <div class="email-header">
+                  <strong>To:</strong> {{ form.actionConfig.toEmail || 'your-email@gmail.com' }}
+                </div>
+                <div class="email-header">
+                  <strong>Subject:</strong> {{ form.actionConfig.subject || 'Reminder: Event Title' }}
+                </div>
+                <div class="email-body">
+                  {{ form.actionConfig.body || 'Hello! This is a reminder about your upcoming event: Event Title at Event Time' }}
                 </div>
               </div>
             </div>
@@ -275,18 +303,52 @@
           <v-icon size="18">mdi-check</v-icon>
           {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
+        
+        <!-- Test Email Button for Calendar → Gmail -->
+        <button 
+          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
+          class="action-btn test-email-btn" 
+          @click="sendTestEmail" 
+          :disabled="!canSendTestEmail || isSendingTest"
+        >
+          <v-icon size="18">mdi-email-send</v-icon>
+          {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
+        </button>
+        
+        <!-- Debug info for Calendar → Gmail -->
+        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
+          <small style="color: #666; font-size: 0.75rem;">
+            Debug: {{ isFormValid ? '✅ Ready to create' : '❌ Missing: ' + getMissingFields() }}
+          </small>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import appsJson from '../../assets/apps.json'
 import { areaService } from '../../services/area'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
+
+interface AreaTemplate {
+  id: string
+  title: string
+  subtitle: string
+  description: string
+  icon: string
+  gradientClass: string
+  triggerService: string
+  actionService: string
+  isActive: boolean
+}
+
+const props = defineProps<{
+  template?: AreaTemplate | null
+}>()
 
 const ICONS_DIR = 'app-icons'
 
@@ -306,10 +368,44 @@ const form = reactive({
   actionConfig: {} as any,
 })
 
+// Watch for template changes and pre-fill form
+watch(() => props.template, (newTemplate) => {
+  if (newTemplate) {
+    form.areaName = newTemplate.title
+    form.description = newTemplate.description
+    form.triggerService = newTemplate.triggerService
+    form.actionService = newTemplate.actionService
+    
+    // Pre-fill configuration for Calendar → Gmail
+    if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
+      form.triggerConfig = {
+        eventTime: '',
+        eventTitle: '',
+        calendarId: 'primary'
+      }
+      form.actionConfig = {
+        toEmail: '',
+        subject: 'Reminder: {{eventTitle}}',
+        body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+      }
+    }
+  }
+}, { immediate: true })
+
 const isFormValid = computed(() => {
-  return form.areaName.trim() !== '' &&
-         form.triggerService !== '' &&
-         form.actionService !== ''
+  const hasBasicInfo = form.areaName.trim() !== '' &&
+                      form.triggerService !== '' &&
+                      form.actionService !== ''
+  
+  // Additional validation for Calendar → Gmail
+  if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
+    return hasBasicInfo &&
+           form.triggerConfig.eventTime &&
+           form.actionConfig.toEmail &&
+           form.actionConfig.subject
+  }
+  
+  return hasBasicInfo
 })
 
 const showAllTriggerServices = ref(false)
@@ -319,11 +415,29 @@ const showAllReactionServices = ref(false)
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
   showAllTriggerServices.value = false
+  
+  // Initialize default config for Calendar
+  if (serviceId === 'Google Calendar') {
+    form.triggerConfig = {
+      eventTime: '',
+      eventTitle: '',
+      calendarId: 'primary'
+    }
+  }
 }
 
 const selectAction = (serviceId: string) => {
   form.actionService = serviceId
   showAllReactionServices.value = false
+  
+  // Initialize default config for Gmail
+  if (serviceId === 'Gmail') {
+    form.actionConfig = {
+      toEmail: '',
+      subject: 'Reminder: {{eventTitle}}',
+      body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+    }
+  }
 }
 
 const getServiceName = (serviceId: string) => {
@@ -331,8 +445,61 @@ const getServiceName = (serviceId: string) => {
   return service?.title || ''
 }
 
+const getMissingFields = () => {
+  const missing = []
+  if (!form.areaName.trim()) missing.push('Area Name')
+  if (!form.triggerConfig.eventTime) missing.push('Event Time')
+  if (!form.actionConfig.toEmail) missing.push('Email Address')
+  if (!form.actionConfig.subject) missing.push('Email Subject')
+  return missing.join(', ')
+}
+
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const isSendingTest = ref(false)
+
+const canSendTestEmail = computed(() => {
+  return form.actionConfig.toEmail && 
+         form.actionConfig.subject && 
+         form.actionConfig.body
+})
+
+const sendTestEmail = async () => {
+  if (!canSendTestEmail.value) return
+  
+  isSendingTest.value = true
+  error.value = null
+  
+  try {
+    const testEmailData = {
+      to: form.actionConfig.toEmail,
+      subject: form.actionConfig.subject,
+      body: form.actionConfig.body
+    }
+    
+    const response = await fetch('http://localhost:8080/test/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testEmailData)
+    })
+    
+    const result = await response.json()
+    
+    if (response.ok) {
+      alert('✅ Test email sent successfully!')
+    } else {
+      throw new Error(result.error || 'Failed to send test email')
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to send test email'
+    console.error('Error sending test email:', err)
+    alert('❌ Failed to send test email: ' + (err instanceof Error ? err.message : 'Unknown error'))
+  } finally {
+    isSendingTest.value = false
+  }
+}
 
 const createArea = async () => {
   if (!isFormValid.value) return
@@ -1063,8 +1230,88 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
+.input-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+  display: block;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.preview-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.preview-icon {
+  color: var(--color-accent-primary);
+}
+
+.preview-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.email-preview {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--color-border-primary);
+}
+
+.email-header {
+  margin-bottom: 0.5rem;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.email-body {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 :deep(.v-field--focused .v-field__outline) {
   color: var(--color-accent-primary) !important;
+}
+
+.action-btn.test-email-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.action-btn.test-email-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.action-btn.test-email-btn:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 :deep(.v-select .v-field__input) {
