@@ -61,7 +61,7 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.actionService" class="service-grid">
+                <div v-if="!form.triggerService" class="service-grid">
                   <div
                     v-for="item in appItems.slice(0, 8)"
                     :key="item.value"
@@ -84,13 +84,13 @@
                 <div v-else class="selected-service-display">
                   <div class="selected-service-card">
                     <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                      <img :src="getIconUrl(apps.find(a => a.name === form.triggerService)?.icon || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
                     </div>
                     <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                      <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
                       <span class="service-type">Trigger Service</span>
                     </div>
-                    <button class="change-service-btn" @click="form.actionService = ''">
+                    <button class="change-service-btn" @click="form.triggerService = ''">
                       <v-icon size="16">mdi-close</v-icon>
                     </button>
                   </div>
@@ -118,12 +118,12 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.reactionService" class="service-grid">
+                <div v-if="!form.actionService" class="service-grid">
                   <div
                     v-for="item in appItems.slice(0, 8)"
                     :key="item.value"
                     class="service-card"
-                    @click="selectReaction(item.value)"
+                    @click="selectAction(item.value)"
                   >
                     <div class="service-card-icon">
                       <img :src="item.icon" :alt="item.title" class="service-icon" />
@@ -141,13 +141,13 @@
                 <div v-else class="selected-service-display">
                   <div class="selected-service-card">
                     <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.reactionService)?.icon || '')" :alt="getServiceName(form.reactionService)" class="service-icon" />
+                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
                     </div>
                     <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.reactionService) }}</span>
+                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
                       <span class="service-type">Action Service</span>
                     </div>
-                    <button class="change-service-btn" @click="form.reactionService = ''">
+                    <button class="change-service-btn" @click="form.actionService = ''">
                       <v-icon size="16">mdi-close</v-icon>
                     </button>
                   </div>
@@ -158,14 +158,19 @@
         </div>
       </div>
 
+      <div v-if="error" class="error-message">
+        <v-icon size="20" color="#ef4444">mdi-alert-circle</v-icon>
+        <span>{{ error }}</span>
+      </div>
+
       <div class="card-actions">
         <button class="action-btn secondary" @click="$emit('close')">
           <v-icon size="18">mdi-close</v-icon>
           Cancel
         </button>
-        <button class="action-btn primary" @click="$emit('save')" :disabled="!isFormValid">
+        <button class="action-btn primary" @click="createArea" :disabled="!isFormValid || isLoading">
           <v-icon size="18">mdi-check</v-icon>
-          Create Area
+          {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
       </div>
     </div>
@@ -175,6 +180,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import appsJson from '../../assets/apps.json'
+import { areaService } from '../../services/area'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -191,14 +197,14 @@ const appItems = computed(() =>
 const form = reactive({
   areaName: '',
   description: '',
+  triggerService: '' as string | null,
   actionService: '' as string | null,
-  reactionService: '' as string | null,
 })
 
 const isFormValid = computed(() => {
   return form.areaName.trim() !== '' &&
-         form.actionService !== '' &&
-         form.reactionService !== ''
+         form.triggerService !== '' &&
+         form.actionService !== ''
 })
 
 const showAllTriggerServices = ref(false)
@@ -206,12 +212,12 @@ const showAllReactionServices = ref(false)
 
 
 const selectTrigger = (serviceId: string) => {
-  form.actionService = serviceId
+  form.triggerService = serviceId
   showAllTriggerServices.value = false
 }
 
-const selectReaction = (serviceId: string) => {
-  form.reactionService = serviceId
+const selectAction = (serviceId: string) => {
+  form.actionService = serviceId
   showAllReactionServices.value = false
 }
 
@@ -220,7 +226,36 @@ const getServiceName = (serviceId: string) => {
   return service?.title || ''
 }
 
-defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+
+const createArea = async () => {
+  if (!isFormValid.value) return
+  
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    const areaData = {
+      name: form.areaName,
+      description: form.description,
+      triggerService: form.triggerService!,
+      triggerType: 'Event', // Default trigger type
+      actionService: form.actionService!,
+      actionType: 'Action' // Default action type
+    }
+    
+    await areaService.createArea(areaData)
+    emit('save')
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to create area'
+    console.error('Error creating area:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 </script>
 
 <style scoped>
@@ -822,6 +857,19 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-field--focused .v-field__outline) {
   color: var(--color-accent-primary);
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin: 1rem 0;
 }
 
 :deep(.v-list) {

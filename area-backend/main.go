@@ -86,5 +86,8 @@ func main() {
 	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
 	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
 
+	r.GET("/areas/popular", controllers.GetPopularAreas)
+	r.GET("/areas/recommended", controllers.GetRecommendedAreas)
+
 	r.Run()
 }
