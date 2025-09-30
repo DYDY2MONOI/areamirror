@@ -61,7 +61,7 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.actionService" class="service-grid">
+                <div v-if="!form.triggerService" class="service-grid">
                   <div
                     v-for="item in appItems.slice(0, 8)"
                     :key="item.value"
@@ -84,13 +84,13 @@
                 <div v-else class="selected-service-display">
                   <div class="selected-service-card">
                     <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                      <img :src="getIconUrl(apps.find(a => a.name === form.triggerService)?.icon || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
                     </div>
                     <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                      <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
                       <span class="service-type">Trigger Service</span>
                     </div>
-                    <button class="change-service-btn" @click="form.actionService = ''">
+                    <button class="change-service-btn" @click="form.triggerService = ''">
                       <v-icon size="16">mdi-close</v-icon>
                     </button>
                   </div>
@@ -118,12 +118,12 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.reactionService" class="service-grid">
+                <div v-if="!form.actionService" class="service-grid">
                   <div
                     v-for="item in appItems.slice(0, 8)"
                     :key="item.value"
                     class="service-card"
-                    @click="selectReaction(item.value)"
+                    @click="selectAction(item.value)"
                   >
                     <div class="service-card-icon">
                       <img :src="item.icon" :alt="item.title" class="service-icon" />
@@ -141,13 +141,13 @@
                 <div v-else class="selected-service-display">
                   <div class="selected-service-card">
                     <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.reactionService)?.icon || '')" :alt="getServiceName(form.reactionService)" class="service-icon" />
+                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
                     </div>
                     <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.reactionService) }}</span>
+                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
                       <span class="service-type">Action Service</span>
                     </div>
-                    <button class="change-service-btn" @click="form.reactionService = ''">
+                    <button class="change-service-btn" @click="form.actionService = ''">
                       <v-icon size="16">mdi-close</v-icon>
                     </button>
                   </div>
@@ -156,6 +156,114 @@
             </div>
           </div>
         </div>
+
+        <!-- Configuration Section -->
+        <div v-if="form.triggerService && form.actionService" class="form-section">
+          <div class="section-label">
+            <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
+            <span class="label-text">Configuration</span>
+          </div>
+
+          <!-- Calendar Trigger Configuration -->
+          <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">Calendar Event Trigger</h4>
+                <p class="config-subtitle">Configure when this area should trigger</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">Event Time</label>
+                  <input
+                    v-model="form.triggerConfig.eventTime"
+                    type="datetime-local"
+                    class="modern-input"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Event Title (Optional)</label>
+                  <input
+                    v-model="form.triggerConfig.eventTitle"
+                    class="modern-input"
+                    placeholder="e.g., Meeting with John"
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Calendar ID</label>
+                  <input
+                    v-model="form.triggerConfig.calendarId"
+                    class="modern-input"
+                    placeholder="primary"
+                    value="primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gmail Action Configuration -->
+          <div v-if="form.actionService === 'Gmail'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('gmail.png')" alt="Gmail" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">Gmail Action</h4>
+                <p class="config-subtitle">Configure the email to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">To Email</label>
+                  <input
+                    v-model="form.actionConfig.toEmail"
+                    type="email"
+                    class="modern-input"
+                    placeholder="recipient@example.com"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Subject</label>
+                  <input
+                    v-model="form.actionConfig.subject"
+                    class="modern-input"
+                    placeholder="Reminder: {{eventTitle}}"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Email Body</label>
+                  <textarea
+                    v-model="form.actionConfig.body"
+                    class="modern-textarea"
+                    placeholder="Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}"
+                    rows="4"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="error" class="error-message">
+        <v-icon size="20" color="#ef4444">mdi-alert-circle</v-icon>
+        <span>{{ error }}</span>
       </div>
 
       <div class="card-actions">
@@ -163,9 +271,9 @@
           <v-icon size="18">mdi-close</v-icon>
           Cancel
         </button>
-        <button class="action-btn primary" @click="$emit('save')" :disabled="!isFormValid">
+        <button class="action-btn primary" @click="createArea" :disabled="!isFormValid || isLoading">
           <v-icon size="18">mdi-check</v-icon>
-          Create Area
+          {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
       </div>
     </div>
@@ -175,6 +283,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import appsJson from '../../assets/apps.json'
+import { areaService } from '../../services/area'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -191,14 +300,16 @@ const appItems = computed(() =>
 const form = reactive({
   areaName: '',
   description: '',
+  triggerService: '' as string | null,
   actionService: '' as string | null,
-  reactionService: '' as string | null,
+  triggerConfig: {} as any,
+  actionConfig: {} as any,
 })
 
 const isFormValid = computed(() => {
   return form.areaName.trim() !== '' &&
-         form.actionService !== '' &&
-         form.reactionService !== ''
+         form.triggerService !== '' &&
+         form.actionService !== ''
 })
 
 const showAllTriggerServices = ref(false)
@@ -206,12 +317,12 @@ const showAllReactionServices = ref(false)
 
 
 const selectTrigger = (serviceId: string) => {
-  form.actionService = serviceId
+  form.triggerService = serviceId
   showAllTriggerServices.value = false
 }
 
-const selectReaction = (serviceId: string) => {
-  form.reactionService = serviceId
+const selectAction = (serviceId: string) => {
+  form.actionService = serviceId
   showAllReactionServices.value = false
 }
 
@@ -220,7 +331,38 @@ const getServiceName = (serviceId: string) => {
   return service?.title || ''
 }
 
-defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+
+const createArea = async () => {
+  if (!isFormValid.value) return
+  
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    const areaData = {
+      name: form.areaName,
+      description: form.description,
+      triggerService: form.triggerService!,
+      triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+      actionService: form.actionService!,
+      actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+      triggerConfig: form.triggerConfig,
+      actionConfig: form.actionConfig
+    }
+    
+    await areaService.createArea(areaData)
+    emit('save')
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to create area'
+    console.error('Error creating area:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 </script>
 
 <style scoped>
@@ -824,6 +966,19 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-accent-primary);
 }
 
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin: 1rem 0;
+}
+
 :deep(.v-list) {
   background: var(--color-bg-card) !important;
   backdrop-filter: blur(20px);
@@ -841,6 +996,67 @@ defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-field__input) {
   color: var(--color-text-primary) !important;
+}
+
+/* Configuration Section Styles */
+.config-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.config-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.config-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.config-icon .service-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.config-info {
+  flex: 1;
+}
+
+.config-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+.config-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.config-content {
+  padding-left: 3.5rem;
 }
 
 :deep(.v-field__outline) {

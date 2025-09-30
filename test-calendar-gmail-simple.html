@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AREA Calendar → Gmail Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .response {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #2ecc71;
+        }
+        .error {
+            border-left: 4px solid #e74c3c;
+        }
+        .info {
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AREA Calendar → Gmail Test</h1>
+        
+        <div class="section">
+            <h2>📧 Test Email System</h2>
+            <div class="form-group">
+                <label for="testEmail">Test Email Address:</label>
+                <input type="email" id="testEmail" placeholder="your-email@example.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="testSubject">Subject:</label>
+                <input type="text" id="testSubject" placeholder="Test Email Subject" value="AREA Test Email">
+            </div>
+            <div class="form-group">
+                <label for="testBody">Message:</label>
+                <textarea id="testBody" rows="3" placeholder="Test email body...">This is a test email from the AREA system!</textarea>
+            </div>
+            <button onclick="testEmail()">📤 Send Test Email</button>
+        </div>
+
+        <div class="section">
+            <h2>📅 Create Calendar → Gmail AREA</h2>
+            <div class="form-group">
+                <label for="areaName">AREA Name:</label>
+                <input type="text" id="areaName" placeholder="My Calendar Reminder" value="Calendar Reminder">
+            </div>
+            <div class="form-group">
+                <label for="areaDescription">Description:</label>
+                <input type="text" id="areaDescription" placeholder="Description of this AREA" value="Sends email when calendar event occurs">
+            </div>
+            
+            <h3>📅 Calendar Trigger Configuration</h3>
+            <div class="form-group">
+                <label for="eventTime">Event Time (HH:MM):</label>
+                <input type="time" id="eventTime" value="09:00">
+            </div>
+            <div class="form-group">
+                <label for="eventTitle">Event Title:</label>
+                <input type="text" id="eventTitle" placeholder="Meeting with team" value="Daily Standup">
+            </div>
+            <div class="form-group">
+                <label for="calendarId">Calendar ID:</label>
+                <input type="text" id="calendarId" placeholder="primary" value="primary">
+            </div>
+            
+            <h3>📧 Gmail Action Configuration</h3>
+            <div class="form-group">
+                <label for="toEmail">Send Email To:</label>
+                <input type="email" id="toEmail" placeholder="recipient@example.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="emailSubject">Email Subject:</label>
+                <input type="text" id="emailSubject" placeholder="Reminder: {{eventTitle}}" value="Reminder: {{eventTitle}}">
+            </div>
+            <div class="form-group">
+                <label for="emailBody">Email Body:</label>
+                <textarea id="emailBody" rows="4" placeholder="Email content...">Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.</textarea>
+            </div>
+            
+            <button onclick="createArea()">🎯 Create AREA</button>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Test Scheduler</h2>
+            <div class="form-group">
+                <label for="areaId">AREA ID (from create response):</label>
+                <input type="text" id="areaId" placeholder="Enter AREA ID here">
+            </div>
+            <button onclick="testScheduler()">⏰ Test Scheduler</button>
+        </div>
+
+        <div id="response" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        function showResponse(data, type = 'info') {
+            const responseDiv = document.getElementById('response');
+            responseDiv.className = `response ${type}`;
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+            responseDiv.style.display = 'block';
+        }
+
+        async function testEmail() {
+            const email = document.getElementById('testEmail').value;
+            const subject = document.getElementById('testSubject').value;
+            const body = document.getElementById('testBody').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/test/email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to: email,
+                        subject: subject,
+                        body: body
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse(data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse({ error: error.message }, 'error');
+            }
+        }
+
+        async function createArea() {
+            const areaData = {
+                name: document.getElementById('areaName').value,
+                description: document.getElementById('areaDescription').value,
+                triggerService: 'Google Calendar',
+                actionService: 'Gmail',
+                triggerConfig: {
+                    eventTime: document.getElementById('eventTime').value,
+                    eventTitle: document.getElementById('eventTitle').value,
+                    calendarId: document.getElementById('calendarId').value
+                },
+                actionConfig: {
+                    toEmail: document.getElementById('toEmail').value,
+                    subject: document.getElementById('emailSubject').value,
+                    body: document.getElementById('emailBody').value
+                }
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/areas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(areaData)
+                });
+                
+                const data = await response.json();
+                showResponse(data, response.ok ? 'success' : 'error');
+                
+                if (data.id) {
+                    document.getElementById('areaId').value = data.id;
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, 'error');
+            }
+        }
+
+        async function testScheduler() {
+            const areaId = document.getElementById('areaId').value;
+            
+            if (!areaId) {
+                showResponse({ error: 'Please enter an AREA ID' }, 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/test/scheduler/${areaId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                showResponse(data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse({ error: error.message }, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

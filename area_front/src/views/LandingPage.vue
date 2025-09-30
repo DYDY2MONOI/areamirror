@@ -174,44 +174,18 @@
         </button>
       </div>
       <div class="cards-grid">
-        <div class="card-col">
-          <v-sheet class="area-card gradient-red" rounded="xl">
-            <v-icon size="64" color="white">mdi-email-outline</v-icon>
-          </v-sheet>
-          <div class="card-title">Gmail → Discord</div>
-          <div class="card-subtitle">Auto notification</div>
-          <div class="card-description">Send Discord message when you receive important emails</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-green" rounded="xl">
-            <v-icon size="64" color="white">mdi-music-note</v-icon>
-          </v-sheet>
-          <div class="card-title">Spotify → Twitter</div>
-          <div class="card-subtitle">Auto sharing</div>
-          <div class="card-description">Automatically tweet your favorite tracks</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-indigo" rounded="xl">
-            <v-icon size="64" color="white">mdi-github</v-icon>
-          </v-sheet>
-          <div class="card-title">GitHub → Slack</div>
-          <div class="card-subtitle">Team alerts</div>
-          <div class="card-description">Notify your Slack channel when issues are opened</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-crimson" rounded="xl">
-            <v-icon size="64" color="white">mdi-youtube</v-icon>
-          </v-sheet>
-          <div class="card-title">YouTube → Telegram</div>
-          <div class="card-subtitle">New video</div>
-          <div class="card-description">Get a Telegram ping when a channel uploads</div>
-        </div>
+        <AreaCard 
+          v-for="area in popularAreas" 
+          :key="area.id" 
+          :area="area" 
+          @click="handleAreaClick"
+        />
       </div>
     </v-container>
 
     <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
       <div class="custom-modal-content" @click.stop>
-        <CreateArea @close="showCreateModal = false" @save="showCreateModal = false" />
+        <CreateArea @close="showCreateModal = false" @save="handleAreaCreated" />
       </div>
     </div>
 
@@ -227,38 +201,12 @@
         </button>
       </div>
       <div class="cards-grid">
-        <div class="card-col">
-          <v-sheet class="area-card gradient-blue" rounded="xl">
-            <v-icon size="64" color="white">mdi-weather-partly-cloudy</v-icon>
-          </v-sheet>
-          <div class="card-title">Weather → Telegram</div>
-          <div class="card-subtitle">Daily reminder</div>
-          <div class="card-description">Get weather forecast every morning on Telegram</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-pink" rounded="xl">
-            <v-icon size="64" color="white">mdi-camera</v-icon>
-          </v-sheet>
-          <div class="card-title">Instagram → Dropbox</div>
-          <div class="card-subtitle">Auto backup</div>
-          <div class="card-description">Automatically backup your Instagram stories</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-teal" rounded="xl">
-            <v-icon size="64" color="white">mdi-twitch</v-icon>
-          </v-sheet>
-          <div class="card-title">Twitch → Discord</div>
-          <div class="card-subtitle">Go live</div>
-          <div class="card-description">Alert your server when your stream starts</div>
-        </div>
-        <div class="card-col">
-          <v-sheet class="area-card gradient-orange" rounded="xl">
-            <v-icon size="64" color="white">mdi-newspaper-variant-outline</v-icon>
-          </v-sheet>
-          <div class="card-title">RSS → Notion</div>
-          <div class="card-subtitle">Save articles</div>
-          <div class="card-description">Append new posts to your Notion reading list</div>
-        </div>
+        <AreaCard 
+          v-for="area in recommendedAreas" 
+          :key="area.id" 
+          :area="area" 
+          @click="handleAreaClick"
+        />
       </div>
     </v-container>
 
@@ -325,25 +273,108 @@
     </div>
   </div>
 
+  <!-- Area Details Modal -->
+  <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
+    <div class="custom-modal-content area-modal" @click.stop>
+      <div class="area-modal-header">
+        <div class="area-icon-container">
+          <v-icon :size="48" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
+        </div>
+        <h3 class="area-modal-title">{{ selectedArea?.title }}</h3>
+        <p class="area-modal-subtitle">{{ selectedArea?.subtitle }}</p>
+      </div>
+
+      <div class="area-modal-content">
+        <div class="area-description">
+          <h4 class="description-title">Description</h4>
+          <p class="description-text">{{ selectedArea?.description }}</p>
+        </div>
+
+        <div class="area-workflow">
+          <h4 class="workflow-title">How it works</h4>
+          <div class="workflow-steps">
+            <div class="workflow-step">
+              <div class="step-icon trigger-icon">
+                <v-icon size="20" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
+              </div>
+              <div class="step-content">
+                <div class="step-label">Trigger</div>
+                <div class="step-service">{{ selectedArea?.triggerService }}</div>
+              </div>
+            </div>
+            <div class="workflow-arrow">
+              <v-icon size="24" color="#9ca3af">mdi-arrow-right</v-icon>
+            </div>
+            <div class="workflow-step">
+              <div class="step-icon action-icon">
+                <v-icon size="20" color="white">{{ getActionIcon(selectedArea?.actionService) }}</v-icon>
+              </div>
+              <div class="step-content">
+                <div class="step-label">Action</div>
+                <div class="step-service">{{ selectedArea?.actionService }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="area-modal-actions">
+        <v-btn
+          class="area-modal-close-btn"
+          variant="outlined"
+          @click="showAreaModal = false"
+        >
+          Close
+        </v-btn>
+        <v-btn
+          class="area-modal-create-btn"
+          variant="flat"
+          disabled
+        >
+          Use This Area
+        </v-btn>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <script setup lang="ts">
 import CreateArea from '../components/CreateArea/CreateArea.vue'
 import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
+import AreaCard from '../components/AreaCard.vue'
 import { ref, watch, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
+
+interface AreaTemplate {
+  id: string
+  title: string
+  subtitle: string
+  description: string
+  icon: string
+  gradientClass: string
+  triggerService: string
+  actionService: string
+  isActive: boolean
+}
 
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
+const showAreaModal = ref(false)
+const selectedArea = ref<AreaTemplate | null>(null)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
+const { popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas } = useAreas()
 const router = useRouter()
 
 onMounted(async () => {
   await refreshProfile()
+  await fetchPopularAreas()
+  await fetchRecommendedAreas()
 })
 
 
@@ -371,6 +402,85 @@ const confirmLogout = async () => {
     router.push('/login')
   } catch (error) {
     console.error('Error during sign out:', error)
+  }
+}
+
+const handleAreaClick = (area: AreaTemplate) => {
+  requireAuth(() => {
+    console.log('Area clicked:', area)
+    selectedArea.value = area
+    showAreaModal.value = true
+  })
+}
+
+const createAreaFromTemplate = () => {
+  showAreaModal.value = false
+  showCreateModal.value = true
+}
+
+const handleAreaCreated = async () => {
+  showCreateModal.value = false
+  await fetchPopularAreas()
+  await fetchRecommendedAreas()
+}
+
+const getTriggerIcon = (service: string) => {
+  switch (service) {
+    case "Google Calendar":
+      return "mdi-calendar"
+    case "GitHub":
+      return "mdi-github"
+    case "Gmail":
+      return "mdi-email-outline"
+    case "Discord":
+      return "mdi-discord"
+    case "Slack":
+      return "mdi-slack"
+    case "Weather":
+      return "mdi-weather-partly-cloudy"
+    case "Instagram":
+      return "mdi-instagram"
+    case "Twitter":
+      return "mdi-twitter"
+    case "YouTube":
+      return "mdi-youtube"
+    case "Spotify":
+      return "mdi-music"
+    case "Telegram":
+      return "mdi-telegram"
+    case "Twitch":
+      return "mdi-twitch"
+    case "Dropbox":
+      return "mdi-dropbox"
+    case "Notion":
+      return "mdi-notebook"
+    default:
+      return "mdi-cog"
+  }
+}
+
+const getActionIcon = (service: string) => {
+  switch (service) {
+    case "Gmail":
+      return "mdi-email-outline"
+    case "Discord":
+      return "mdi-discord"
+    case "Slack":
+      return "mdi-slack"
+    case "GitHub":
+      return "mdi-github"
+    case "Telegram":
+      return "mdi-telegram"
+    case "Twitter":
+      return "mdi-twitter"
+    case "Instagram":
+      return "mdi-instagram"
+    case "Dropbox":
+      return "mdi-dropbox"
+    case "Notion":
+      return "mdi-notebook"
+    default:
+      return "mdi-cog"
   }
 }
 
@@ -942,6 +1052,8 @@ watch(showCreateModal, (isOpen) => {
 .gradient-crimson { background: var(--color-area-red); }
 .gradient-teal { background: var(--color-area-green); }
 .gradient-orange { background: var(--color-area-orange); }
+.gradient-purple { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+.gradient-gray { background: linear-gradient(135deg, #6b7280, #9ca3af); }
 .card-title { margin-top: 12px; font-weight: 800; font-size: 20px; }
 .card-subtitle { color: rgba(255,255,255,0.85); font-weight: 700; }
 .card-description { color: rgba(255,255,255,0.7); }
@@ -1251,6 +1363,238 @@ body.modal-open {
     width: 100%;
   }
 }
+
+/* Area Modal Styles */
+.area-modal {
+  max-width: 600px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.area-modal-header {
+  padding: 2rem;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.area-icon-container {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.area-modal-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.area-modal-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 500;
+}
+
+.area-modal-content {
+  padding: 2rem;
+}
+
+.area-description {
+  margin-bottom: 2rem;
+}
+
+.description-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.75rem 0;
+}
+
+.description-text {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.area-workflow {
+  margin-bottom: 1rem;
+}
+
+.workflow-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.workflow-steps {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trigger-icon {
+  background: var(--gradient-accent);
+}
+
+.action-icon {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.step-service {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.workflow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.area-modal-actions {
+  padding: 1.5rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.area-modal-close-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-transform: none;
+  transition: var(--transition-normal);
+}
+
+.area-modal-close-btn:hover {
+  background: var(--color-hover-bg) !important;
+  border-color: var(--color-border-secondary) !important;
+  transform: translateY(-1px);
+}
+
+.area-modal-create-btn {
+  background: var(--gradient-accent) !important;
+  color: var(--color-text-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-transform: none;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-glow);
+}
+
+.area-modal-create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.area-modal-create-btn:disabled {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-secondary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .area-modal {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .area-modal-header {
+    padding: 1.5rem;
+  }
+
+  .area-icon-container {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0.75rem;
+  }
+
+  .area-modal-title {
+    font-size: 1.5rem;
+  }
+
+  .area-modal-content {
+    padding: 1.5rem;
+  }
+
+  .workflow-steps {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .workflow-arrow {
+    transform: rotate(90deg);
+  }
+
+  .area-modal-actions {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    flex-direction: column;
+  }
+
+  .area-modal-close-btn,
+  .area-modal-create-btn {
+    width: 100%;
+  }
+}
+
 </style>
 
 

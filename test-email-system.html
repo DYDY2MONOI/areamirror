@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Email System - Calendar → Gmail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #555; margin-top: 0; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .post-btn { background-color: #28a745; }
+        .test-btn { background-color: #17a2b8; }
+        .danger-btn { background-color: #dc3545; }
+        input, select, textarea {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        textarea { width: 300px; height: 60px; }
+        #response {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        .config-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>📧 Test Email System - Calendar → Gmail</h1>
+
+    <!-- Status Section -->
+    <div class="container">
+        <h2>🔍 System Status</h2>
+        <div id="systemStatus">
+            <div class="status warning">Checking system status...</div>
+        </div>
+        <button onclick="checkSystemStatus()">Refresh Status</button>
+    </div>
+
+    <!-- Direct Email Test -->
+    <div class="container">
+        <h2>📧 Direct Email Test</h2>
+        <p>Test sending emails directly through the Gmail API</p>
+        <div class="form-group">
+            <label>To Email:</label>
+            <input type="email" id="directToEmail" placeholder="test@example.com" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label>Subject:</label>
+            <input type="text" id="directSubject" placeholder="Test Email" value="Test Email from AREA System">
+        </div>
+        <div class="form-group">
+            <label>Body:</label>
+            <textarea id="directBody" placeholder="This is a test email from the AREA automation system.">This is a test email from the AREA automation system.</textarea>
+        </div>
+        <button class="test-btn" onclick="testDirectEmail()">Send Direct Email</button>
+    </div>
+
+    <!-- Create Calendar → Gmail AREA -->
+    <div class="container">
+        <h2>📅 Create Calendar → Gmail AREA</h2>
+        <p>Create an AREA that will send an email at a specific time</p>
+        
+        <div class="form-group">
+            <label>Area Name:</label>
+            <input type="text" id="areaName" placeholder="Meeting Reminder" value="Meeting Reminder">
+        </div>
+        <div class="form-group">
+            <label>Description:</label>
+            <textarea id="areaDesc" placeholder="Send email reminder before meetings">Send email reminder before meetings</textarea>
+        </div>
+        
+        <div class="config-section">
+            <h3>📅 Calendar Configuration</h3>
+            <div class="form-group">
+                <label>Event Time:</label>
+                <input type="datetime-local" id="eventTime" value="">
+            </div>
+            <div class="form-group">
+                <label>Event Title:</label>
+                <input type="text" id="eventTitle" placeholder="Team Meeting" value="Team Meeting">
+            </div>
+            <div class="form-group">
+                <label>Calendar ID:</label>
+                <input type="text" id="calendarId" placeholder="primary" value="primary">
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>📧 Gmail Configuration</h3>
+            <div class="form-group">
+                <label>To Email:</label>
+                <input type="email" id="toEmail" placeholder="recipient@example.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label>Subject:</label>
+                <input type="text" id="emailSubject" placeholder="Reminder: {{eventTitle}}" value="Reminder: {{eventTitle}}">
+            </div>
+            <div class="form-group">
+                <label>Email Body:</label>
+                <textarea id="emailBody" placeholder="Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}" rows="3">Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}</textarea>
+            </div>
+        </div>
+
+        <button class="post-btn" onclick="createCalendarGmailArea()">Create Calendar → Gmail AREA</button>
+    </div>
+
+    <!-- Test Scheduler -->
+    <div class="container">
+        <h2>⏰ Test Scheduler</h2>
+        <p>Manually trigger an AREA to test the email sending</p>
+        <div class="form-group">
+            <label>Area ID:</label>
+            <input type="text" id="testAreaId" placeholder="Enter Area ID from above">
+        </div>
+        <button class="test-btn" onclick="testScheduler()">Test Scheduler</button>
+    </div>
+
+    <!-- Get Areas -->
+    <div class="container">
+        <h2>📊 View All Areas</h2>
+        <button onclick="getAreas()">Get All Areas</button>
+    </div>
+
+    <!-- Response -->
+    <div class="container">
+        <h2>📋 API Response</h2>
+        <div id="response">Click a button to test the API</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        function setDefaultEventTime() {
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            const eventTimeInput = document.getElementById('eventTime');
+            eventTimeInput.value = now.toISOString().slice(0, 16);
+        }
+
+        function displayResponse(data, status = 'success') {
+            const responseDiv = document.getElementById('response');
+            const timestamp = new Date().toLocaleTimeString();
+            responseDiv.innerHTML = `[${timestamp}] ${status.toUpperCase()}:\n${JSON.stringify(data, null, 2)}`;
+            responseDiv.style.color = status === 'success' ? '#28a745' : '#dc3545';
+        }
+
+        function updateSystemStatus(message, type) {
+            const statusDiv = document.getElementById('systemStatus');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkSystemStatus() {
+            updateSystemStatus('Checking system status...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE}/areas`);
+                if (response.ok) {
+                    updateSystemStatus('Backend is running and accessible', 'success');
+                } else {
+                    updateSystemStatus('Backend is not responding properly', 'error');
+                }
+            } catch (error) {
+                updateSystemStatus('Backend is not accessible: ' + error.message, 'error');
+            }
+        }
+
+        async function testDirectEmail() {
+            const emailData = {
+                to: document.getElementById('directToEmail').value,
+                subject: document.getElementById('directSubject').value,
+                body: document.getElementById('directBody').value
+            };
+
+            if (!emailData.to) {
+                alert('Please enter a recipient email address');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/test/email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(emailData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    alert('✅ Test email sent successfully!');
+                }
+            } catch (error) {
+                displayResponse(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createCalendarGmailArea() {
+            const areaData = {
+                name: document.getElementById('areaName').value,
+                description: document.getElementById('areaDesc').value,
+                triggerService: 'Google Calendar',
+                triggerType: 'Event',
+                actionService: 'Gmail',
+                actionType: 'SendEmail',
+                triggerConfig: {
+                    eventTime: document.getElementById('eventTime').value,
+                    eventTitle: document.getElementById('eventTitle').value,
+                    calendarId: document.getElementById('calendarId').value
+                },
+                actionConfig: {
+                    toEmail: document.getElementById('toEmail').value,
+                    subject: document.getElementById('emailSubject').value,
+                    body: document.getElementById('emailBody').value
+                }
+            };
+
+            if (!areaData.name || !areaData.triggerConfig.eventTime || !areaData.actionConfig.toEmail) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/areas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(areaData)
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    alert('Calendar → Gmail AREA created successfully!');
+                    if (data.data && data.data.id) {
+                        document.getElementById('testAreaId').value = data.data.id;
+                    }
+                }
+            } catch (error) {
+                displayResponse(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testScheduler() {
+            const areaId = document.getElementById('testAreaId').value;
+            if (!areaId) {
+                alert('Please enter an Area ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/test/scheduler/${areaId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    alert('✅ Area executed successfully! Check your email.');
+                }
+            } catch (error) {
+                displayResponse(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function getAreas() {
+            try {
+                const response = await fetch(`${API_BASE}/areas`);
+                const data = await response.json();
+                displayResponse(data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                displayResponse(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        window.onload = function() {
+            setDefaultEventTime();
+            checkSystemStatus();
+            getAreas();
+        };
+    </script>
+</body>
+</html>
