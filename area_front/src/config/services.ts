@@ -34,6 +34,17 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     isEnabled: true
   },
   {
+    id: 'facebook',
+    name: 'Facebook',
+    icon: 'facebook',
+    color: '#1877f2',
+    description: 'Connect your Facebook account to access social features and posts',
+    authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
+    callbackPath: '/auth/facebook/callback',
+    scopes: ['public_profile'],
+    isEnabled: true
+  },
+  {
     id: 'discord',
     name: 'Discord',
     icon: 'discord',
