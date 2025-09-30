@@ -1,7 +1,6 @@
 <template>
   <div class="landing-dark">
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
-      <!-- Section utilisateur dans la sidebar -->
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
           <img
@@ -176,7 +175,7 @@
       <div class="cards-grid">
         <div class="card-col" @click="requireAuth(() => showGithubGmailModal = true)">
           <v-sheet class="area-card gradient-red" rounded="xl">
-            <v-icon size="64" color="white">mdi-email-outline</v-icon>
+            <v-icon size="64" color="white">mdi-github</v-icon>
           </v-sheet>
           <div class="card-title">Github → Gmail</div>
           <div class="card-subtitle">Auto notification</div>
@@ -321,6 +320,8 @@
             prepend-inner-icon="mdi-source-repository"
             clearable
             attach=".github-gmail-modal"
+            :loading="isLoadingRepositories"
+            :disabled="isLoadingRepositories"
           >
             <template #item="{ props, item }">
               <v-list-item v-bind="props">
@@ -328,10 +329,14 @@
                   <v-icon color="primary">mdi-source-repository</v-icon>
                 </template>
                 <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ item.raw.description }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ item.raw.description || 'Aucune description' }}</v-list-item-subtitle>
               </v-list-item>
             </template>
           </v-select>
+          <div v-if="repositoryError" class="error-message">
+            <v-icon size="16" color="error">mdi-alert-circle</v-icon>
+            <span>{{ repositoryError }}</span>
+          </div>
         </div>
 
         <div class="form-section">
@@ -426,6 +431,7 @@ import CardButton from '../components/CreateArea/CardButton.vue'
 import { ref, watch, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import { githubService, type GitHubRepository } from '@/services/github'
 
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
@@ -435,34 +441,9 @@ const showGithubGmailModal = ref(false)
 const selectedRepository = ref(null)
 const destinationEmail = ref('')
 const notificationTypes = ref(['push'])
-
-const repositories = ref([
-  {
-    id: 1,
-    name: 'mon-projet-web',
-    description: 'Application web principale'
-  },
-  {
-    id: 2,
-    name: 'api-backend',
-    description: 'API REST pour le backend'
-  },
-  {
-    id: 3,
-    name: 'mobile-app',
-    description: 'Application mobile React Native'
-  },
-  {
-    id: 4,
-    name: 'data-analysis',
-    description: 'Scripts d\'analyse de données'
-  },
-  {
-    id: 5,
-    name: 'devops-tools',
-    description: 'Outils et scripts DevOps'
-  }
-])
+const repositories = ref<GitHubRepository[]>([])
+const isLoadingRepositories = ref(false)
+const repositoryError = ref('')
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const router = useRouter()
@@ -499,18 +480,42 @@ const confirmLogout = async () => {
   }
 }
 
-const confirmGithubGmailSetup = () => {
-  console.log('Configuration Github -> Gmail:', {
-    repository: selectedRepository.value,
-    email: destinationEmail.value,
-    notifications: notificationTypes.value
-  })
+const loadRepositories = async () => {
+  if (!isAuthenticated.value) return
 
-  showGithubGmailModal.value = false
+  isLoadingRepositories.value = true
+  repositoryError.value = ''
 
-  selectedRepository.value = null
-  destinationEmail.value = ''
-  notificationTypes.value = ['push']
+  try {
+    const repos = await githubService.getRepositories()
+    repositories.value = repos
+  } catch (error) {
+    console.error('Error loading repositories:', error)
+    repositoryError.value = error instanceof Error ? error.message : 'Erreur lors du chargement des repositories'
+  } finally {
+    isLoadingRepositories.value = false
+  }
+}
+
+const confirmGithubGmailSetup = async () => {
+  if (!selectedRepository.value || !destinationEmail.value) return
+
+  try {
+    await githubService.createArea(
+      selectedRepository.value,
+      destinationEmail.value,
+      notificationTypes.value
+    )
+
+    showGithubGmailModal.value = false
+
+    selectedRepository.value = null
+    destinationEmail.value = ''
+    notificationTypes.value = ['push']
+  } catch (error) {
+    console.error('Error creating area:', error)
+    repositoryError.value = error instanceof Error ? error.message : 'Erreur lors de la création de l\'AREA'
+  }
 }
 
 watch(showCreateModal, (isOpen) => {
@@ -524,6 +529,7 @@ watch(showCreateModal, (isOpen) => {
 watch(showGithubGmailModal, (isOpen) => {
   if (isOpen) {
     document.body.classList.add('modal-open')
+    loadRepositories()
   } else {
     document.body.classList.remove('modal-open')
   }
@@ -1424,6 +1430,20 @@ body.modal-open {
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 0.5rem;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: var(--radius-md);
+  color: #f44336;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .repository-select,
