@@ -35,6 +35,8 @@ export interface CreateAreaRequest {
   triggerType: string
   actionService: string
   actionType: string
+  triggerConfig?: any
+  actionConfig?: any
 }
 
 class AreaService {

@@ -3,6 +3,8 @@ package controllers
 import (
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"Golang-API-tutoriel/services"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,12 +12,14 @@ import (
 )
 
 type CreateAreaRequest struct {
-	Name           string `json:"name" binding:"required"`
-	Description    string `json:"description"`
-	TriggerService string `json:"triggerService" binding:"required"`
-	TriggerType    string `json:"triggerType" binding:"required"`
-	ActionService  string `json:"actionService" binding:"required"`
-	ActionType     string `json:"actionType" binding:"required"`
+	Name           string      `json:"name" binding:"required"`
+	Description    string      `json:"description"`
+	TriggerService string      `json:"triggerService" binding:"required"`
+	TriggerType    string      `json:"triggerType" binding:"required"`
+	ActionService  string      `json:"actionService" binding:"required"`
+	ActionType     string      `json:"actionType" binding:"required"`
+	TriggerConfig  interface{} `json:"triggerConfig"`
+	ActionConfig   interface{} `json:"actionConfig"`
 }
 
 func GetAreas(c *gin.Context) {
@@ -58,6 +62,9 @@ func CreateArea(c *gin.Context) {
 		return
 	}
 
+	triggerConfigJSON, _ := json.Marshal(req.TriggerConfig)
+	actionConfigJSON, _ := json.Marshal(req.ActionConfig)
+
 	area := models.Area{
 		UserID:         user.ID,
 		Name:           req.Name,
@@ -68,8 +75,8 @@ func CreateArea(c *gin.Context) {
 		ActionType:     req.ActionType,
 		IsActive:       true,
 		IsPublic:       true,
-		TriggerConfig:  datatypes.JSON(`{}`),
-		ActionConfig:   datatypes.JSON(`{}`),
+		TriggerConfig:  datatypes.JSON(triggerConfigJSON),
+		ActionConfig:   datatypes.JSON(actionConfigJSON),
 		TriggerIconURL: getIconUrlForService(req.TriggerService),
 		ActionIconURL:  getIconUrlForService(req.ActionService),
 	}
@@ -298,4 +305,64 @@ func getGradientClassForArea(area models.Area) string {
 	default:
 		return "gradient-gray"
 	}
+}
+
+func TestEmail(c *gin.Context) {
+	var req struct {
+		To      string `json:"to" binding:"required"`
+		Subject string `json:"subject"`
+		Body    string `json:"body"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	emailService, err := services.NewEmailService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Email service not available: " + err.Error()})
+		return
+	}
+
+	if err := emailService.TestConnection(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Email connection failed: " + err.Error()})
+		return
+	}
+
+	emailReq := services.EmailRequest{
+		To:      req.To,
+		Subject: req.Subject,
+		Body:    req.Body,
+	}
+
+	if err := emailService.SendEmail(emailReq); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Test email sent successfully!",
+		"to":      req.To,
+	})
+}
+
+func TestScheduler(c *gin.Context) {
+	areaID := c.Param("id")
+
+	scheduler, err := services.NewSchedulerService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Scheduler not available: " + err.Error()})
+		return
+	}
+
+	if err := scheduler.TestScheduler(areaID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to test scheduler: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Area executed successfully",
+		"area_id": areaID,
+	})
 }

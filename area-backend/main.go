@@ -4,6 +4,8 @@ import (
 	"Golang-API-tutoriel/controllers"
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"Golang-API-tutoriel/services"
+	"context"
 	"log"
 
 	"github.com/gin-contrib/cors"
@@ -88,6 +90,18 @@ func main() {
 
 	r.GET("/areas/popular", controllers.GetPopularAreas)
 	r.GET("/areas/recommended", controllers.GetRecommendedAreas)
+
+	r.POST("/test/email", controllers.TestEmail)
+	r.POST("/test/scheduler/:id", controllers.TestScheduler)
+
+	scheduler, err := services.NewSchedulerService()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize scheduler: %v", err)
+	} else {
+		ctx := context.Background()
+		go scheduler.StartScheduler(ctx)
+		log.Println("Scheduler started in background")
+	}
 
 	r.Run()
 }

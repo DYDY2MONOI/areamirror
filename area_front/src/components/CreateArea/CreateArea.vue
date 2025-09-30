@@ -156,6 +156,109 @@
             </div>
           </div>
         </div>
+
+        <!-- Configuration Section -->
+        <div v-if="form.triggerService && form.actionService" class="form-section">
+          <div class="section-label">
+            <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
+            <span class="label-text">Configuration</span>
+          </div>
+
+          <!-- Calendar Trigger Configuration -->
+          <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">Calendar Event Trigger</h4>
+                <p class="config-subtitle">Configure when this area should trigger</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">Event Time</label>
+                  <input
+                    v-model="form.triggerConfig.eventTime"
+                    type="datetime-local"
+                    class="modern-input"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Event Title (Optional)</label>
+                  <input
+                    v-model="form.triggerConfig.eventTitle"
+                    class="modern-input"
+                    placeholder="e.g., Meeting with John"
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Calendar ID</label>
+                  <input
+                    v-model="form.triggerConfig.calendarId"
+                    class="modern-input"
+                    placeholder="primary"
+                    value="primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gmail Action Configuration -->
+          <div v-if="form.actionService === 'Gmail'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('gmail.png')" alt="Gmail" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">Gmail Action</h4>
+                <p class="config-subtitle">Configure the email to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">To Email</label>
+                  <input
+                    v-model="form.actionConfig.toEmail"
+                    type="email"
+                    class="modern-input"
+                    placeholder="recipient@example.com"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Subject</label>
+                  <input
+                    v-model="form.actionConfig.subject"
+                    class="modern-input"
+                    placeholder="Reminder: {{eventTitle}}"
+                    required
+                  />
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Email Body</label>
+                  <textarea
+                    v-model="form.actionConfig.body"
+                    class="modern-textarea"
+                    placeholder="Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}"
+                    rows="4"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="error" class="error-message">
@@ -199,6 +302,8 @@ const form = reactive({
   description: '',
   triggerService: '' as string | null,
   actionService: '' as string | null,
+  triggerConfig: {} as any,
+  actionConfig: {} as any,
 })
 
 const isFormValid = computed(() => {
@@ -240,9 +345,11 @@ const createArea = async () => {
       name: form.areaName,
       description: form.description,
       triggerService: form.triggerService!,
-      triggerType: 'Event', // Default trigger type
+      triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
       actionService: form.actionService!,
-      actionType: 'Action' // Default action type
+      actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+      triggerConfig: form.triggerConfig,
+      actionConfig: form.actionConfig
     }
     
     await areaService.createArea(areaData)
@@ -889,6 +996,67 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-field__input) {
   color: var(--color-text-primary) !important;
+}
+
+/* Configuration Section Styles */
+.config-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.config-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.config-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.config-icon .service-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.config-info {
+  flex: 1;
+}
+
+.config-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+.config-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.config-content {
+  padding-left: 3.5rem;
 }
 
 :deep(.v-field__outline) {
