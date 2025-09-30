@@ -70,6 +70,8 @@ func CreateArea(c *gin.Context) {
 		IsPublic:       true,
 		TriggerConfig:  datatypes.JSON(`{}`),
 		ActionConfig:   datatypes.JSON(`{}`),
+		TriggerIconURL: getIconUrlForService(req.TriggerService),
+		ActionIconURL:  getIconUrlForService(req.ActionService),
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -78,6 +80,41 @@ func CreateArea(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": area})
+}
+
+func getIconUrlForService(service string) string {
+	switch service {
+	case "Google Calendar":
+		return "https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg"
+	case "GitHub":
+		return "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+	case "Gmail":
+		return "https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg"
+	case "Discord":
+		return "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png"
+	case "Slack":
+		return "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
+	case "Weather":
+		return "https://openweathermap.org/themes/openweathermap/assets/img/logo_white_cropped.png"
+	case "Instagram":
+		return "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg"
+	case "Twitter":
+		return "https://abs.twimg.com/icons/apple-touch-icon-192x192.png"
+	case "YouTube":
+		return "https://www.youtube.com/img/desktop/yt_1200.png"
+	case "Spotify":
+		return "https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png"
+	case "Telegram":
+		return "https://telegram.org/img/t_logo.png"
+	case "Twitch":
+		return "https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png"
+	case "Dropbox":
+		return "https://cfl.dropboxstatic.com/static/images/brand/glyph_2020.png"
+	case "Notion":
+		return "https://www.notion.so/images/logo-ios.png"
+	default:
+		return ""
+	}
 }
 
 func UpdateArea(c *gin.Context) {

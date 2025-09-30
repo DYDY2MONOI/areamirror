@@ -1,6 +1,6 @@
 <template>
   <div class="card-col" @click="handleClick">
-    <v-sheet :class="`area-card ${area.gradientClass}`" rounded="xl">
+    <v-sheet :class="`area-card ${getGradientClass(area)}`" rounded="xl">
       <div class="area-icons-container">
         <div class="service-icon trigger-icon">
           <img 
@@ -182,6 +182,29 @@ const getActionEmoji = (service: string) => {
       return "⚙️"
   }
 }
+
+const getGradientClass = (area: AreaTemplate) => {
+  const trigger = area.triggerService
+  const action = area.actionService
+  
+  // GitHub to Discord
+  if (trigger === "GitHub" && action === "Discord") {
+    return "gradient-github-discord"
+  }
+  
+  // Discord to Notion
+  if (trigger === "Discord" && action === "Notion") {
+    return "gradient-discord-notion"
+  }
+  
+  // GitHub to Gmail
+  if (trigger === "GitHub" && action === "Gmail") {
+    return "gradient-github-gmail"
+  }
+  
+  // Default gradient for other combinations
+  return "gradient-default"
+}
 </script>
 
 <style scoped>
@@ -210,6 +233,26 @@ const getActionEmoji = (service: string) => {
     box-shadow .25s ease,
     background-position .6s ease,
     filter .25s ease;
+}
+
+/* GitHub to Discord gradient */
+.gradient-github-discord {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Discord to Notion gradient */
+.gradient-discord-notion {
+  background: linear-gradient(135deg, #5865f2 0%, #00d4aa 100%);
+}
+
+/* GitHub to Gmail gradient */
+.gradient-github-gmail {
+  background: linear-gradient(135deg, #333333 0%, #ea4335 100%);
+}
+
+/* Default gradient for other combinations */
+.gradient-default {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .area-icons-container {
@@ -269,7 +312,9 @@ const getActionEmoji = (service: string) => {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px;
 }
 
 .area-card :deep(.v-icon) {
