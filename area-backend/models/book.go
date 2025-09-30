@@ -30,6 +30,8 @@ type User struct {
 	GitHubUsername     *string    `json:"github_username"`
 	GoogleID           *string    `json:"google_id" gorm:"uniqueIndex"`
 	GoogleEmail        *string    `json:"google_email"`
+	FacebookID         *string    `json:"facebook_id" gorm:"uniqueIndex"`
+	FacebookEmail      *string    `json:"facebook_email"`
 
 	Areas []Area `json:"areas,omitempty" gorm:"foreignKey:UserID"`
 }
