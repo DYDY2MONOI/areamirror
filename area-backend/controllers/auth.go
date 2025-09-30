@@ -3,6 +3,7 @@ package controllers
 import (
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"Golang-API-tutoriel/services"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -801,24 +802,28 @@ func GetGitHubRepositories(c *gin.Context) {
 		return
 	}
 
-	if user.GitHubID == nil {
+	if user.GitHubUsername == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No GitHub account linked"})
 		return
 	}
 
+	fmt.Printf("🔍 Fetching repositories for user: %s (GitHub username: %s)\n", user.Email, *user.GitHubUsername)
+
 	repositories, err := getGitHubRepositoriesForUser(*user.GitHubUsername)
 	if err != nil {
+		fmt.Printf("❌ Error fetching repositories: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch repositories"})
 		return
 	}
 
+	fmt.Printf("✅ Successfully fetched %d repositories\n", len(repositories))
 	c.JSON(http.StatusOK, GitHubRepositoriesResponse{
 		Repositories: repositories,
 	})
 }
 
 func getGitHubRepositoriesForUser(username string) ([]GitHubRepository, error) {
-	url := fmt.Sprintf("https://api.github.com/users/%s/repos", username)
+	url := fmt.Sprintf("https://api.github.com/users/%s/repos?type=public&per_page=100", username)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -828,7 +833,15 @@ func getGitHubRepositoriesForUser(username string) ([]GitHubRepository, error) {
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("User-Agent", "AREA-App")
 
-	client := &http.Client{}
+	githubToken := os.Getenv("GITHUB_TOKEN")
+	if githubToken != "" {
+		req.Header.Set("Authorization", "token "+githubToken)
+		fmt.Printf("🔑 Using GitHub token for API request\n")
+	} else {
+		fmt.Printf("⚠️ No GitHub token found, using public API (rate limited)\n")
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -877,17 +890,54 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		return
 	}
 
+	repositories, err := getGitHubRepositoriesForUser(*user.GitHubUsername)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch repository information"})
+		return
+	}
+
+	var targetRepo *GitHubRepository
+	for _, repo := range repositories {
+		if repo.ID == req.RepositoryID {
+			targetRepo = &repo
+			break
+		}
+	}
+
+	if targetRepo == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	emailService := services.NewEmailService()
+
+	triggerConfig := map[string]interface{}{
+		"repository_id":      req.RepositoryID,
+		"notification_types": req.NotificationTypes,
+		"repository_name":    targetRepo.Name,
+		"repository_full_name": targetRepo.FullName,
+	}
+
+	actionConfig := map[string]interface{}{
+		"destination_email":   req.DestinationEmail,
+		"subject_template":    emailService.GetDefaultPushSubjectTemplate(),
+		"body_template":       emailService.GetDefaultPushBodyTemplate(),
+	}
+
+	triggerConfigJSON, _ := json.Marshal(triggerConfig)
+	actionConfigJSON, _ := json.Marshal(actionConfig)
+
 	area := models.Area{
 		UserID:         userID.(uint),
-		Name:           fmt.Sprintf("GitHub → Gmail (%d)", req.RepositoryID),
-		Description:    fmt.Sprintf("Envoie des emails Gmail lors d'événements sur le repository GitHub ID %d", req.RepositoryID),
+		Name:           fmt.Sprintf("GitHub → Gmail (%s)", targetRepo.Name),
+		Description:    fmt.Sprintf("Envoie des emails Gmail lors d'événements sur le repository %s", targetRepo.FullName),
 		IsActive:       true,
 		TriggerService: "github",
 		TriggerType:    "push",
-		TriggerConfig:  datatypes.JSON(fmt.Sprintf(`{"repository_id": %d, "notification_types": %s}`, req.RepositoryID, fmt.Sprintf(`["%s"]`, strings.Join(req.NotificationTypes, `","`)))),
+		TriggerConfig:  datatypes.JSON(triggerConfigJSON),
 		ActionService:  "gmail",
 		ActionType:     "send_email",
-		ActionConfig:   datatypes.JSON(fmt.Sprintf(`{"destination_email": "%s", "subject_template": "GitHub Activity - {{.repository.name}}", "body_template": "Nouvelle activité détectée sur {{.repository.name}}: {{.event_type}}"}`, req.DestinationEmail)),
+		ActionConfig:   datatypes.JSON(actionConfigJSON),
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -895,11 +945,23 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		return
 	}
 
+	githubService := services.NewGitHubIntegrationService()
+	webhookResp, err := githubService.CreateWebhook(targetRepo.FullName[:strings.Index(targetRepo.FullName, "/")], targetRepo.Name)
+
+	var webhookMessage string
+	if err != nil {
+		webhookMessage = fmt.Sprintf("Area created but webhook configuration failed: %v", err)
+	} else {
+		webhookMessage = fmt.Sprintf("Webhook configured successfully (ID: %d)", webhookResp.ID)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "GitHub-Gmail area created successfully",
 		"area_id": area.ID,
 		"repository_id": req.RepositoryID,
+		"repository_name": targetRepo.Name,
 		"destination_email": req.DestinationEmail,
 		"notification_types": req.NotificationTypes,
+		"webhook_status": webhookMessage,
 	})
 }

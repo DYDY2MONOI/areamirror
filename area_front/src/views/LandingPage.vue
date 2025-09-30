@@ -173,7 +173,7 @@
         </button>
       </div>
       <div class="cards-grid">
-        <div class="card-col" @click="requireAuth(() => showGithubGmailModal = true)">
+        <div class="card-col" @click="requireAuth(() => createGithubGmailArea())">
           <v-sheet class="area-card gradient-red" rounded="xl">
             <v-icon size="64" color="white">mdi-github</v-icon>
           </v-sheet>
@@ -294,105 +294,6 @@
     </div>
   </div>
 
-  <div v-if="showGithubGmailModal" class="custom-modal-overlay" @click="showGithubGmailModal = false">
-    <div class="custom-modal-content github-gmail-modal" @click.stop>
-      <div class="github-gmail-modal-header">
-        <div class="github-gmail-icon-container">
-          <v-icon size="32" color="white">mdi-github</v-icon>
-          <v-icon size="20" color="white" class="arrow-icon">mdi-arrow-right</v-icon>
-          <v-icon size="32" color="white">mdi-email-outline</v-icon>
-        </div>
-        <h3 class="github-gmail-title">Github → Gmail</h3>
-        <p class="github-gmail-message">Configurez votre automation pour recevoir des emails lors des push sur vos repositories</p>
-      </div>
-
-      <div class="github-gmail-modal-content">
-        <div class="form-section">
-          <label class="form-label">Sélectionner un repository</label>
-          <v-select
-            v-model="selectedRepository"
-            :items="repositories"
-            item-title="name"
-            item-value="id"
-            placeholder="Choisissez un repository..."
-            variant="outlined"
-            class="repository-select"
-            prepend-inner-icon="mdi-source-repository"
-            clearable
-            attach=".github-gmail-modal"
-            :loading="isLoadingRepositories"
-            :disabled="isLoadingRepositories"
-          >
-            <template #item="{ props, item }">
-              <v-list-item v-bind="props">
-                <template #prepend>
-                  <v-icon color="primary">mdi-source-repository</v-icon>
-                </template>
-                <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ item.raw.description || 'Aucune description' }}</v-list-item-subtitle>
-              </v-list-item>
-            </template>
-          </v-select>
-          <div v-if="repositoryError" class="error-message">
-            <v-icon size="16" color="error">mdi-alert-circle</v-icon>
-            <span>{{ repositoryError }}</span>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <label class="form-label">Email de destination</label>
-          <v-text-field
-            v-model="destinationEmail"
-            placeholder="votre.email@example.com"
-            variant="outlined"
-            prepend-inner-icon="mdi-email"
-            type="email"
-            class="email-input"
-          />
-        </div>
-
-        <div class="form-section">
-          <label class="form-label">Type de notifications</label>
-          <v-checkbox-group v-model="notificationTypes" class="checkbox-group">
-            <v-checkbox
-              value="push"
-              label="Push commits"
-              color="primary"
-            />
-            <v-checkbox
-              value="pull_request"
-              label="Pull requests"
-              color="primary"
-            />
-            <v-checkbox
-              value="issues"
-              label="Issues"
-              color="primary"
-            />
-          </v-checkbox-group>
-        </div>
-      </div>
-
-      <div class="github-gmail-modal-actions">
-        <v-btn
-          class="github-gmail-cancel-btn"
-          variant="outlined"
-          @click="showGithubGmailModal = false"
-        >
-          Annuler
-        </v-btn>
-        <v-btn
-          class="github-gmail-confirm-btn"
-          variant="flat"
-          @click="confirmGithubGmailSetup"
-          :disabled="!selectedRepository || !destinationEmail"
-        >
-          Créer l'AREA
-        </v-btn>
-      </div>
-    </div>
-  </div>
-
   <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
     <div class="custom-modal-content logout-modal" @click.stop>
       <div class="logout-modal-header">
@@ -436,14 +337,6 @@ import { githubService, type GitHubRepository } from '@/services/github'
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
-const showGithubGmailModal = ref(false)
-
-const selectedRepository = ref(null)
-const destinationEmail = ref('')
-const notificationTypes = ref(['push'])
-const repositories = ref<GitHubRepository[]>([])
-const isLoadingRepositories = ref(false)
-const repositoryError = ref('')
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const router = useRouter()
@@ -480,56 +373,49 @@ const confirmLogout = async () => {
   }
 }
 
-const loadRepositories = async () => {
-  if (!isAuthenticated.value) return
-
-  isLoadingRepositories.value = true
-  repositoryError.value = ''
-
+const createGithubGmailArea = async () => {
   try {
     const repos = await githubService.getRepositories()
-    repositories.value = repos
-  } catch (error) {
-    console.error('Error loading repositories:', error)
-    repositoryError.value = error instanceof Error ? error.message : 'Erreur lors du chargement des repositories'
-  } finally {
-    isLoadingRepositories.value = false
-  }
-}
+    if (repos.length === 0) {
+      alert('Aucun repository GitHub trouvé. Veuillez lier votre compte GitHub d\'abord.')
+      return
+    }
 
-const confirmGithubGmailSetup = async () => {
-  if (!selectedRepository.value || !destinationEmail.value) return
+    const firstRepo = repos[0]
 
-  try {
-    await githubService.createArea(
-      selectedRepository.value,
-      destinationEmail.value,
-      notificationTypes.value
+    // Demander l'email de destination
+    const destinationEmail = prompt(
+      `Entrez l'adresse email de destination pour les notifications GitHub :\n\nRepository: ${firstRepo.name}`,
+      currentUser.value?.email || ''
     )
 
-    showGithubGmailModal.value = false
+    if (!destinationEmail) {
+      return
+    }
 
-    selectedRepository.value = null
-    destinationEmail.value = ''
-    notificationTypes.value = ['push']
+    // Validation basique de l'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(destinationEmail)) {
+      alert('Veuillez entrer une adresse email valide.')
+      return
+    }
+
+    await githubService.createArea(
+      firstRepo.id,
+      destinationEmail,
+      ['push']
+    )
+
+    alert(`AREA GitHub → Gmail créée avec succès !\nRepository: ${firstRepo.name}\nEmail: ${destinationEmail}`)
   } catch (error) {
-    console.error('Error creating area:', error)
-    repositoryError.value = error instanceof Error ? error.message : 'Erreur lors de la création de l\'AREA'
+    console.error('Error creating GitHub-Gmail area:', error)
+    alert(`Erreur lors de la création de l'AREA: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
   }
 }
 
 watch(showCreateModal, (isOpen) => {
   if (isOpen) {
     document.body.classList.add('modal-open')
-  } else {
-    document.body.classList.remove('modal-open')
-  }
-})
-
-watch(showGithubGmailModal, (isOpen) => {
-  if (isOpen) {
-    document.body.classList.add('modal-open')
-    loadRepositories()
   } else {
     document.body.classList.remove('modal-open')
   }

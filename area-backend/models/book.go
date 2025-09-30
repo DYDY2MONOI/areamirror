@@ -27,7 +27,7 @@ type User struct {
 	LoginProvider      string     `json:"login_provider" gorm:"default:'email'"`
 	ProfileImage       *string    `json:"profile_image"`
 	GitHubID           *string    `json:"github_id" gorm:"uniqueIndex"`
-	GitHubUsername     *string    `json:"github_username"`
+	GitHubUsername     *string    `json:"github_username" gorm:"column:git_hub_username"`
 	GoogleID           *string    `json:"google_id" gorm:"uniqueIndex"`
 	GoogleEmail        *string    `json:"google_email"`
 
@@ -81,7 +81,7 @@ type Area struct {
 	UserID      uint      `json:"user_id" gorm:"not null"`
 	Name        string    `json:"name" gorm:"type:text;not null"`
 	Description string    `json:"description" gorm:"type:text"`
-	Status      string    `json:"status" gorm:"type:area_status;default:'enabled';not null"`
+	Status      string    `json:"status" gorm:"type:varchar(20);default:'enabled';not null"`
 	IsPublic    bool      `json:"is_public" gorm:"not null;default:false"`
 	IsActive    bool      `json:"is_active" gorm:"not null;default:true"`
 
@@ -101,7 +101,7 @@ type Area struct {
 	RetryMax        int    `json:"retry_max" gorm:"not null;default:3;check:retry_max >= 0"`
 	RetryBackoffMs  int    `json:"retry_backoff_ms" gorm:"not null;default:1000;check:retry_backoff_ms >= 0"`
 
-	LastRunStatus string     `json:"last_run_status" gorm:"type:run_status;default:'idle';not null"`
+	LastRunStatus string     `json:"last_run_status" gorm:"type:varchar(20);default:'idle';not null"`
 	LastRunAt     *time.Time `json:"last_run_at" gorm:"type:timestamptz"`
 	NextRunAt     *time.Time `json:"next_run_at" gorm:"type:timestamptz"`
 	RunCount      int64      `json:"run_count" gorm:"not null;default:0"`

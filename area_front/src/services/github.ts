@@ -31,8 +31,10 @@ class GitHubService {
 
   private getAuthHeaders() {
     if (!this.token) {
+      console.error('❌ GitHub Service: No token found in localStorage')
       throw new Error('Authentication token missing')
     }
+    console.log('🔑 GitHub Service: Using token', this.token.substring(0, 10) + '...')
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.token}`,

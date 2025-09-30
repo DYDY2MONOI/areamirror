@@ -93,6 +93,10 @@ func main() {
 	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
 	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
 
+	// Webhook GitHub pour recevoir les événements
+	githubWebhookController := controllers.NewGitHubWebhookController()
+	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+
 	r.Static("/uploads", "./uploads")
 
 	r.Run()
