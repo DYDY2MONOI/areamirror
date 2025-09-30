@@ -5,7 +5,7 @@
         <div class="service-icon trigger-icon">
           <img 
             v-if="area.triggerIconUrl" 
-            :src="area.triggerIconUrl" 
+            :src="getIconUrl(area.triggerIconUrl)" 
             :alt="area.triggerService"
             class="service-logo"
           />
@@ -19,7 +19,7 @@
         <div class="service-icon action-icon">
           <img 
             v-if="area.actionIconUrl" 
-            :src="area.actionIconUrl" 
+            :src="getIconUrl(area.actionIconUrl)" 
             :alt="area.actionService"
             class="service-logo"
           />
@@ -36,6 +36,21 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
+
+import githubIcon from '@/assets/app-icons/github.png'
+import discordIcon from '@/assets/app-icons/discord.png'
+import gmailIcon from '@/assets/app-icons/gmail.png'
+import slackIcon from '@/assets/app-icons/slack.png'
+import twitterIcon from '@/assets/app-icons/twitter.png'
+import notionIcon from '@/assets/app-icons/notion.png'
+import instagramIcon from '@/assets/app-icons/instagram.png'
+import youtubeIcon from '@/assets/app-icons/youtube.png'
+import spotifyIcon from '@/assets/app-icons/spotify.png'
+import telegramIcon from '@/assets/app-icons/telegram.png'
+import twitchIcon from '@/assets/app-icons/twitch.png'
+import dropboxIcon from '@/assets/app-icons/dropbox.png'
+import weatherIcon from '@/assets/app-icons/weather.png'
+import googleCalendarIcon from '@/assets/app-icons/google-calendar.png'
 
 interface AreaTemplate {
   id: string
@@ -200,6 +215,27 @@ const getGradientClass = (area: AreaTemplate) => {
   }
   
   return "gradient-default"
+}
+
+const getIconUrl = (iconName: string) => {
+  const iconMap: { [key: string]: string } = {
+    'github.png': githubIcon,
+    'discord.png': discordIcon,
+    'gmail.png': gmailIcon,
+    'slack.png': slackIcon,
+    'twitter.png': twitterIcon,
+    'notion.png': notionIcon,
+    'instagram.png': instagramIcon,
+    'youtube.png': youtubeIcon,
+    'spotify.png': spotifyIcon,
+    'telegram.png': telegramIcon,
+    'twitch.png': twitchIcon,
+    'dropbox.png': dropboxIcon,
+    'weather.png': weatherIcon,
+    'google-calendar.png': googleCalendarIcon,
+  }
+  
+  return iconMap[iconName] || ''
 }
 </script>
 
