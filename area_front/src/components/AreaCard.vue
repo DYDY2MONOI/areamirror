@@ -187,22 +187,18 @@ const getGradientClass = (area: AreaTemplate) => {
   const trigger = area.triggerService
   const action = area.actionService
   
-  // GitHub to Discord
   if (trigger === "GitHub" && action === "Discord") {
     return "gradient-github-discord"
   }
   
-  // Discord to Notion
   if (trigger === "Discord" && action === "Notion") {
     return "gradient-discord-notion"
   }
   
-  // GitHub to Gmail
   if (trigger === "GitHub" && action === "Gmail") {
     return "gradient-github-gmail"
   }
   
-  // Default gradient for other combinations
   return "gradient-default"
 }
 </script>

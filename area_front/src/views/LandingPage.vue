@@ -185,7 +185,7 @@
 
     <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
       <div class="custom-modal-content" @click.stop>
-        <CreateArea @close="showCreateModal = false" @save="showCreateModal = false" />
+        <CreateArea @close="showCreateModal = false" @save="handleAreaCreated" />
       </div>
     </div>
 
@@ -416,6 +416,12 @@ const handleAreaClick = (area: AreaTemplate) => {
 const createAreaFromTemplate = () => {
   showAreaModal.value = false
   showCreateModal.value = true
+}
+
+const handleAreaCreated = async () => {
+  showCreateModal.value = false
+  await fetchPopularAreas()
+  await fetchRecommendedAreas()
 }
 
 const getTriggerIcon = (service: string) => {
