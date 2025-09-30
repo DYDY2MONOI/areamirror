@@ -14,3 +14,9 @@ export const API_ENDPOINTS = {
   AREAS: '/areas',
   APPLETS: '/applets'
 } as const
+
+export const AUTH_ENDPOINTS = {
+  LOGIN: '/login',
+  REGISTER: '/register',
+  PROFILE: '/profile'
+} as const

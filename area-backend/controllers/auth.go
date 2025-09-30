@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/datatypes"
 )
 
 var jwtKey = []byte("your-secret-key-change-in-production")
@@ -767,4 +768,138 @@ func getGoogleUser(accessToken string) (*GoogleUserResponse, error) {
 	}
 
 	return &googleUser, nil
+}
+
+type GitHubRepository struct {
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	FullName      string `json:"full_name"`
+	Description   string `json:"description"`
+	Private       bool   `json:"private"`
+	HTMLURL       string `json:"html_url"`
+	CloneURL      string `json:"clone_url"`
+	DefaultBranch string `json:"default_branch"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+	PushedAt      string `json:"pushed_at"`
+}
+
+type GitHubRepositoriesResponse struct {
+	Repositories []GitHubRepository `json:"repositories"`
+}
+
+func GetGitHubRepositories(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.GitHubID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No GitHub account linked"})
+		return
+	}
+
+	repositories, err := getGitHubRepositoriesForUser(*user.GitHubUsername)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch repositories"})
+		return
+	}
+
+	c.JSON(http.StatusOK, GitHubRepositoriesResponse{
+		Repositories: repositories,
+	})
+}
+
+func getGitHubRepositoriesForUser(username string) ([]GitHubRepository, error) {
+	url := fmt.Sprintf("https://api.github.com/users/%s/repos", username)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("User-Agent", "AREA-App")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var githubRepos []GitHubRepository
+	if err := json.Unmarshal(body, &githubRepos); err != nil {
+		return nil, err
+	}
+
+	return githubRepos, nil
+}
+
+type GitHubGmailAreaRequest struct {
+	RepositoryID      int      `json:"repository_id" binding:"required"`
+	DestinationEmail  string   `json:"destination_email" binding:"required,email"`
+	NotificationTypes []string `json:"notification_types" binding:"required"`
+}
+
+func CreateGitHubGmailArea(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req GitHubGmailAreaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	area := models.Area{
+		UserID:         userID.(uint),
+		Name:           fmt.Sprintf("GitHub → Gmail (%d)", req.RepositoryID),
+		Description:    fmt.Sprintf("Envoie des emails Gmail lors d'événements sur le repository GitHub ID %d", req.RepositoryID),
+		IsActive:       true,
+		TriggerService: "github",
+		TriggerType:    "push",
+		TriggerConfig:  datatypes.JSON(fmt.Sprintf(`{"repository_id": %d, "notification_types": %s}`, req.RepositoryID, fmt.Sprintf(`["%s"]`, strings.Join(req.NotificationTypes, `","`)))),
+		ActionService:  "gmail",
+		ActionType:     "send_email",
+		ActionConfig:   datatypes.JSON(fmt.Sprintf(`{"destination_email": "%s", "subject_template": "GitHub Activity - {{.repository.name}}", "body_template": "Nouvelle activité détectée sur {{.repository.name}}: {{.event_type}}"}`, req.DestinationEmail)),
+	}
+
+	if err := database.DB.Create(&area).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create area"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "GitHub-Gmail area created successfully",
+		"area_id": area.ID,
+		"repository_id": req.RepositoryID,
+		"destination_email": req.DestinationEmail,
+		"notification_types": req.NotificationTypes,
+	})
 }

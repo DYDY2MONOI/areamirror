@@ -32,6 +32,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	// Routes d'authentification directement accessibles (pour compatibilité avec le frontend)
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
@@ -42,8 +43,14 @@ func main() {
 	r.POST("/profile/google/link", controllers.AuthMiddleware(), controllers.LinkGoogleAccount)
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 
-	r.Static("/uploads", "./uploads")
+	// Routes GitHub dans le groupe /api
+	api := r.Group("/api")
+	{
+		api.GET("/github/repositories", controllers.AuthMiddleware(), controllers.GetGitHubRepositories)
+		api.POST("/areas/github-gmail", controllers.AuthMiddleware(), controllers.CreateGitHubGmailArea)
+	}
 
+	// Autres routes directement accessibles
 	r.GET("/users", controllers.GetUsers)
 	r.GET("/users/:id", controllers.GetUser)
 	r.POST("/users", controllers.CreateUser)
@@ -85,6 +92,8 @@ func main() {
 	r.GET("/user/:id/applets/:id", controllers.GetApplet)
 	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
 	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
+
+	r.Static("/uploads", "./uploads")
 
 	r.Run()
 }
