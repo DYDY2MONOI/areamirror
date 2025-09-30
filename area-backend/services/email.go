@@ -118,14 +118,10 @@ func NewEmailService() (*EmailService, error) {
 }
 
 func (es *EmailService) SendGitHubNotification(to, subjectTemplate, bodyTemplate string, eventData GitHubEventData) error {
-	fmt.Printf("📧 [EMAIL SIMULÉ] Destinataire: %s\n", to)
-	fmt.Printf("📧 [EMAIL SIMULÉ] Repository: %s\n", eventData.Repository.FullName)
-	fmt.Printf("📧 [EMAIL SIMULÉ] Commit: %s\n", eventData.HeadCommit.Message)
-	fmt.Printf("📧 [EMAIL SIMULÉ] Auteur: %s\n", eventData.HeadCommit.Author.Name)
-	fmt.Printf("📧 [EMAIL SIMULÉ] Sujet: Nouveau push sur %s\n", eventData.Repository.Name)
-	fmt.Printf("📧 [EMAIL SIMULÉ] Contenu: Push détecté sur le repository %s par %s\n", eventData.Repository.FullName, eventData.HeadCommit.Author.Name)
-	fmt.Printf("📧 [EMAIL SIMULÉ] ==========================================\n")
-	return nil
+	fmt.Printf("📧 Sending real email to: %s\n", to)
+	fmt.Printf("📧 Repository: %s\n", eventData.Repository.FullName)
+	fmt.Printf("📧 Commit: %s\n", eventData.HeadCommit.Message)
+	fmt.Printf("📧 Author: %s\n", eventData.HeadCommit.Author.Name)
 
 	subject, err := es.renderTemplate(subjectTemplate, eventData)
 	if err != nil {

@@ -231,9 +231,10 @@
                     v-model="form.triggerConfig.repositoryId"
                     class="modern-input"
                     @change="onRepositoryChange"
+                    :disabled="isLoadingRepositories"
                     required
                   >
-                    <option value="">Choose a repository...</option>
+                    <option value="">{{ isLoadingRepositories ? 'Loading repositories...' : 'Choose a repository...' }}</option>
                     <option
                       v-for="repo in repositories"
                       :key="repo.id"
@@ -242,7 +243,9 @@
                       {{ repo.full_name }} {{ repo.private ? '(Private)' : '' }}
                     </option>
                   </select>
-                  <small class="input-hint">Select the repository you want to monitor</small>
+                  <small class="input-hint">
+                    {{ isLoadingRepositories ? 'Loading your GitHub repositories...' : 'Select the repository you want to monitor' }}
+                  </small>
                 </div>
 
                 <div class="input-container">
@@ -406,9 +409,25 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
+        <button
+          v-if="form.triggerService === 'GitHub' && form.actionService === 'Gmail'"
+          class="action-btn test-email-btn"
+          @click="sendTestEmail"
+          :disabled="!canSendTestEmail || isSendingTest"
+        >
+          <v-icon size="18">mdi-email-send</v-icon>
+          {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
+        </button>
+
         <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
-            Debug: {{ isFormValid ? '✅ Ready to create' : '❌ Missing: ' + getMissingFields() }}
+            Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
+          </small>
+        </div>
+
+        <div v-if="form.triggerService === 'GitHub' && form.actionService === 'Gmail'" class="debug-info">
+          <small style="color: #666; font-size: 0.75rem;">
+            Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
         </div>
       </div>
@@ -597,9 +616,17 @@ const loadRepositories = async () => {
   isLoadingRepositories.value = true
   try {
     repositories.value = await githubService.getRepositories()
+    if (repositories.value.length === 0) {
+      error.value = 'No repositories found. Make sure you have GitHub repositories and your GitHub account is linked.'
+    }
   } catch (err) {
     console.error('Failed to load repositories:', err)
-    error.value = 'Failed to load GitHub repositories. Please try again.'
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load GitHub repositories'
+    if (errorMessage.indexOf('GitHub username not configured') !== -1 || errorMessage.indexOf('No GitHub account linked') !== -1) {
+      error.value = 'Please link your GitHub account first in your profile settings.'
+    } else {
+      error.value = `Failed to load repositories: ${errorMessage}`
+    }
   } finally {
     isLoadingRepositories.value = false
   }

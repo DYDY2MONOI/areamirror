@@ -87,7 +87,7 @@ func main() {
 	r.DELETE("/areas/:id", controllers.DeleteArea)
 	r.PATCH("/areas/:id/toggle", controllers.ToggleArea)
 
-	r.GET("/user/:id/areas", controllers.GetUserAreas)
+	r.GET("/user/me/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
 
 	r.POST("/user/:id/applets", controllers.CreateApplet)
 	r.GET("/user/:id/applets", controllers.GetApplets)
@@ -95,7 +95,6 @@ func main() {
 	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
 	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
 
-	// Webhook GitHub pour recevoir les événements
 	githubWebhookController := controllers.NewGitHubWebhookController()
 	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
 

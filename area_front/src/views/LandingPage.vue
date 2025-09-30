@@ -192,6 +192,27 @@
       </div>
     </div>
 
+    <v-container v-if="isAuthenticated && areas.length > 0" class="mt-6">
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">My Areas</h2>
+          <p class="section-subtitle">Your created automation areas</p>
+        </div>
+        <button class="view-all-btn">
+          <span>View All</span>
+          <v-icon size="16">mdi-arrow-right</v-icon>
+        </button>
+      </div>
+      <div class="cards-grid">
+        <AreaCard
+          v-for="area in areas"
+          :key="area.id"
+          :area="area"
+          @click="handleAreaClick"
+        />
+      </div>
+    </v-container>
+
     <v-container class="mt-6">
       <div class="section-header">
         <div class="section-info">
@@ -351,6 +372,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
 import { githubService, type GitHubRepository } from '@/services/github'
+import { type Area } from '@/services/area'
 
 interface AreaTemplate {
   id: string
@@ -371,13 +393,16 @@ const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
-const { popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas } = useAreas()
+const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas } = useAreas()
 const router = useRouter()
 
 onMounted(async () => {
   await refreshProfile()
   await fetchPopularAreas()
   await fetchRecommendedAreas()
+  if (currentUser.value?.id) {
+    await fetchUserAreas(currentUser.value.id)
+  }
 })
 
 
@@ -408,11 +433,20 @@ const confirmLogout = async () => {
   }
 }
 
-const handleAreaClick = (area: AreaTemplate) => {
+const handleAreaClick = (area: AreaTemplate | Area) => {
   requireAuth(() => {
     console.log('Area clicked:', area)
-    selectedArea.value = area
-    showAreaModal.value = true
+
+    // Only show area modal for templates, not user-created areas
+    if ('title' in area) {
+      // This is an AreaTemplate
+      selectedArea.value = area as AreaTemplate
+      showAreaModal.value = true
+    } else {
+      // This is a user-created Area - could show area details or edit modal
+      console.log('User area clicked:', area)
+      // For now, just log it. In the future, we could show an edit modal
+    }
   })
 }
 
@@ -425,6 +459,9 @@ const handleAreaCreated = async () => {
   showCreateModal.value = false
   await fetchPopularAreas()
   await fetchRecommendedAreas()
+  if (currentUser.value?.id) {
+    await fetchUserAreas(currentUser.value.id)
+  }
 }
 
 const getTriggerIcon = (service: string) => {

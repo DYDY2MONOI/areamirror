@@ -58,7 +58,8 @@ type GitHubWebhookPayload struct {
 }
 
 type AreaConfig struct {
-	RepositoryID      int      `json:"repository_id"`
+	RepositoryID       int      `json:"repository_id"`
+	RepositoryFullName string   `json:"repository_full_name"`
 	NotificationTypes  []string `json:"notification_types"`
 	DestinationEmail   string   `json:"destination_email"`
 	SubjectTemplate    string   `json:"subject_template"`
@@ -87,11 +88,21 @@ func (gep *GitHubEventProcessor) ProcessPushEvent(payload GitHubWebhookPayload) 
 		return fmt.Errorf("failed to fetch GitHub areas: %v", err)
 	}
 
-	for _, area := range areas {
+	var allAreas []models.Area
+	database.DB.Find(&allAreas)
+	log.Printf("Total areas in database: %d", len(allAreas))
+	for i, area := range allAreas {
+		log.Printf("Area %d: Name=%s, TriggerService=%s, IsActive=%t", i+1, area.Name, area.TriggerService, area.IsActive)
+	}
+
+	log.Printf("Found %d GitHub areas to process", len(areas))
+	for i, area := range areas {
+		log.Printf("Processing area %d: %s (ID: %d)", i+1, area.Name, area.ID)
 		if err := gep.processAreaForEvent(area, payload); err != nil {
 			log.Printf("Error processing area %s: %v", area.Name, err)
 			continue
 		}
+		log.Printf("Successfully processed area: %s", area.Name)
 	}
 
 	return nil
@@ -103,7 +114,9 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		return fmt.Errorf("failed to unmarshal trigger config: %v", err)
 	}
 
-	if config.RepositoryID != payload.Repository.ID {
+	// Match by repository full name instead of ID (more reliable)
+	if config.RepositoryFullName != payload.Repository.FullName {
+		log.Printf("Repository mismatch: config=%s, payload=%s", config.RepositoryFullName, payload.Repository.FullName)
 		return nil
 	}
 
@@ -128,6 +141,10 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		bodyTemplate = gep.emailService.GetDefaultPushBodyTemplate()
 	}
 
+	log.Printf("📧 Sending email to: %s", actionConfig.DestinationEmail)
+	log.Printf("📧 Subject template: %s", subjectTemplate)
+	log.Printf("📧 Body template: %s", bodyTemplate)
+
 	err := gep.emailService.SendGitHubNotification(
 		actionConfig.DestinationEmail,
 		subjectTemplate,
@@ -136,8 +153,11 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to send email notification: %v", err)
+		log.Printf("❌ Failed to send email: %v", err)
+		return err
 	}
+
+	log.Printf("✅ Email sent successfully to: %s", actionConfig.DestinationEmail)
 
 	log.Printf("Email notification sent successfully for area %s to %s", area.Name, actionConfig.DestinationEmail)
 	return nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -44,12 +45,56 @@ func NewGitHubIntegrationService() *GitHubIntegrationService {
 	}
 }
 
+func (gis *GitHubIntegrationService) deleteExistingWebhooks(owner, repo string) error {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	req.Header.Set("Authorization", "token "+gis.apiToken)
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	}
+
+	var webhooks []GitHubWebhookResponse
+	if err := json.NewDecoder(resp.Body).Decode(&webhooks); err != nil {
+		return fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	// Delete all existing webhooks
+	for _, webhook := range webhooks {
+		fmt.Printf("🗑️ Deleting existing webhook ID: %d, URL: %s\n", webhook.ID, webhook.Config.URL)
+		if err := gis.DeleteWebhook(owner, repo, webhook.ID); err != nil {
+			fmt.Printf("❌ Failed to delete webhook %d: %v\n", webhook.ID, err)
+		} else {
+			fmt.Printf("✅ Deleted webhook %d\n", webhook.ID)
+		}
+	}
+
+	return nil
+}
+
 func (gis *GitHubIntegrationService) CreateWebhook(owner, repo string) (*GitHubWebhookResponse, error) {
 	if gis.apiToken == "" {
 		return nil, fmt.Errorf("GITHUB_TOKEN not configured")
 	}
 	if gis.webhookURL == "" {
 		return nil, fmt.Errorf("WEBHOOK_URL not configured")
+	}
+
+	// First, try to delete any existing webhooks for this repository
+	if err := gis.deleteExistingWebhooks(owner, repo); err != nil {
+		fmt.Printf("⚠️ Warning: Failed to delete existing webhooks: %v\n", err)
 	}
 
 	webhookConfig := GitHubWebhookConfig{
@@ -73,6 +118,7 @@ func (gis *GitHubIntegrationService) CreateWebhook(owner, repo string) (*GitHubW
 	}
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/hooks", owner, repo)
+	fmt.Printf("🔗 Creating webhook for %s/%s at %s\n", owner, repo, gis.webhookURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
@@ -89,8 +135,11 @@ func (gis *GitHubIntegrationService) CreateWebhook(owner, repo string) (*GitHubW
 	}
 	defer resp.Body.Close()
 
+	fmt.Printf("📡 GitHub API response: %d\n", resp.StatusCode)
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("❌ GitHub API error: %s\n", string(body))
+		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	var webhookResp GitHubWebhookResponse
@@ -98,6 +147,7 @@ func (gis *GitHubIntegrationService) CreateWebhook(owner, repo string) (*GitHubW
 		return nil, fmt.Errorf("failed to decode response: %v", err)
 	}
 
+	fmt.Printf("✅ Webhook created successfully! ID: %d, URL: %s\n", webhookResp.ID, webhookResp.Config.URL)
 	return &webhookResp, nil
 }
 

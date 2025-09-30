@@ -3,9 +3,9 @@
     <v-sheet :class="`area-card ${getGradientClass(area)}`" rounded="xl">
       <div class="area-icons-container">
         <div class="service-icon trigger-icon">
-          <img 
-            v-if="area.triggerIconUrl" 
-            :src="getIconUrl(area.triggerIconUrl)" 
+          <img
+            v-if="area.triggerIconUrl"
+            :src="getIconUrl(area.triggerIconUrl)"
             :alt="area.triggerService"
             class="service-logo"
           />
@@ -17,9 +17,9 @@
           <div class="arrow-fallback">→</div>
         </div>
         <div class="service-icon action-icon">
-          <img 
-            v-if="area.actionIconUrl" 
-            :src="getIconUrl(area.actionIconUrl)" 
+          <img
+            v-if="area.actionIconUrl"
+            :src="getIconUrl(area.actionIconUrl)"
             :alt="area.actionService"
             class="service-logo"
           />
@@ -28,14 +28,15 @@
         </div>
       </div>
     </v-sheet>
-    <div class="card-title">{{ area.title }}</div>
-    <div class="card-subtitle">{{ area.subtitle }}</div>
+    <div class="card-title">{{ 'title' in area ? area.title : area.name }}</div>
+    <div v-if="'subtitle' in area" class="card-subtitle">{{ area.subtitle }}</div>
     <div class="card-description">{{ area.description }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
+import { type Area } from '@/services/area'
 
 import githubIcon from '@/assets/app-icons/github.png'
 import discordIcon from '@/assets/app-icons/discord.png'
@@ -66,12 +67,13 @@ interface AreaTemplate {
   isActive: boolean
 }
 
+
 const props = defineProps<{
-  area: AreaTemplate
+  area: AreaTemplate | Area
 }>()
 
 const emit = defineEmits<{
-  click: [area: AreaTemplate]
+  click: [area: AreaTemplate | Area]
 }>()
 
 const handleClick = () => {
@@ -198,22 +200,22 @@ const getActionEmoji = (service: string) => {
   }
 }
 
-const getGradientClass = (area: AreaTemplate) => {
+const getGradientClass = (area: AreaTemplate | Area) => {
   const trigger = area.triggerService
   const action = area.actionService
-  
+
   if (trigger === "GitHub" && action === "Discord") {
     return "gradient-github-discord"
   }
-  
+
   if (trigger === "Discord" && action === "Notion") {
     return "gradient-discord-notion"
   }
-  
+
   if (trigger === "GitHub" && action === "Gmail") {
     return "gradient-github-gmail"
   }
-  
+
   return "gradient-default"
 }
 
@@ -234,7 +236,7 @@ const getIconUrl = (iconName: string) => {
     'weather.png': weatherIcon,
     'google-calendar.png': googleCalendarIcon,
   }
-  
+
   return iconMap[iconName] || ''
 }
 </script>

@@ -890,6 +890,11 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		return
 	}
 
+	if user.GitHubUsername == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "GitHub username not configured. Please link your GitHub account first."})
+		return
+	}
+
 	repositories, err := getGitHubRepositoriesForUser(*user.GitHubUsername)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch repository information"})

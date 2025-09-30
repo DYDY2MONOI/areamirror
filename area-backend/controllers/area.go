@@ -41,9 +41,13 @@ func GetArea(c *gin.Context) {
 }
 
 func GetUserAreas(c *gin.Context) {
-	var areas []models.Area
-	userID := c.Param("id")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
+	var areas []models.Area
 	database.DB.Preload("Actions").Preload("Reactions").Where("user_id = ?", userID).Find(&areas)
 	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
