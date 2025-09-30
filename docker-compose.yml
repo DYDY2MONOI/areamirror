@@ -11,6 +11,11 @@ services:
       - "5433:5432"
     networks:
       - area_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U area_user -d area_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -31,23 +36,26 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - area_network
     volumes:
       - ./area-backend/uploads:/root/uploads
+    restart: unless-stopped
 
   frontend:
     build:
-      context: ./area_front
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
       - "3000:80"
     depends_on:
-      - backend
-      - database
+      backend:
+        condition: service_started
     networks:
       - area_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -3,7 +3,6 @@ import LandingPage from '../views/LandingPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
-import ServiceLinkPage from '../views/ServiceLinkPage.vue'
 import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
 import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
@@ -42,18 +41,6 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: ProfilePage,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/services',
-      name: 'services',
-      component: ServiceLinkPage,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/github-link',
-      name: 'github-link',
-      component: ServiceLinkPage,
       meta: { requiresAuth: true }
     },
     {
