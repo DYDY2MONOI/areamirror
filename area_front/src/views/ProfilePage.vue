@@ -325,7 +325,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
+const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const profileImageUrl = ref<string | null>(null)
@@ -367,6 +367,8 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.github_username
     case 'google':
       return !!currentUser.value.google_id
+    case 'facebook':
+      return !!currentUser.value.facebook_id
     case 'discord':
       return !!currentUser.value.discord_id
     case 'spotify':
@@ -411,6 +413,18 @@ const linkService = async (serviceId: string) => {
       const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
 
       window.location.href = googleAuthUrl
+    } else if (serviceId === 'facebook') {
+      const facebookClientId = import.meta.env.VITE_FACEBOOK_CLIENT_ID || 'your_facebook_client_id_here'
+
+      if (!facebookClientId || facebookClientId === 'your_facebook_client_id_here') {
+        errorMessages.value = { ...errorMessages.value, [serviceId]: 'Facebook OAuth not configured. Please set the VITE_FACEBOOK_CLIENT_ID environment variable.' }
+        return
+      }
+
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
+      const facebookAuthUrl = `${service.authUrl}?client_id=${facebookClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}&response_type=code`
+
+      window.location.href = facebookAuthUrl
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${service.name} integration is not yet implemented.` }
     }
@@ -434,6 +448,9 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'google') {
       await unlinkGoogleAccount()
       successMessages.value = { ...successMessages.value, [serviceId]: 'Google account unlinked successfully' }
+    } else if (serviceId === 'facebook') {
+      await unlinkFacebookAccount()
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account unlinked successfully' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} unlinking is not yet implemented.` }
     }
@@ -457,6 +474,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)
       successMessages.value = { ...successMessages.value, [serviceId]: 'Google account linked successfully!' }
+    } else if (serviceId === 'facebook') {
+      const result = await linkFacebookAccount(code)
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account linked successfully!' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} linking is not yet implemented.` }
     }
