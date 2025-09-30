@@ -323,7 +323,7 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      const redirectUri = encodeURIComponent('http://localhost:3000/callback')
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
       const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
 
       window.location.href = googleAuthUrl
@@ -385,7 +385,6 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
 }
 
 onMounted(() => {
-  // Handle callback parameters
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
   const error = urlParams.get('error')

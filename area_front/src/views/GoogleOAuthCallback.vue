@@ -66,7 +66,6 @@ const redirectToProfile = () => {
 
 onMounted(async () => {
   try {
-    // Récupérer le code d'autorisation depuis l'URL
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     const errorParam = urlParams.get('error')
@@ -81,7 +80,6 @@ onMounted(async () => {
 
     message.value = 'Linking Google account...'
     
-    // Lier le compte Google
     await authService.linkGoogleAccount(code)
     
     success.value = true

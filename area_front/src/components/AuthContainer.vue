@@ -30,7 +30,6 @@ onMounted(() => {
   }, 100)
 })
 
-// Fonction pour changer de vue avec animation
 const switchView = (view: 'login' | 'register') => {
   if (isAnimating.value || currentView.value === view) return
   
