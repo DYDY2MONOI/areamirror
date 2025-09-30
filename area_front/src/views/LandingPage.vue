@@ -174,13 +174,13 @@
         </button>
       </div>
       <div class="cards-grid">
-        <div class="card-col">
+        <div class="card-col" @click="requireAuth(() => showGithubGmailModal = true)">
           <v-sheet class="area-card gradient-red" rounded="xl">
             <v-icon size="64" color="white">mdi-email-outline</v-icon>
           </v-sheet>
-          <div class="card-title">Gmail → Discord</div>
+          <div class="card-title">Github → Gmail</div>
           <div class="card-subtitle">Auto notification</div>
-          <div class="card-description">Send Discord message when you receive important emails</div>
+          <div class="card-description">Send emails when you push to your github repo</div>
         </div>
         <div class="card-col">
           <v-sheet class="area-card gradient-green" rounded="xl">
@@ -295,7 +295,99 @@
     </div>
   </div>
 
-  <!-- Dialog de confirmation de déconnexion -->
+  <div v-if="showGithubGmailModal" class="custom-modal-overlay" @click="showGithubGmailModal = false">
+    <div class="custom-modal-content github-gmail-modal" @click.stop>
+      <div class="github-gmail-modal-header">
+        <div class="github-gmail-icon-container">
+          <v-icon size="32" color="white">mdi-github</v-icon>
+          <v-icon size="20" color="white" class="arrow-icon">mdi-arrow-right</v-icon>
+          <v-icon size="32" color="white">mdi-email-outline</v-icon>
+        </div>
+        <h3 class="github-gmail-title">Github → Gmail</h3>
+        <p class="github-gmail-message">Configurez votre automation pour recevoir des emails lors des push sur vos repositories</p>
+      </div>
+
+      <div class="github-gmail-modal-content">
+        <div class="form-section">
+          <label class="form-label">Sélectionner un repository</label>
+          <v-select
+            v-model="selectedRepository"
+            :items="repositories"
+            item-title="name"
+            item-value="id"
+            placeholder="Choisissez un repository..."
+            variant="outlined"
+            class="repository-select"
+            prepend-inner-icon="mdi-source-repository"
+            clearable
+            attach=".github-gmail-modal"
+          >
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template #prepend>
+                  <v-icon color="primary">mdi-source-repository</v-icon>
+                </template>
+                <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                <v-list-item-subtitle>{{ item.raw.description }}</v-list-item-subtitle>
+              </v-list-item>
+            </template>
+          </v-select>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Email de destination</label>
+          <v-text-field
+            v-model="destinationEmail"
+            placeholder="votre.email@example.com"
+            variant="outlined"
+            prepend-inner-icon="mdi-email"
+            type="email"
+            class="email-input"
+          />
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Type de notifications</label>
+          <v-checkbox-group v-model="notificationTypes" class="checkbox-group">
+            <v-checkbox
+              value="push"
+              label="Push commits"
+              color="primary"
+            />
+            <v-checkbox
+              value="pull_request"
+              label="Pull requests"
+              color="primary"
+            />
+            <v-checkbox
+              value="issues"
+              label="Issues"
+              color="primary"
+            />
+          </v-checkbox-group>
+        </div>
+      </div>
+
+      <div class="github-gmail-modal-actions">
+        <v-btn
+          class="github-gmail-cancel-btn"
+          variant="outlined"
+          @click="showGithubGmailModal = false"
+        >
+          Annuler
+        </v-btn>
+        <v-btn
+          class="github-gmail-confirm-btn"
+          variant="flat"
+          @click="confirmGithubGmailSetup"
+          :disabled="!selectedRepository || !destinationEmail"
+        >
+          Créer l'AREA
+        </v-btn>
+      </div>
+    </div>
+  </div>
+
   <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
     <div class="custom-modal-content logout-modal" @click.stop>
       <div class="logout-modal-header">
@@ -338,6 +430,39 @@ import { useRouter } from 'vue-router'
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
+const showGithubGmailModal = ref(false)
+
+const selectedRepository = ref(null)
+const destinationEmail = ref('')
+const notificationTypes = ref(['push'])
+
+const repositories = ref([
+  {
+    id: 1,
+    name: 'mon-projet-web',
+    description: 'Application web principale'
+  },
+  {
+    id: 2,
+    name: 'api-backend',
+    description: 'API REST pour le backend'
+  },
+  {
+    id: 3,
+    name: 'mobile-app',
+    description: 'Application mobile React Native'
+  },
+  {
+    id: 4,
+    name: 'data-analysis',
+    description: 'Scripts d\'analyse de données'
+  },
+  {
+    id: 5,
+    name: 'devops-tools',
+    description: 'Outils et scripts DevOps'
+  }
+])
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const router = useRouter()
@@ -374,7 +499,29 @@ const confirmLogout = async () => {
   }
 }
 
+const confirmGithubGmailSetup = () => {
+  console.log('Configuration Github -> Gmail:', {
+    repository: selectedRepository.value,
+    email: destinationEmail.value,
+    notifications: notificationTypes.value
+  })
+
+  showGithubGmailModal.value = false
+
+  selectedRepository.value = null
+  destinationEmail.value = ''
+  notificationTypes.value = ['push']
+}
+
 watch(showCreateModal, (isOpen) => {
+  if (isOpen) {
+    document.body.classList.add('modal-open')
+  } else {
+    document.body.classList.remove('modal-open')
+  }
+})
+
+watch(showGithubGmailModal, (isOpen) => {
   if (isOpen) {
     document.body.classList.add('modal-open')
   } else {
@@ -1085,7 +1232,7 @@ body.modal-open {
   bottom: 0;
   background: var(--gradient-bg-modal);
   backdrop-filter: blur(12px);
-  z-index: 9999;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1216,14 +1363,185 @@ body.modal-open {
     0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
+.github-gmail-modal {
+  max-width: 600px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.github-gmail-modal-header {
+  padding: 2rem;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.github-gmail-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.arrow-icon {
+  opacity: 0.8;
+}
+
+.github-gmail-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.github-gmail-message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.github-gmail-modal-content {
+  padding: 2rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.repository-select,
+.email-input {
+  width: 100%;
+}
+
+.repository-select :deep(.v-field),
+.email-input :deep(.v-field) {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+}
+
+.repository-select :deep(.v-menu) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-list) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-overlay) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-overlay__content) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-field--focused),
+.email-input :deep(.v-field--focused) {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.repository-select :deep(.v-field__input),
+.email-input :deep(.v-field__input) {
+  color: var(--color-text-primary);
+}
+
+.repository-select :deep(.v-field__input::placeholder),
+.email-input :deep(.v-field__input::placeholder) {
+  color: var(--color-text-secondary);
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-group :deep(.v-checkbox) {
+  margin: 0;
+}
+
+.checkbox-group :deep(.v-checkbox .v-label) {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.github-gmail-modal-actions {
+  padding: 1.5rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.github-gmail-cancel-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-transform: none;
+  transition: var(--transition-normal);
+}
+
+.github-gmail-cancel-btn:hover {
+  background: var(--color-hover-bg) !important;
+  border-color: var(--color-border-secondary) !important;
+  transform: translateY(-1px);
+}
+
+.github-gmail-confirm-btn {
+  background: var(--gradient-accent) !important;
+  color: var(--color-text-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-transform: none;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-glow);
+}
+
+.github-gmail-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.github-gmail-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
-  .logout-modal {
+  .logout-modal,
+  .github-gmail-modal {
     margin: 1rem;
     max-width: calc(100vw - 2rem);
   }
 
-  .logout-modal-header {
+  .logout-modal-header,
+  .github-gmail-modal-header {
     padding: 1.5rem;
   }
 
@@ -1233,22 +1551,35 @@ body.modal-open {
     margin-bottom: 0.75rem;
   }
 
-  .logout-title {
+  .logout-title,
+  .github-gmail-title {
     font-size: 1.25rem;
   }
 
-  .logout-message {
+  .logout-message,
+  .github-gmail-message {
     font-size: 0.875rem;
   }
 
-  .logout-modal-actions {
+  .logout-modal-actions,
+  .github-gmail-modal-actions {
     padding: 1rem 1.5rem 1.5rem 1.5rem;
     flex-direction: column;
   }
 
   .logout-cancel-btn,
-  .logout-confirm-btn {
+  .logout-confirm-btn,
+  .github-gmail-cancel-btn,
+  .github-gmail-confirm-btn {
     width: 100%;
+  }
+
+  .github-gmail-modal-content {
+    padding: 1.5rem;
+  }
+
+  .github-gmail-icon-container {
+    gap: 0.75rem;
   }
 }
 </style>
