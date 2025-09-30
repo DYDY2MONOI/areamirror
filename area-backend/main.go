@@ -43,6 +43,8 @@ func main() {
 	r.DELETE("/profile/github/unlink", controllers.AuthMiddleware(), controllers.UnlinkGitHubAccount)
 	r.POST("/profile/google/link", controllers.AuthMiddleware(), controllers.LinkGoogleAccount)
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
+	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
+	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
 
 	r.Static("/uploads", "./uploads")
 

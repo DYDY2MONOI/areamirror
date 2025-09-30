@@ -124,6 +124,27 @@ export function useAuth() {
     }
   }
 
+  const linkFacebookAccount = async (code: string) => {
+    try {
+      const result = await authService.linkFacebookAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Facebook link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkFacebookAccount = async () => {
+    try {
+      await authService.unlinkFacebookAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Facebook unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -163,6 +184,8 @@ export function useAuth() {
     unlinkGitHubAccount,
     linkGoogleAccount,
     unlinkGoogleAccount,
+    linkFacebookAccount,
+    unlinkFacebookAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,

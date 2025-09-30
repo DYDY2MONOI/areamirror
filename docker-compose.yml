@@ -36,6 +36,9 @@ services:
       GOOGLE_ACCESS_TOKEN: ya29.a0AQQ_BDTJ-yHNqlzW3TYsjPNBSx6aV-8ez-e4BCc-dBqYWy1G1AMV0-_gHOUMMAVbNh6-jusaSvID93Y7WMPAe-VQA0bzYBOgEEzVQ2z15zNPIvx3KKw26hd1uLjcZjYgeUF99VVfxTo-VRKOvfkL3aupl-o4Ggv0atSKNwFBzijapN-CXevy4VWC89WU5MmiGZWkCC8aCgYKATUSARcSFQHGX2Mi47aW8AwceUVkgBVGKP6xuw0206
       GOOGLE_REFRESH_TOKEN: 1//040tCPusos1jhCgYIARAAGAQSNwF-L9Irh3ab-7L6rzjJa_mtz6kHVODGTDXvkfV-jEDwT8zcyR82rGfIGBtfotQB4g1k5X7ckUs      
       GOOGLE_REDIRECT_URI: http://localhost:3000/callback
+      FACEBOOK_CLIENT_ID: 827003503004798
+      FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
+      FACEBOOK_REDIRECT_URI: http://localhost:3000/auth/facebook/callback
     ports:
       - "8080:8080"
     depends_on:
@@ -51,6 +54,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_FACEBOOK_CLIENT_ID: 827003503004798
     ports:
       - "3000:80"
     depends_on:

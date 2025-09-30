@@ -6,6 +6,10 @@ COPY area_front/package*.json ./
 RUN npm ci
 
 COPY area_front/ ./
+
+ARG VITE_FACEBOOK_CLIENT_ID
+ENV VITE_FACEBOOK_CLIENT_ID=$VITE_FACEBOOK_CLIENT_ID
+
 RUN npm run build
 
 FROM nginx:alpine
