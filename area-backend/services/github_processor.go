@@ -66,8 +66,15 @@ type AreaConfig struct {
 }
 
 func NewGitHubEventProcessor() *GitHubEventProcessor {
+	emailService, err := NewEmailService()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize email service: %v", err)
+		return &GitHubEventProcessor{
+			emailService: nil,
+		}
+	}
 	return &GitHubEventProcessor{
-		emailService: NewEmailService(),
+		emailService: emailService,
 	}
 }
 

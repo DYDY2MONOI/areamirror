@@ -909,7 +909,11 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		return
 	}
 
-	emailService := services.NewEmailService()
+	emailService, err := services.NewEmailService()
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to initialize email service"})
+		return
+	}
 
 	triggerConfig := map[string]interface{}{
 		"repository_id":      req.RepositoryID,

@@ -88,12 +88,14 @@ type Area struct {
 	TriggerService string         `json:"trigger_service" gorm:"type:text;not null"`
 	TriggerType    string         `json:"trigger_type" gorm:"type:text;not null"`
 	TriggerConfig  datatypes.JSON `json:"trigger_config" gorm:"type:jsonb;not null;default:'{}'"`
+	TriggerIconURL string         `json:"trigger_icon_url" gorm:"type:text"`
 
 	Conditions datatypes.JSON `json:"conditions" gorm:"type:jsonb;not null;default:'[]'"`
 
 	ActionService string         `json:"action_service" gorm:"type:text;not null"`
 	ActionType    string         `json:"action_type" gorm:"type:text;not null"`
 	ActionConfig  datatypes.JSON `json:"action_config" gorm:"type:jsonb;not null;default:'{}'"`
+	ActionIconURL string         `json:"action_icon_url" gorm:"type:text"`
 
 	ScheduleCron    string `json:"schedule_cron" gorm:"type:text"`
 	RateLimitPerMin *int   `json:"rate_limit_per_min" gorm:"check:rate_limit_per_min IS NULL OR rate_limit_per_min > 0"`
