@@ -155,6 +155,8 @@ func Register(c *gin.Context) {
 			"first_name":    user.FirstName,
 			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
+			"role":          user.Role,
+			"is_active":     user.IsActive,
 		},
 	})
 }
@@ -193,6 +195,8 @@ func Login(c *gin.Context) {
 			"first_name":    user.FirstName,
 			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
+			"role":          user.Role,
+			"is_active":     user.IsActive,
 		},
 	})
 }
@@ -225,6 +229,8 @@ func GetProfile(c *gin.Context) {
 			"lang":            user.Lang,
 			"login_provider":  user.LoginProvider,
 			"profile_image":   user.ProfileImage,
+			"role":            user.Role,
+			"is_active":       user.IsActive,
 			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
 			"google_id":       user.GoogleID,
@@ -956,7 +962,6 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 		return nil, err
 	}
 
-	// Si pas d'email, utiliser l'ID Facebook comme email
 	if facebookUser.Email == "" {
 		facebookUser.Email = facebookUser.ID + "@facebook.com"
 	}

@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{})
 
 	database.SeedData()
 
@@ -75,14 +75,14 @@ func main() {
 	r.GET("/service/:id/actions", controllers.GetServiceActions)
 	r.GET("/service/:id/reactions", controllers.GetServiceReactions)
 
-	r.GET("/areas", controllers.GetAreas)
-	r.GET("/areas/:id", controllers.GetArea)
-	r.POST("/areas", controllers.CreateArea)
-	r.PUT("/areas/:id", controllers.UpdateArea)
-	r.DELETE("/areas/:id", controllers.DeleteArea)
-	r.PATCH("/areas/:id/toggle", controllers.ToggleArea)
+	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
+	r.GET("/areas/:id", controllers.AuthMiddleware(), controllers.GetArea)
+	r.POST("/areas", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.CreateArea)
+	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateArea)
+	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)
+	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.ToggleArea)
 
-	r.GET("/user/:id/areas", controllers.GetUserAreas)
+	r.GET("/user/:id/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
 
 	r.POST("/user/:id/applets", controllers.CreateApplet)
 	r.GET("/user/:id/applets", controllers.GetApplets)
@@ -95,6 +95,17 @@ func main() {
 
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)
+
+	r.GET("/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetRoles)
+	r.POST("/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.CreateRole)
+	r.GET("/roles/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetRole)
+	r.PUT("/roles/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateRole)
+	r.DELETE("/roles/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteRole)
+
+	r.POST("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.AssignRoleToUser)
+	r.DELETE("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.RemoveRoleFromUser)
+	r.GET("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetUserRoles)
+	r.PUT("/users/:id/role", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateUserRole)
 
 	scheduler, err := services.NewSchedulerService()
 	if err != nil {

@@ -11,6 +11,8 @@ export interface User {
   country?: string
   lang?: string
   login_provider?: string
+  role?: string
+  is_active?: boolean
   github_id?: string
   github_username?: string
   google_id?: string
@@ -78,6 +80,18 @@ class AuthService {
 
   get authToken(): string | null {
     return this.token
+  }
+
+  get isAdmin(): boolean {
+    return this.user?.role === 'admin'
+  }
+
+  get isMember(): boolean {
+    return this.user?.role === 'member'
+  }
+
+  get canCreateAreas(): boolean {
+    return this.isAdmin
   }
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {

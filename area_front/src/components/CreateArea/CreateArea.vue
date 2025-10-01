@@ -206,7 +206,6 @@
                     v-model="form.triggerConfig.calendarId"
                     class="modern-input"
                     placeholder="primary"
-                    value="primary"
                   />
                   <small class="input-hint">Use 'primary' for your main calendar</small>
                 </div>
@@ -368,7 +367,6 @@ const form = reactive({
   actionConfig: {} as any,
 })
 
-// Watch for template changes and pre-fill form
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -376,7 +374,6 @@ watch(() => props.template, (newTemplate) => {
     form.triggerService = newTemplate.triggerService
     form.actionService = newTemplate.actionService
     
-    // Pre-fill configuration for Calendar → Gmail
     if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
@@ -397,7 +394,6 @@ const isFormValid = computed(() => {
                       form.triggerService !== '' &&
                       form.actionService !== ''
   
-  // Additional validation for Calendar → Gmail
   if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
@@ -416,13 +412,14 @@ const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
   showAllTriggerServices.value = false
   
-  // Initialize default config for Calendar
   if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
       eventTime: '',
       eventTitle: '',
       calendarId: 'primary'
     }
+  } else {
+    form.triggerConfig = {}
   }
 }
 
@@ -430,7 +427,6 @@ const selectAction = (serviceId: string) => {
   form.actionService = serviceId
   showAllReactionServices.value = false
   
-  // Initialize default config for Gmail
   if (serviceId === 'Gmail') {
     form.actionConfig = {
       toEmail: '',
