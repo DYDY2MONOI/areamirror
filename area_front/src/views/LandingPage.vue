@@ -197,6 +197,7 @@
       </div>
     </div>
 
+
     <v-container class="mt-6">
       <div class="section-header">
         <div class="section-info">
@@ -558,17 +559,23 @@ const handleAreaClick = (area: AreaTemplate) => {
     router.push('/login')
     return
   }
-  if (currentUser.value?.role !== 'admin') {
-    return
-  }
+  
   console.log('Area clicked:', area)
   selectedArea.value = area
   showAreaModal.value = true
 }
 
 const createAreaFromTemplate = () => {
+  console.log('Creating area from template:', selectedArea.value)
+  console.log('Template data structure:', JSON.stringify(selectedArea.value, null, 2))
   showAreaModal.value = false
-  showCreateModal.value = true
+  
+  router.push({
+    name: 'configure-area',
+    query: {
+      template: JSON.stringify(selectedArea.value)
+    }
+  })
 }
 
 const handleAreaCreated = async () => {

@@ -157,8 +157,8 @@
           </div>
         </div>
 
-        <!-- Configuration Section -->
-        <div v-if="form.triggerService && form.actionService" class="form-section">
+        <!-- Configuration Section - Hidden for admins -->
+        <div v-if="form.triggerService && form.actionService && currentUser?.role !== 'admin'" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
@@ -303,9 +303,9 @@
           {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
         
-        <!-- Test Email Button for Calendar → Gmail -->
+        <!-- Test Email Button for Calendar → Gmail (Hidden for admins) -->
         <button 
-          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
+          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'"
           class="action-btn test-email-btn" 
           @click="sendTestEmail" 
           :disabled="!canSendTestEmail || isSendingTest"
@@ -314,8 +314,8 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
         
-        <!-- Debug info for Calendar → Gmail -->
-        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
+        <!-- Debug info for Calendar → Gmail (Hidden for admins) -->
+        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? '✅ Ready to create' : '❌ Missing: ' + getMissingFields() }}
           </small>
@@ -329,6 +329,7 @@
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import appsJson from '../../assets/apps.json'
 import { areaService } from '../../services/area'
+import { useAuth } from '@/composables/useAuth'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -349,6 +350,7 @@ const props = defineProps<{
   template?: AreaTemplate | null
 }>()
 
+const { currentUser } = useAuth()
 const ICONS_DIR = 'app-icons'
 
 const getIconUrl = (file: string) =>
@@ -393,6 +395,10 @@ const isFormValid = computed(() => {
   const hasBasicInfo = form.areaName.trim() !== '' &&
                       form.triggerService !== '' &&
                       form.actionService !== ''
+  
+  if (currentUser.value?.role === 'admin') {
+    return hasBasicInfo
+  }
   
   if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
@@ -504,6 +510,20 @@ const createArea = async () => {
   error.value = null
   
   try {
+    let triggerConfig = form.triggerConfig
+    let actionConfig = form.actionConfig
+    
+    if (currentUser.value?.role === 'admin') {
+      triggerConfig = {
+        type: 'default',
+        enabled: true
+      }
+      actionConfig = {
+        type: 'default',
+        enabled: true
+      }
+    }
+    
     const areaData = {
       name: form.areaName,
       description: form.description,
@@ -511,8 +531,8 @@ const createArea = async () => {
       triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
       actionService: form.actionService!,
       actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-      triggerConfig: form.triggerConfig,
-      actionConfig: form.actionConfig
+      triggerConfig: triggerConfig,
+      actionConfig: actionConfig
     }
     
     await areaService.createArea(areaData)

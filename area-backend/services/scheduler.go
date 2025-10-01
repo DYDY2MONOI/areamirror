@@ -65,8 +65,16 @@ func (s *SchedulerService) shouldTriggerArea(area models.Area, triggerConfig map
 		return false
 	}
 
+	if area.LastRunAt != nil {
+		timeSinceLastRun := now.Sub(*area.LastRunAt)
+		if timeSinceLastRun < 5*time.Minute {
+			log.Printf("Area %s already executed recently, skipping", area.Name)
+			return false
+		}
+	}
+
 	timeDiff := eventTime.Sub(now)
-	return timeDiff >= 0 && timeDiff <= time.Minute
+	return timeDiff >= 0 && timeDiff <= 30*time.Second
 }
 
 func (s *SchedulerService) executeArea(area models.Area) error {
