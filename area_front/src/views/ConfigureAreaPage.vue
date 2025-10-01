@@ -26,7 +26,7 @@
             <p class="section-description">{{ template?.description }}</p>
           </div>
         </div>
-        
+
         <div class="workflow-preview">
           <div class="workflow-step">
             <div class="step-icon trigger-icon">
@@ -61,8 +61,7 @@
           <p class="debug-info">Form Data: {{ JSON.stringify(form) }}</p>
         </div>
 
-        <!-- Calendar Trigger Configuration -->
-        <div v-if="template" class="config-card">
+        <div v-if="template && template.triggerService === 'Google Calendar'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
               <v-icon size="24" color="white">mdi-calendar</v-icon>
@@ -86,23 +85,23 @@
                     required
                   />
                   <div class="date-presets">
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setDatePreset('today')"
                     >
                       Today
                     </button>
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setDatePreset('tomorrow')"
                     >
                       Tomorrow
                     </button>
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setDatePreset('nextweek')"
                     >
                       Next Week
@@ -123,30 +122,30 @@
                     required
                   />
                   <div class="time-presets">
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setTimePreset('09:00')"
                     >
                       9:00 AM
                     </button>
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setTimePreset('12:00')"
                     >
                       12:00 PM
                     </button>
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setTimePreset('15:00')"
                     >
                       3:00 PM
                     </button>
-                    <button 
-                      type="button" 
-                      class="preset-btn" 
+                    <button
+                      type="button"
+                      class="preset-btn"
                       @click="setTimePreset('18:00')"
                     >
                       6:00 PM
@@ -185,7 +184,7 @@
         </div>
 
         <!-- Gmail Action Configuration -->
-        <div v-if="template" class="config-card">
+        <div v-if="template && template.actionService === 'Gmail'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
               <v-icon size="24" color="white">mdi-email</v-icon>
@@ -254,7 +253,7 @@
           <v-icon size="18">mdi-check</v-icon>
           {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
-        
+
         <!-- Test Email Button for Calendar → Gmail -->
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
           <div class="test-email-info">
@@ -266,9 +265,9 @@
               <strong>Body:</strong> {{ form.actionConfig.body || 'Enter message body' }}
             </div>
           </div>
-          <button 
-            class="btn btn-test" 
-            @click="sendTestEmail" 
+          <button
+            class="btn btn-test"
+            @click="sendTestEmail"
             :disabled="!canSendTestEmail || isSendingTest"
           >
             <v-icon size="18">mdi-email-send</v-icon>
@@ -290,9 +289,9 @@
               <strong>Combined:</strong> {{ getCombinedDateTime() }}
             </div>
           </div>
-          <button 
-            class="btn btn-test-trigger" 
-            @click="testTrigger" 
+          <button
+            class="btn btn-test-trigger"
+            @click="testTrigger"
             :disabled="!canTestTrigger || isTestingTrigger"
           >
             <v-icon size="18">mdi-calendar-clock</v-icon>
@@ -346,43 +345,56 @@ watch(() => template.value, (newTemplate) => {
     console.log('Initializing form for template:', newTemplate)
     console.log('Trigger service:', newTemplate.triggerService)
     console.log('Action service:', newTemplate.actionService)
-    
-    form.triggerConfig = {
-      eventDate: '',
-      eventTime: '',
-      eventTitle: '',
-      calendarId: 'primary'
+
+    // Initialize config based on the services used
+    if (newTemplate.triggerService === 'Google Calendar') {
+      form.triggerConfig = {
+        eventDate: '',
+        eventTime: '',
+        eventTitle: '',
+        calendarId: 'primary'
+      }
+    } else {
+      form.triggerConfig = {}
     }
-    form.actionConfig = {
-      toEmail: '',
-      subject: 'Reminder: {{eventTitle}}',
-      body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+
+    if (newTemplate.actionService === 'Gmail') {
+      form.actionConfig = {
+        toEmail: '',
+        subject: 'Reminder: {{eventTitle}}',
+        body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+      }
+    } else {
+      form.actionConfig = {}
     }
+
     console.log('Form initialized:', form)
   }
 }, { immediate: true })
 
 const isFormValid = computed(() => {
   if (!template.value) return false
-  
-  if (template.value.triggerService && template.value.actionService) {
+
+  // For Google Calendar + Gmail areas, require specific fields
+  if (template.value.triggerService === 'Google Calendar' && template.value.actionService === 'Gmail') {
     return form.triggerConfig.eventDate &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
   }
-  
+
+  // For other area types, just require basic info (admin can create without detailed config)
   return true
 })
 
 const canSendTestEmail = computed(() => {
-  return form.actionConfig.toEmail && 
-         form.actionConfig.subject && 
+  return form.actionConfig.toEmail &&
+         form.actionConfig.subject &&
          form.actionConfig.body
 })
 
 const canTestTrigger = computed(() => {
-  return form.triggerConfig.eventDate && 
+  return form.triggerConfig.eventDate &&
          form.triggerConfig.eventTime
 })
 
@@ -423,7 +435,7 @@ const setTimePreset = (time: string) => {
 const setDatePreset = (preset: string) => {
   const today = new Date()
   let targetDate = new Date()
-  
+
   switch (preset) {
     case 'today':
       targetDate = new Date(today)
@@ -437,7 +449,7 @@ const setDatePreset = (preset: string) => {
       targetDate.setDate(today.getDate() + 7)
       break
   }
-  
+
   form.triggerConfig.eventDate = targetDate.toISOString().split('T')[0]
 }
 
@@ -450,23 +462,23 @@ const sendTestEmail = async () => {
     console.log('Cannot send test email - form not valid')
     return
   }
-  
+
   console.log('Sending test email with data:', {
     to: form.actionConfig.toEmail,
     subject: form.actionConfig.subject,
     body: form.actionConfig.body
   })
-  
+
   isSendingTest.value = true
   error.value = null
-  
+
   try {
     const testEmailData = {
       to: form.actionConfig.toEmail,
       subject: form.actionConfig.subject,
       body: form.actionConfig.body
     }
-    
+
     console.log('Making request to backend...')
     const response = await fetch('http://localhost:8080/test/email', {
       method: 'POST',
@@ -475,11 +487,11 @@ const sendTestEmail = async () => {
       },
       body: JSON.stringify(testEmailData)
     })
-    
+
     console.log('Response status:', response.status)
     const result = await response.json()
     console.log('Response data:', result)
-    
+
     if (response.ok) {
       alert('✅ Test email sent successfully! Check your inbox.')
       error.value = null
@@ -501,16 +513,16 @@ const testTrigger = async () => {
     console.log('Cannot test trigger - date and time not set')
     return
   }
-  
+
   console.log('Testing trigger with data:', {
     eventDate: form.triggerConfig.eventDate,
     eventTime: form.triggerConfig.eventTime,
     combined: getCombinedDateTime()
   })
-  
+
   isTestingTrigger.value = true
   triggerError.value = null
-  
+
   try {
     const areaData = {
       name: `Test Area - ${template.value?.title || 'Unknown'}`,
@@ -525,11 +537,11 @@ const testTrigger = async () => {
       },
       actionConfig: form.actionConfig
     }
-    
+
     console.log('Creating test area...')
     const createdArea = await areaService.createArea(areaData)
     console.log('Test area created:', createdArea)
-    
+
     console.log('Testing scheduler for area ID:', createdArea.id)
     const response = await fetch(`http://localhost:8080/test/scheduler/${createdArea.id}`, {
       method: 'POST',
@@ -537,14 +549,14 @@ const testTrigger = async () => {
         'Content-Type': 'application/json',
       }
     })
-    
+
     const result = await response.json()
     console.log('Scheduler test response:', result)
-    
+
     if (response.ok) {
       alert('✅ Trigger test successful! Check your email inbox.')
       triggerError.value = null
-      
+
       try {
         await fetch(`http://localhost:8080/areas/${createdArea.id}`, {
           method: 'DELETE',
@@ -571,30 +583,31 @@ const testTrigger = async () => {
 
 const createArea = async () => {
   if (!isFormValid.value || !template.value) return
-  
+
   isLoading.value = true
   error.value = null
-  
+
   try {
     let triggerConfig = { ...form.triggerConfig }
-    
-    if (form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
+
+    // Only process Google Calendar specific config if it's a Google Calendar trigger
+    if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = eventDateTime.toISOString()
       console.log('Combined event time:', triggerConfig.eventTime)
     }
-    
+
     const areaData = {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
-      triggerService: template.value.triggerService || 'Google Calendar',
+      triggerService: template.value.triggerService || 'Unknown',
       triggerType: template.value.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
-      actionService: template.value.actionService || 'Gmail',
+      actionService: template.value.actionService || 'Unknown',
       actionType: template.value.actionService === 'Gmail' ? 'SendEmail' : 'Action',
       triggerConfig: triggerConfig,
       actionConfig: form.actionConfig
     }
-    
+
     console.log('Creating area with data:', areaData)
     await areaService.createArea(areaData)
     router.push('/')
