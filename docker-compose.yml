@@ -39,6 +39,12 @@ services:
       FACEBOOK_CLIENT_ID: 827003503004798
       FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
       FACEBOOK_REDIRECT_URI: http://localhost:3000/auth/facebook/callback
+      # Configuration email pour mot de passe oublié (séparé du système Gmail existant)
+      PASSWORD_RESET_SMTP_HOST: smtp.gmail.com
+      PASSWORD_RESET_SMTP_PORT: 587
+      PASSWORD_RESET_SMTP_USERNAME: your_email@gmail.com
+      PASSWORD_RESET_SMTP_PASSWORD: your_app_password
+      PASSWORD_RESET_FROM_EMAIL: your_email@gmail.com
     ports:
       - "8080:8080"
     depends_on:
