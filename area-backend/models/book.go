@@ -30,8 +30,13 @@ type User struct {
 	GitHubUsername     *string    `json:"github_username" gorm:"column:git_hub_username"`
 	GoogleID           *string    `json:"google_id" gorm:"uniqueIndex"`
 	GoogleEmail        *string    `json:"google_email"`
+	FacebookID         *string    `json:"facebook_id" gorm:"uniqueIndex"`
+	FacebookEmail      *string    `json:"facebook_email"`
+	Role               string     `json:"role" gorm:"default:'member'"`
+	IsActive           bool       `json:"is_active" gorm:"default:true"`
 
 	Areas []Area `json:"areas,omitempty" gorm:"foreignKey:UserID"`
+	Roles []Role `json:"roles,omitempty" gorm:"many2many:user_roles;"`
 }
 
 type Service struct {

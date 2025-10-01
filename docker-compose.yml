@@ -32,17 +32,18 @@ services:
       GITHUB_CLIENT_SECRET: d20831e34517a30903d8166a67d7aee11969be99
       GOOGLE_CLIENT_ID: 635456942993-cl4hm8rvh0pcslhjfko23cbgh18o4cdq.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: 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
-      
-      GOOGLE_ACCESS_TOKEN: ya29.a0AQQ_BDTJ-yHNqlzW3TYsjPNBSx6aV-8ez-e4BCc-dBqYWy1G1AMV0-_gHOUMMAVbNh6-jusaSvID93Y7WMPAe-VQA0bzYBOgEEzVQ2z15zNPIvx3KKw26hd1uLjcZjYgeUF99VVfxTo-VRKOvfkL3aupl-o4Ggv0atSKNwFBzijapN-CXevy4VWC89WU5MmiGZWkCC8aCgYKATUSARcSFQHGX2Mi47aW8AwceUVkgBVGKP6xuw0206
-      GOOGLE_REFRESH_TOKEN: 1//040tCPusos1jhCgYIARAAGAQSNwF-L9Irh3ab-7L6rzjJa_mtz6kHVODGTDXvkfV-jEDwT8zcyR82rGfIGBtfotQB4g1k5X7ckUs      
+
+      GOOGLE_ACCESS_TOKEN: ya29.a0AQQ_BDSFYXG24W0tze0mjCa9CqP2qwGU4ICPVIuJnkYXdg5-Y_qbfXXrzUGn_Fs2ldtuOhuF80u8T168s3TVbMPORnWq_jluvs-UeMXuiCpqb8LC3oi92CitV8ApWGHpuiTy2RlmV1Gp130End_nx1PfwS6ERs47Lj0aV9MhzyehNf8wQUNhQouX00MziiTpaU3klZAaCgYKATkSARcSFQHGX2Mihd-Ywjee2f7vXT6c1mWQ5g0206
+      GOOGLE_REFRESH_TOKEN: 1//049IIAzsHEue6CgYIARAAGAQSNwF-L9Ir-TH4-sSQBViF3Hl1jFAvACSpFVybfphVQSnqoZ7N77eiyZbDjbR_mwtwfPr1v4SsWNA
       GOOGLE_REDIRECT_URI: http://localhost:3000/callback
-      # Configuration GitHub → Gmail
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:8080/webhooks/github}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6}
-      # Configuration Gmail SMTP
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASSWORD: ${GMAIL_PASSWORD:-}
+      FACEBOOK_CLIENT_ID: 827003503004798
+      FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
+      FACEBOOK_REDIRECT_URI: http://localhost:3000/auth/facebook/callback
     ports:
       - "8080:8080"
     depends_on:
@@ -58,6 +59,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_FACEBOOK_CLIENT_ID: 827003503004798
     ports:
       - "3000:80"
     depends_on:

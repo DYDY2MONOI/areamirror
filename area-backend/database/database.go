@@ -31,7 +31,6 @@ func InitDB() {
 		sslmode = "disable"
 	}
 
-
 	if host == "" || user == "" || dbname == "" {
 		log.Fatal("Variables d'environnement manquantes dans .env: DB_HOST, DB_USER, DB_NAME sont obligatoires")
 	}
@@ -42,13 +41,27 @@ func InitDB() {
 	}
 	dsn += " dbname=" + dbname + " port=" + port + " sslmode=" + sslmode
 
-
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Échec de connexion à la base de données:", err)
 	}
 
 	log.Println("Connexion à PostgreSQL réussie!")
+
+	createEnums()
+}
+
+func createEnums() {
+	enums := []string{
+		"CREATE TYPE area_status AS ENUM ('enabled', 'disabled', 'paused');",
+		"CREATE TYPE run_status AS ENUM ('idle', 'running', 'success', 'failed', 'retrying');",
+	}
+
+	for _, enumSQL := range enums {
+		if err := DB.Exec(enumSQL).Error; err != nil {
+			log.Printf("Enum creation warning (may already exist): %v", err)
+		}
+	}
 }
 
 func GetDB() *gorm.DB {

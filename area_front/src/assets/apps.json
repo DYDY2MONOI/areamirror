@@ -1,5 +1,9 @@
 [
   {
+    "name": "Google Calendar",
+    "icon": "google-calendar.png"
+  },
+  {
     "name": "Gmail",
     "icon": "gmail.png"
   },
@@ -26,10 +30,6 @@
   {
     "name": "Notion",
     "icon": "notion.png"
-  },
-  {
-    "name": "Slack",
-    "icon": "slack.png"
   },
   {
     "name": "Trello",
@@ -62,10 +62,6 @@
   {
     "name": "Dropbox",
     "icon": "dropbox.png"
-  },
-  {
-    "name": "Google Calendar",
-    "icon": "google-calendar.png"
   },
   {
     "name": "Microsoft Teams",

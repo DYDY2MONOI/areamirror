@@ -88,6 +88,22 @@ type GoogleUserResponse struct {
 	Picture       string `json:"picture"`
 }
 
+type FacebookLinkRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type FacebookTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type FacebookUserResponse struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 func init() {
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
@@ -141,6 +157,8 @@ func Register(c *gin.Context) {
 			"first_name":    user.FirstName,
 			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
+			"role":          user.Role,
+			"is_active":     user.IsActive,
 		},
 	})
 }
@@ -179,6 +197,8 @@ func Login(c *gin.Context) {
 			"first_name":    user.FirstName,
 			"last_name":     user.LastName,
 			"profile_image": user.ProfileImage,
+			"role":          user.Role,
+			"is_active":     user.IsActive,
 		},
 	})
 }
@@ -211,10 +231,14 @@ func GetProfile(c *gin.Context) {
 			"lang":            user.Lang,
 			"login_provider":  user.LoginProvider,
 			"profile_image":   user.ProfileImage,
+			"role":            user.Role,
+			"is_active":       user.IsActive,
 			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
 			"google_id":       user.GoogleID,
 			"google_email":    user.GoogleEmail,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
 		},
 	})
 }
@@ -295,6 +319,8 @@ func UpdateProfile(c *gin.Context) {
 			"github_username": user.GitHubUsername,
 			"google_id":       user.GoogleID,
 			"google_email":    user.GoogleEmail,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
 		},
 	})
 }
@@ -433,6 +459,8 @@ func UploadProfileImage(c *gin.Context) {
 			"github_username": user.GitHubUsername,
 			"google_id":       user.GoogleID,
 			"google_email":    user.GoogleEmail,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
 		},
 	})
 }
@@ -973,4 +1001,176 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		"notification_types": req.NotificationTypes,
 		"webhook_status": webhookMessage,
 	})
+}
+
+func LinkFacebookAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req FacebookLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	facebookClientID := os.Getenv("FACEBOOK_CLIENT_ID")
+	facebookClientSecret := os.Getenv("FACEBOOK_CLIENT_SECRET")
+
+	if facebookClientID == "" || facebookClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Facebook OAuth not configured"})
+		return
+	}
+
+	accessToken, err := exchangeFacebookCodeForToken(req.Code, facebookClientID, facebookClientSecret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
+
+	facebookUser, err := getFacebookUser(accessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Facebook user"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existingUser models.User
+	if err := database.DB.Where("facebook_id = ?", facebookUser.ID).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Facebook account is already linked to another user"})
+		return
+	}
+
+	user.FacebookID = &facebookUser.ID
+	user.FacebookEmail = &facebookUser.Email
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Facebook account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Facebook account linked successfully",
+		"facebook_email": user.FacebookEmail,
+	})
+}
+
+func UnlinkFacebookAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.FacebookID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Facebook account linked"})
+		return
+	}
+
+	user.FacebookID = nil
+	user.FacebookEmail = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Facebook account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Facebook account unlinked successfully",
+	})
+}
+
+func exchangeFacebookCodeForToken(code, clientID, clientSecret string) (string, error) {
+	url := "https://graph.facebook.com/v18.0/oauth/access_token"
+
+	redirectURI := os.Getenv("FACEBOOK_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "http://localhost:3000/auth/facebook/callback"
+	}
+
+	data := map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"code":          code,
+		"redirect_uri":  redirectURI,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var tokenResp FacebookTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return "", err
+	}
+
+	return tokenResp.AccessToken, nil
+}
+
+func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
+	url := "https://graph.facebook.com/v18.0/me?fields=id,name"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var facebookUser FacebookUserResponse
+	if err := json.Unmarshal(body, &facebookUser); err != nil {
+		return nil, err
+	}
+
+	if facebookUser.Email == "" {
+		facebookUser.Email = facebookUser.ID + "@facebook.com"
+	}
+
+	return &facebookUser, nil
 }

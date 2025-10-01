@@ -60,9 +60,15 @@ func CreateArea(c *gin.Context) {
 		return
 	}
 
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var user models.User
-	if err := database.DB.First(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No user found"})
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 

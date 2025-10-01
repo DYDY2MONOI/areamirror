@@ -2,6 +2,7 @@ package database
 
 import (
 	"Golang-API-tutoriel/models"
+	"encoding/json"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
@@ -9,10 +10,14 @@ import (
 
 func SeedData() {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	adminPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+
+	createDefaultRoles()
 
 	users := []models.User{
-		{Email: "john@example.com", Password: string(hashedPassword), FirstName: "John", LastName: "Doe"},
-		{Email: "jane@example.com", Password: string(hashedPassword), FirstName: "Jane", LastName: "Smith"},
+		{Email: "admin@area.com", Password: string(adminPassword), FirstName: "Admin", LastName: "User", Role: "admin"},
+		{Email: "john@example.com", Password: string(hashedPassword), FirstName: "John", LastName: "Doe", Role: "member"},
+		{Email: "jane@example.com", Password: string(hashedPassword), FirstName: "Jane", LastName: "Smith", Role: "member"},
 	}
 
 	for _, user := range users {
@@ -75,6 +80,39 @@ func SeedData() {
 		}
 	}
 
-
 	log.Println("Données de test créées avec succès!")
+}
+
+func createDefaultRoles() {
+	adminPermissions := models.GetDefaultPermissions(models.RoleAdmin)
+	adminPermissionsJSON, _ := json.Marshal(adminPermissions)
+
+	adminRole := models.Role{
+		Name:        models.RoleAdmin,
+		Description: "Administrator with full system access",
+		Permissions: string(adminPermissionsJSON),
+		IsActive:    true,
+	}
+
+	var existingAdminRole models.Role
+	if err := DB.Where("name = ?", models.RoleAdmin).First(&existingAdminRole).Error; err != nil {
+		DB.Create(&adminRole)
+	}
+
+	memberPermissions := models.GetDefaultPermissions(models.RoleMember)
+	memberPermissionsJSON, _ := json.Marshal(memberPermissions)
+
+	memberRole := models.Role{
+		Name:        models.RoleMember,
+		Description: "Regular user with basic access",
+		Permissions: string(memberPermissionsJSON),
+		IsActive:    true,
+	}
+
+	var existingMemberRole models.Role
+	if err := DB.Where("name = ?", models.RoleMember).First(&existingMemberRole).Error; err != nil {
+		DB.Create(&memberRole)
+	}
+
+	log.Println("Default roles created successfully!")
 }

@@ -11,10 +11,14 @@ export interface User {
   country?: string
   lang?: string
   login_provider?: string
+  role?: string
+  is_active?: boolean
   github_id?: string
   github_username?: string
   google_id?: string
   google_email?: string
+  facebook_id?: string
+  facebook_email?: string
   discord_id?: string
   discord_username?: string
   spotify_id?: string
@@ -76,6 +80,18 @@ class AuthService {
 
   get authToken(): string | null {
     return this.token
+  }
+
+  get isAdmin(): boolean {
+    return this.user?.role === 'admin'
+  }
+
+  get isMember(): boolean {
+    return this.user?.role === 'member'
+  }
+
+  get canCreateAreas(): boolean {
+    return this.isAdmin
   }
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -386,6 +402,52 @@ class AuthService {
     }
 
     return this.user.profile_image
+  }
+
+  async linkFacebookAccount(code: string): Promise<{ facebook_email: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/facebook/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Facebook account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkFacebookAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/facebook/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Facebook account')
+    }
+
+    await this.fetchProfile()
   }
 }
 

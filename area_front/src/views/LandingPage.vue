@@ -27,7 +27,11 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <SidebarButton tooltip="Create" @open="() => requireAuth(() => showCreateModal = true)" />
+        <SidebarButton
+          v-if="isAuthenticated && currentUser?.role === 'admin'"
+          tooltip="Create"
+          @open="() => requireAdmin(() => showCreateModal = true)"
+        />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
             <v-list-item
@@ -234,7 +238,7 @@
       </div>
     </v-container>
 
-    <v-container>
+    <v-container v-if="!isAuthenticated || currentUser?.role === 'admin'">
       <div class="section-header">
         <div class="section-info">
           <h2 class="section-title">Create new AREA</h2>
@@ -260,11 +264,109 @@
           </div>
         </div>
         <div class="cards-grid">
-          <CardButton @open="() => requireAuth(() => showCreateModal = true)" />
+          <CardButton
+            v-if="isAuthenticated && currentUser?.role === 'admin'"
+            @open="() => requireAdmin(() => showCreateModal = true)"
+          />
+          <CardButton
+            v-else
+            @open="() => requireAuth(() => showCreateModal = true)"
+          />
         </div>
       </div>
     </v-container>
     </div>
+
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <div class="footer-logo">
+            <h3 class="company-name">AREA</h3>
+            <p class="company-tagline">Intelligent Automation Platform</p>
+          </div>
+          <p class="footer-description">
+            Connect your favorite services with intelligent automation.
+            Build powerful workflows that work for you.
+          </p>
+        </div>
+
+        <div class="footer-section">
+          <h4 class="footer-title">Product</h4>
+          <ul class="footer-links">
+            <li><a href="#" @click.prevent>Features</a></li>
+            <li><a href="#" @click.prevent>Integrations</a></li>
+            <li><a href="#" @click.prevent>API</a></li>
+            <li><a href="#" @click.prevent>Documentation</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4 class="footer-title">Company</h4>
+          <ul class="footer-links">
+            <li><a href="#" @click.prevent>About Us</a></li>
+            <li><a href="#" @click.prevent>Careers</a></li>
+            <li><a href="#" @click.prevent>Blog</a></li>
+            <li><a href="#" @click.prevent>Press</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4 class="footer-title">Support</h4>
+          <ul class="footer-links">
+            <li><a href="#" @click.prevent>Help Center</a></li>
+            <li><a href="#" @click.prevent>Community</a></li>
+            <li><a href="#" @click.prevent>Contact</a></li>
+            <li><a href="#" @click.prevent>Status</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4 class="footer-title">Contact</h4>
+          <div class="contact-info">
+            <div class="contact-item">
+              <v-icon size="16" color="var(--color-accent-primary)">mdi-email</v-icon>
+              <span>contact@area.com</span>
+            </div>
+            <div class="contact-item">
+              <v-icon size="16" color="var(--color-accent-primary)">mdi-phone</v-icon>
+              <span>+33 7 41 61 72 18</span>
+            </div>
+            <div class="contact-item">
+              <v-icon size="16" color="var(--color-accent-primary)">mdi-map-marker</v-icon>
+              <span>Paname, France</span>
+            </div>
+          </div>
+          <div class="social-links">
+            <a href="#" class="social-link" @click.prevent>
+              <v-icon size="20">mdi-twitter</v-icon>
+            </a>
+            <a href="#" class="social-link" @click.prevent>
+              <v-icon size="20">mdi-github</v-icon>
+            </a>
+            <a href="#" class="social-link" @click.prevent>
+              <v-icon size="20">mdi-linkedin</v-icon>
+            </a>
+            <a href="#" class="social-link" @click.prevent>
+              <v-icon size="20">mdi-discord</v-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-bottom-content">
+          <p class="copyright">
+            © {{ year }} AREA. All rights reserved.
+          </p>
+          <div class="footer-bottom-links">
+            <a href="#" @click.prevent>Privacy Policy</a>
+            <a href="#" @click.prevent>Terms of Service</a>
+            <a href="#" @click.prevent>Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 
   <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
@@ -360,6 +462,36 @@
     </div>
   </div>
 
+  <!-- Dialog de confirmation de déconnexion -->
+  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
+    <div class="custom-modal-content logout-modal" @click.stop>
+      <div class="logout-modal-header">
+        <div class="logout-icon-container">
+          <v-icon size="32" color="white">mdi-logout</v-icon>
+        </div>
+        <h3 class="logout-title">Sign Out</h3>
+      </div>
+      <p class="logout-message">Are you sure you want to sign out?</p>
+      <div class="logout-actions">
+        <v-btn
+          class="logout-cancel-btn"
+          variant="outlined"
+          @click="showLogoutDialog = false"
+        >
+          Cancel
+        </v-btn>
+        <v-btn
+          class="logout-confirm-btn"
+          variant="flat"
+          @click="confirmLogout"
+        >
+          Sign Out
+        </v-btn>
+      </div>
+    </div>
+  </div>
+
+
 </template>
 
 <script setup lang="ts">
@@ -423,6 +555,18 @@ const requireAuth = (action: () => void) => {
   action()
 }
 
+const requireAdmin = (action: () => void) => {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  if (currentUser.value?.role !== 'admin') {
+    alert('Only administrators can create areas. Please contact an admin for access.')
+    return
+  }
+  action()
+}
+
 const confirmLogout = async () => {
   try {
     await logout()
@@ -451,8 +595,16 @@ const handleAreaClick = (area: AreaTemplate | Area) => {
 }
 
 const createAreaFromTemplate = () => {
+  console.log('Creating area from template:', selectedArea.value)
+  console.log('Template data structure:', JSON.stringify(selectedArea.value, null, 2))
   showAreaModal.value = false
-  showCreateModal.value = true
+
+  router.push({
+    name: 'configure-area',
+    query: {
+      template: JSON.stringify(selectedArea.value)
+    }
+  })
 }
 
 const handleAreaCreated = async () => {
@@ -1832,6 +1984,226 @@ body.modal-open {
     width: 100%;
   }
 }
+
+/* Footer Styles */
+.site-footer {
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-primary);
+  margin-top: 4rem;
+  padding: 3rem 0 0 0;
+  backdrop-filter: blur(20px);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+  padding: 0 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.footer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footer-logo {
+  margin-bottom: 1rem;
+}
+
+.company-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.company-tagline {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.footer-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.footer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-links li a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.footer-links li a:hover {
+  color: var(--color-accent-primary);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: var(--transition-normal);
+}
+
+.social-link:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-focus);
+  color: var(--color-accent-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--color-border-primary);
+  padding: 2rem 0;
+}
+
+.footer-bottom-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.copyright {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.footer-bottom-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.footer-bottom-links a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.footer-bottom-links a:hover {
+  color: var(--color-accent-primary);
+}
+
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .footer-section:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 0 1rem;
+  }
+
+  .footer-bottom-content {
+    flex-direction: column;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  .footer-bottom-links {
+    justify-content: center;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    padding: 2rem 0 0 0;
+  }
+
+  .footer-content {
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .footer-bottom {
+    padding: 1.5rem 0;
+  }
+
+  .footer-bottom-content {
+    padding: 0 1rem;
+  }
+
+  .footer-bottom-links {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
 
 </style>
 
