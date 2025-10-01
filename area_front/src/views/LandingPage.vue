@@ -1,5 +1,31 @@
 <template>
   <div class="landing-dark">
+    <!-- Space Background -->
+    <div class="space-background">
+      <div class="stars"></div>
+      <div class="stars2"></div>
+      <div class="stars3"></div>
+
+      <!-- Planets -->
+      <div class="planet-container">
+        <div class="planet planet-left">
+          <div class="planet-core"></div>
+          <div class="planet-surface"></div>
+          <div class="planet-glow-edge"></div>
+          <div class="planet-atmosphere"></div>
+        </div>
+        <div class="planet planet-right">
+          <div class="planet-core"></div>
+          <div class="planet-surface"></div>
+          <div class="planet-glow-edge"></div>
+          <div class="planet-atmosphere"></div>
+        </div>
+      </div>
+
+      <!-- Nebula Effect -->
+      <div class="nebula"></div>
+    </div>
+
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
@@ -663,6 +689,432 @@ watch(showCreateModal, (isOpen) => {
 </script>
 
 <style scoped>
+/* Space Background Styles */
+.space-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, #1a1a2e 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, #16213e 0%, transparent 50%),
+    linear-gradient(135deg, #0f0f23 0%, #000000 50%, #0a0a0f 100%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Animated Stars */
+.stars, .stars2, .stars3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 23px 37px, #fff, transparent),
+    radial-gradient(2px 2px at 47px 73px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 89px 43px, #eee, transparent),
+    radial-gradient(1px 1px at 127px 83px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 163px 31px, #ddd, transparent),
+    radial-gradient(1px 1px at 201px 57px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 67px 19px, #fff, transparent),
+    radial-gradient(1px 1px at 143px 91px, rgba(255,255,255,0.6), transparent);
+  background-repeat: repeat;
+  background-size: 250px 120px;
+  animation: twinkle 8s ease-in-out infinite;
+}
+
+.stars2 {
+  background-image:
+    radial-gradient(1px 1px at 53px 23px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 97px 67px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 151px 13px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 197px 53px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 79px 41px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 113px 29px, rgba(255,255,255,0.8), transparent);
+  background-repeat: repeat;
+  background-size: 300px 150px;
+  animation: twinkle 12s ease-in-out infinite reverse;
+}
+
+.stars3 {
+  background-image:
+    radial-gradient(1px 1px at 31px 59px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 83px 27px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 119px 87px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 157px 13px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 191px 71px, rgba(255,255,255,0.8), transparent);
+  background-repeat: repeat;
+  background-size: 400px 200px;
+  animation: twinkle 15s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0px) scale(1);
+  }
+  25% {
+    opacity: 0.8;
+    transform: translateY(-15px) scale(1.1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translateY(-8px) scale(0.9);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translateY(-22px) scale(1.05);
+  }
+}
+
+/* Planet Container */
+.planet-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Planet Base Styles */
+.planet {
+  position: absolute;
+  border-radius: 50%;
+  animation: float 20s ease-in-out infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.planet-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.planet-atmosphere {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: atmosphere 8s ease-in-out infinite;
+}
+
+.planet-glow {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: glow 6s ease-in-out infinite;
+}
+
+/* Left Planet - Dramatic Style */
+.planet-left {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  top: 15%;
+  left: -200px;
+  animation-delay: 0s;
+  z-index: 1;
+}
+
+/* Right Planet - Dramatic Style */
+.planet-right {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  top: 10%;
+  right: -250px;
+  animation-delay: 2s;
+  z-index: 1;
+}
+
+/* Planet Core - Dark Base */
+.planet-core {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%,
+    #0f0f23 0%,
+    #1a1a2e 30%,
+    #16213e 60%,
+    #0a0a0f 100%);
+  box-shadow:
+    inset -30px -30px 80px rgba(0, 0, 0, 0.6),
+    inset 20px 20px 60px rgba(255, 255, 255, 0.05);
+}
+
+/* Planet Surface - Atmospheric Details */
+.planet-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 120px 60px at 30% 40%, rgba(26, 26, 46, 0.8), transparent),
+    radial-gradient(ellipse 80px 40px at 60% 20%, rgba(22, 33, 62, 0.6), transparent),
+    radial-gradient(ellipse 100px 50px at 70% 70%, rgba(15, 15, 35, 0.7), transparent),
+    radial-gradient(ellipse 60px 30px at 40% 80%, rgba(26, 26, 46, 0.5), transparent);
+  animation: planet-drift 25s ease-in-out infinite;
+}
+
+/* Glowing Edge Effect */
+.planet-glow-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 100, 50, 0.8) 50%,
+      rgba(255, 150, 80, 0.6) 60%,
+      transparent 70%,
+      transparent 100%);
+  box-shadow:
+    0 0 60px rgba(255, 100, 50, 0.4),
+    0 0 120px rgba(255, 150, 80, 0.2);
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+/* Left Planet Glow Edge */
+.planet-left .planet-glow-edge {
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 120, 60, 0.9) 40%,
+      rgba(255, 180, 100, 0.7) 50%,
+      transparent 60%,
+      transparent 100%);
+  box-shadow:
+    0 0 80px rgba(255, 120, 60, 0.5),
+    0 0 160px rgba(255, 180, 100, 0.3);
+}
+
+/* Right Planet Glow Edge */
+.planet-right .planet-glow-edge {
+  background:
+    linear-gradient(270deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 80, 40, 0.9) 40%,
+      rgba(255, 140, 70, 0.7) 50%,
+      transparent 60%,
+      transparent 100%);
+  box-shadow:
+    0 0 100px rgba(255, 80, 40, 0.6),
+    0 0 200px rgba(255, 140, 70, 0.4);
+}
+
+/* Atmospheric Layer */
+.planet-atmosphere {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%,
+      rgba(26, 26, 46, 0.3) 0%,
+      rgba(22, 33, 62, 0.2) 50%,
+      transparent 100%);
+  animation: atmosphere-drift 15s ease-in-out infinite;
+}
+
+/* Nebula Effect */
+.nebula {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 20% 20%,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 80% 80%,
+      rgba(139, 92, 246, 0.08) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 60% 30%,
+      rgba(236, 72, 153, 0.05) 0%,
+      transparent 50%);
+  animation: nebula-drift 30s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-30px) rotate(8deg);
+  }
+}
+
+@keyframes atmosphere {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes nebula-drift {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(20px) translateY(-10px);
+  }
+  50% {
+    transform: translateX(-10px) translateY(20px);
+  }
+  75% {
+    transform: translateX(-20px) translateY(-5px);
+  }
+}
+
+/* Dramatic Planet Animations */
+@keyframes planet-drift {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+}
+
+@keyframes atmosphere-drift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.08) rotate(180deg);
+    opacity: 0.4;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+/* Responsive Design for Space Background */
+@media (max-width: 1024px) {
+  .planet-left {
+    width: 300px;
+    height: 300px;
+    top: 20%;
+    left: -150px;
+  }
+
+  .planet-right {
+    width: 400px;
+    height: 400px;
+    top: 15%;
+    right: -200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .planet-left {
+    width: 250px;
+    height: 250px;
+    top: 25%;
+    left: -125px;
+  }
+
+  .planet-right {
+    width: 300px;
+    height: 300px;
+    top: 20%;
+    right: -150px;
+  }
+
+  .stars, .stars2, .stars3 {
+    background-size: 150px 75px;
+  }
+}
+
+@media (max-width: 480px) {
+  .planet-left {
+    width: 200px;
+    height: 200px;
+    top: 30%;
+    left: -100px;
+  }
+
+  .planet-right {
+    width: 250px;
+    height: 250px;
+    top: 25%;
+    right: -125px;
+  }
+
+  .stars, .stars2, .stars3 {
+    background-size: 100px 50px;
+  }
+}
+
 .landing-dark {
   background: var(--gradient-bg-primary);
   color: var(--color-text-primary);
@@ -671,6 +1123,7 @@ watch(showCreateModal, (isOpen) => {
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;
+  position: relative;
 }
 
 * {
@@ -681,6 +1134,8 @@ watch(showCreateModal, (isOpen) => {
   max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
+  position: relative;
+  z-index: 2;
 }
 
 .search-section {
@@ -1250,6 +1705,8 @@ watch(showCreateModal, (isOpen) => {
 .nav-btn { color: white !important; text-transform: none; }
 .sidebar-desktop {
   display: none;
+  position: relative;
+  z-index: 3;
 }
 @media (min-width: 1280px) {
   .sidebar-desktop {
