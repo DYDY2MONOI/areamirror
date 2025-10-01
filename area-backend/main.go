@@ -36,6 +36,8 @@ func main() {
 
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
+	r.POST("/forgot-password", controllers.ForgotPassword)
+	r.POST("/reset-password", controllers.ResetPassword)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
