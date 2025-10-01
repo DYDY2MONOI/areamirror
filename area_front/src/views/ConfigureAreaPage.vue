@@ -183,6 +183,100 @@
           </div>
         </div>
 
+        <!-- GitHub Trigger Configuration -->
+        <div v-if="template && template.triggerService === 'GitHub'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-github</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">🐙 GitHub Repository Trigger</h4>
+              <p class="config-subtitle">Configure which GitHub events should trigger this area</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">📁 Repository</label>
+                <input
+                  v-model="form.triggerConfig.repository"
+                  type="text"
+                  class="form-input"
+                  placeholder="owner/repository-name"
+                  required
+                />
+                <small class="form-hint">Enter the repository in format: owner/repository-name (e.g., microsoft/vscode)</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🌿 Branch</label>
+                <input
+                  v-model="form.triggerConfig.branch"
+                  type="text"
+                  class="form-input"
+                  placeholder="main"
+                />
+                <small class="form-hint">Specific branch to monitor (leave empty for all branches)</small>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">📋 Event Types</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="push"
+                    />
+                    <span class="checkbox-label">Push Events</span>
+                    <small class="checkbox-hint">Triggered when code is pushed to the repository</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="pull_request"
+                    />
+                    <span class="checkbox-label">Pull Request Events</span>
+                    <small class="checkbox-hint">Triggered when PRs are opened, closed, or merged</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="issues"
+                    />
+                    <span class="checkbox-label">Issue Events</span>
+                    <small class="checkbox-hint">Triggered when issues are opened, closed, or commented on</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="release"
+                    />
+                    <span class="checkbox-label">Release Events</span>
+                    <small class="checkbox-hint">Triggered when new releases are published</small>
+                  </label>
+                </div>
+                <small class="form-hint">Select which GitHub events should trigger this area</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🔐 Webhook Secret</label>
+                <input
+                  v-model="form.triggerConfig.webhookSecret"
+                  type="password"
+                  class="form-input"
+                  placeholder="your-webhook-secret"
+                />
+                <small class="form-hint">Secret token for webhook verification (optional but recommended)</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Gmail Action Configuration -->
         <div v-if="template && template.actionService === 'Gmail'" class="config-card">
           <div class="config-header">
@@ -278,7 +372,7 @@
           </div>
         </div>
 
-        <!-- Test Trigger Button -->
+        <!-- Test Trigger Button for Google Calendar -->
         <div class="test-trigger-section" v-if="template?.triggerService === 'Google Calendar'">
           <div class="test-trigger-info">
             <h4>🕐 Test Calendar Trigger</h4>
@@ -296,6 +390,30 @@
           >
             <v-icon size="18">mdi-calendar-clock</v-icon>
             {{ isTestingTrigger ? 'Testing...' : 'Test Trigger' }}
+          </button>
+          <div v-if="triggerError" class="error-message">
+            ❌ {{ triggerError }}
+          </div>
+        </div>
+
+        <!-- Test Trigger Button for GitHub -->
+        <div class="test-trigger-section" v-if="template?.triggerService === 'GitHub'">
+          <div class="test-trigger-info">
+            <h4>🐙 Test GitHub Trigger</h4>
+            <p>Test if your GitHub trigger is working correctly. This will simulate a webhook event.</p>
+            <div class="trigger-preview">
+              <strong>Repository:</strong> {{ form.triggerConfig.repository || 'Enter repository' }}<br>
+              <strong>Branch:</strong> {{ form.triggerConfig.branch || 'All branches' }}<br>
+              <strong>Events:</strong> {{ form.triggerConfig.events?.join(', ') || 'Select events' }}
+            </div>
+          </div>
+          <button
+            class="btn btn-test-trigger"
+            @click="testGitHubTrigger"
+            :disabled="!canTestGitHubTrigger || isTestingTrigger"
+          >
+            <v-icon size="18">mdi-github</v-icon>
+            {{ isTestingTrigger ? 'Testing...' : 'Test GitHub Trigger' }}
           </button>
           <div v-if="triggerError" class="error-message">
             ❌ {{ triggerError }}
@@ -354,6 +472,13 @@ watch(() => template.value, (newTemplate) => {
         eventTitle: '',
         calendarId: 'primary'
       }
+    } else if (newTemplate.triggerService === 'GitHub') {
+      form.triggerConfig = {
+        repository: '',
+        branch: '',
+        events: [],
+        webhookSecret: ''
+      }
     } else {
       form.triggerConfig = {}
     }
@@ -383,6 +508,13 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
+  // For GitHub triggers, require repository and at least one event type
+  if (template.value.triggerService === 'GitHub') {
+    return form.triggerConfig.repository &&
+           form.triggerConfig.events &&
+           form.triggerConfig.events.length > 0
+  }
+
   // For other area types, just require basic info (admin can create without detailed config)
   return true
 })
@@ -396,6 +528,12 @@ const canSendTestEmail = computed(() => {
 const canTestTrigger = computed(() => {
   return form.triggerConfig.eventDate &&
          form.triggerConfig.eventTime
+})
+
+const canTestGitHubTrigger = computed(() => {
+  return form.triggerConfig.repository &&
+         form.triggerConfig.events &&
+         form.triggerConfig.events.length > 0
 })
 
 const getCombinedDateTime = () => {
@@ -581,6 +719,84 @@ const testTrigger = async () => {
   }
 }
 
+const testGitHubTrigger = async () => {
+  if (!canTestGitHubTrigger.value) {
+    console.log('Cannot test GitHub trigger - repository and events not set')
+    return
+  }
+
+  console.log('Testing GitHub trigger with data:', {
+    repository: form.triggerConfig.repository,
+    branch: form.triggerConfig.branch,
+    events: form.triggerConfig.events
+  })
+
+  isTestingTrigger.value = true
+  triggerError.value = null
+
+  try {
+    const areaData = {
+      name: `Test GitHub Area - ${template.value?.title || 'Unknown'}`,
+      description: 'Temporary test area for GitHub trigger',
+      triggerService: template.value?.triggerService || 'GitHub',
+      triggerType: 'Webhook',
+      actionService: template.value?.actionService || 'Gmail',
+      actionType: 'SendEmail',
+      triggerConfig: {
+        ...form.triggerConfig,
+        events: Array.isArray(form.triggerConfig.events) ? form.triggerConfig.events : [form.triggerConfig.events]
+      },
+      actionConfig: form.actionConfig
+    }
+
+    console.log('Creating test GitHub area...')
+    const createdArea = await areaService.createArea(areaData)
+    console.log('Test GitHub area created:', createdArea)
+
+    console.log('Testing GitHub webhook for area ID:', createdArea.id)
+    const response = await fetch(`http://localhost:8080/test/github/${createdArea.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        repository: form.triggerConfig.repository,
+        branch: form.triggerConfig.branch,
+        event: form.triggerConfig.events[0] || 'push'
+      })
+    })
+
+    const result = await response.json()
+    console.log('GitHub webhook test response:', result)
+
+    if (response.ok) {
+      alert('✅ GitHub trigger test successful! Check your configured action.')
+      triggerError.value = null
+
+      try {
+        await fetch(`http://localhost:8080/areas/${createdArea.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        console.log('Test GitHub area cleaned up successfully')
+      } catch (cleanupErr) {
+        console.warn('Failed to clean up test GitHub area:', cleanupErr)
+      }
+    } else {
+      throw new Error(result.error || `Server error: ${response.status}`)
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test GitHub trigger'
+    triggerError.value = errorMessage
+    console.error('Error testing GitHub trigger:', err)
+    alert('❌ GitHub trigger test failed: ' + errorMessage)
+  } finally {
+    isTestingTrigger.value = false
+  }
+}
+
 const createArea = async () => {
   if (!isFormValid.value || !template.value) return
 
@@ -595,6 +811,15 @@ const createArea = async () => {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = eventDateTime.toISOString()
       console.log('Combined event time:', triggerConfig.eventTime)
+    }
+
+    // Process GitHub specific config if it's a GitHub trigger
+    if (template.value.triggerService === 'GitHub') {
+      // Ensure events is an array
+      if (typeof triggerConfig.events === 'string') {
+        triggerConfig.events = [triggerConfig.events]
+      }
+      console.log('GitHub trigger config:', triggerConfig)
     }
 
     const areaData = {
@@ -1150,5 +1375,48 @@ const getActionIcon = (service: string) => {
 .btn-test-trigger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-focus);
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-right: 0.75rem;
+  transform: scale(1.2);
+}
+
+.checkbox-label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.checkbox-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-left: 1.5rem;
+  opacity: 0.8;
+  font-style: italic;
 }
 </style>

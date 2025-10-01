@@ -213,6 +213,97 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'GitHub'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('github.png')" alt="GitHub" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">🐙 GitHub Repository Trigger</h4>
+                <p class="config-subtitle">Configure which GitHub events should trigger this area</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-container">
+                <label class="input-label">📁 Repository</label>
+                <input
+                  v-model="form.triggerConfig.repository"
+                  type="text"
+                  class="modern-input"
+                  placeholder="owner/repository-name"
+                  required
+                />
+                <small class="input-hint">Enter the repository in format: owner/repository-name (e.g., microsoft/vscode)</small>
+              </div>
+
+              <div class="input-container">
+                <label class="input-label">🌿 Branch (Optional)</label>
+                <input
+                  v-model="form.triggerConfig.branch"
+                  type="text"
+                  class="modern-input"
+                  placeholder="main"
+                />
+                <small class="input-hint">Specific branch to monitor (leave empty for all branches)</small>
+              </div>
+
+              <div class="input-container">
+                <label class="input-label">📋 Event Types</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="push"
+                    />
+                    <span class="checkbox-label">Push Events</span>
+                    <small class="checkbox-hint">Triggered when code is pushed to the repository</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="pull_request"
+                    />
+                    <span class="checkbox-label">Pull Request Events</span>
+                    <small class="checkbox-hint">Triggered when PRs are opened, closed, or merged</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="issues"
+                    />
+                    <span class="checkbox-label">Issue Events</span>
+                    <small class="checkbox-hint">Triggered when issues are opened, closed, or commented on</small>
+                  </label>
+                  <label class="checkbox-item">
+                    <input
+                      v-model="form.triggerConfig.events"
+                      type="checkbox"
+                      value="release"
+                    />
+                    <span class="checkbox-label">Release Events</span>
+                    <small class="checkbox-hint">Triggered when new releases are published</small>
+                  </label>
+                </div>
+                <small class="input-hint">Select which GitHub events should trigger this area</small>
+              </div>
+
+              <div class="input-container">
+                <label class="input-label">🔐 Webhook Secret (Optional)</label>
+                <input
+                  v-model="form.triggerConfig.webhookSecret"
+                  type="password"
+                  class="modern-input"
+                  placeholder="your-webhook-secret"
+                />
+                <small class="input-hint">Secret token for webhook verification (recommended for security)</small>
+              </div>
+            </div>
+          </div>
+
           <!-- Gmail Action Configuration -->
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
@@ -302,18 +393,17 @@
           <v-icon size="18">mdi-check</v-icon>
           {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
-        
-        <!-- Test Email Button for Calendar → Gmail (Hidden for admins) -->
-        <button 
+
+        <button
           v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'"
-          class="action-btn test-email-btn" 
-          @click="sendTestEmail" 
+          class="action-btn test-email-btn"
+          @click="sendTestEmail"
           :disabled="!canSendTestEmail || isSendingTest"
         >
           <v-icon size="18">mdi-email-send</v-icon>
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
-        
+
         <!-- Debug info for Calendar → Gmail (Hidden for admins) -->
         <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
@@ -375,7 +465,7 @@ watch(() => props.template, (newTemplate) => {
     form.description = newTemplate.description
     form.triggerService = newTemplate.triggerService
     form.actionService = newTemplate.actionService
-    
+
     if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
@@ -387,6 +477,13 @@ watch(() => props.template, (newTemplate) => {
         subject: 'Reminder: {{eventTitle}}',
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
+    } else if (newTemplate.triggerService === 'GitHub') {
+      form.triggerConfig = {
+        repository: '',
+        branch: '',
+        events: [],
+        webhookSecret: ''
+      }
     }
   }
 }, { immediate: true })
@@ -395,18 +492,25 @@ const isFormValid = computed(() => {
   const hasBasicInfo = form.areaName.trim() !== '' &&
                       form.triggerService !== '' &&
                       form.actionService !== ''
-  
+
   if (currentUser.value?.role === 'admin') {
     return hasBasicInfo
   }
-  
+
   if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
   }
-  
+
+  if (form.triggerService === 'GitHub') {
+    return hasBasicInfo &&
+           form.triggerConfig.repository &&
+           form.triggerConfig.events &&
+           form.triggerConfig.events.length > 0
+  }
+
   return hasBasicInfo
 })
 
@@ -417,12 +521,19 @@ const showAllReactionServices = ref(false)
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
   showAllTriggerServices.value = false
-  
+
   if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
       eventTime: '',
       eventTitle: '',
       calendarId: 'primary'
+    }
+  } else if (serviceId === 'GitHub') {
+    form.triggerConfig = {
+      repository: '',
+      branch: '',
+      events: [],
+      webhookSecret: ''
     }
   } else {
     form.triggerConfig = {}
@@ -432,7 +543,7 @@ const selectTrigger = (serviceId: string) => {
 const selectAction = (serviceId: string) => {
   form.actionService = serviceId
   showAllReactionServices.value = false
-  
+
   if (serviceId === 'Gmail') {
     form.actionConfig = {
       toEmail: '',
@@ -461,24 +572,24 @@ const error = ref<string | null>(null)
 const isSendingTest = ref(false)
 
 const canSendTestEmail = computed(() => {
-  return form.actionConfig.toEmail && 
-         form.actionConfig.subject && 
+  return form.actionConfig.toEmail &&
+         form.actionConfig.subject &&
          form.actionConfig.body
 })
 
 const sendTestEmail = async () => {
   if (!canSendTestEmail.value) return
-  
+
   isSendingTest.value = true
   error.value = null
-  
+
   try {
     const testEmailData = {
       to: form.actionConfig.toEmail,
       subject: form.actionConfig.subject,
       body: form.actionConfig.body
     }
-    
+
     const response = await fetch('http://localhost:8080/test/email', {
       method: 'POST',
       headers: {
@@ -486,9 +597,9 @@ const sendTestEmail = async () => {
       },
       body: JSON.stringify(testEmailData)
     })
-    
+
     const result = await response.json()
-    
+
     if (response.ok) {
       alert('✅ Test email sent successfully!')
     } else {
@@ -505,14 +616,14 @@ const sendTestEmail = async () => {
 
 const createArea = async () => {
   if (!isFormValid.value) return
-  
+
   isLoading.value = true
   error.value = null
-  
+
   try {
     let triggerConfig = form.triggerConfig
     let actionConfig = form.actionConfig
-    
+
     if (currentUser.value?.role === 'admin') {
       triggerConfig = {
         type: 'default',
@@ -523,7 +634,7 @@ const createArea = async () => {
         enabled: true
       }
     }
-    
+
     const areaData = {
       name: form.areaName,
       description: form.description,
@@ -534,7 +645,7 @@ const createArea = async () => {
       triggerConfig: triggerConfig,
       actionConfig: actionConfig
     }
-    
+
     await areaService.createArea(areaData)
     emit('save')
   } catch (err) {
@@ -1251,6 +1362,49 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-secondary);
   margin-top: 0.25rem;
   display: block;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-focus);
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-right: 0.75rem;
+  transform: scale(1.1);
+}
+
+.checkbox-label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.checkbox-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-left: 1.5rem;
   opacity: 0.8;
   font-style: italic;
 }
