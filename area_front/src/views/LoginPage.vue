@@ -45,6 +45,11 @@
                 :class="{ 'error': error && !form.password }"
               />
             </div>
+            <div class="forgot-password-link">
+              <router-link to="/forgot-password" class="forgot-link">
+                Mot de passe oublié ?
+              </router-link>
+            </div>
           </div>
 
           <div v-if="error" class="error-message">
@@ -338,6 +343,24 @@ const loginWithGoogle = () => {
 .form-input.error {
   border-color: var(--color-accent-tertiary);
   background: rgba(249, 115, 22, 0.1);
+}
+
+.forgot-password-link {
+  text-align: right;
+  margin-top: 0.5rem;
+}
+
+.forgot-link {
+  color: var(--color-accent-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: var(--transition-normal);
+}
+
+.forgot-link:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
 }
 
 .error-message {
