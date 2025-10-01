@@ -472,64 +472,6 @@
     </div>
   </div>
 
-  <!-- Modal pour afficher les détails d'une AREA -->
-  <div v-if="showAreaModal" class="custom-modal-overlay" @click="showAreaModal = false">
-    <div class="custom-modal-content area-modal" @click.stop>
-      <div class="area-modal-header">
-        <div class="area-icon-container">
-          <div class="area-icon" :class="selectedArea?.gradientClass">
-            <v-icon size="32" color="white">{{ getTriggerIcon(selectedArea?.triggerService || '') }}</v-icon>
-          </div>
-        </div>
-        <div class="area-modal-info">
-          <h3 class="area-modal-title">{{ selectedArea?.title }}</h3>
-          <p class="area-modal-subtitle">{{ selectedArea?.subtitle }}</p>
-        </div>
-      </div>
-      <div class="area-modal-content">
-        <p class="area-modal-description">{{ selectedArea?.description }}</p>
-        <div class="workflow-steps">
-          <div class="workflow-step">
-            <div class="step-icon">
-              <v-icon size="20" color="white">{{ getTriggerIcon(selectedArea?.triggerService || '') }}</v-icon>
-            </div>
-            <div class="step-content">
-              <h4 class="step-title">Trigger</h4>
-              <p class="step-description">{{ selectedArea?.triggerService }}</p>
-            </div>
-          </div>
-          <div class="workflow-arrow">
-            <v-icon size="24" color="white">mdi-arrow-right</v-icon>
-          </div>
-          <div class="workflow-step">
-            <div class="step-icon">
-              <v-icon size="20" color="white">{{ getActionIcon(selectedArea?.actionService || '') }}</v-icon>
-            </div>
-            <div class="step-content">
-              <h4 class="step-title">Action</h4>
-              <p class="step-description">{{ selectedArea?.actionService }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="area-modal-actions">
-        <v-btn
-          class="area-modal-close-btn"
-          variant="outlined"
-          @click="showAreaModal = false"
-        >
-          Close
-        </v-btn>
-        <v-btn
-          class="area-modal-create-btn"
-          variant="flat"
-          @click="createAreaFromTemplate"
-        >
-          Use This Area
-        </v-btn>
-      </div>
-    </div>
-  </div>
 
 </template>
 
