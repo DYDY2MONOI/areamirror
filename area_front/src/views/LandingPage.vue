@@ -369,31 +369,36 @@
     </footer>
   </div>
 
-  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
-    <div class="custom-modal-content logout-modal" @click.stop>
-      <div class="logout-modal-header">
-        <div class="logout-icon-container">
-          <v-icon size="32" color="white">mdi-logout</v-icon>
+  <!-- Modern Logout Confirmation Modal -->
+  <div v-if="showLogoutDialog" class="logout-modal-overlay" @click="showLogoutDialog = false">
+    <div class="logout-modal-container" @click.stop>
+      <div class="logout-modal-content">
+        <!-- Header with icon and title -->
+        <div class="logout-modal-header">
+          <div class="logout-icon-wrapper">
+            <div class="logout-icon-bg">
+              <v-icon size="24" color="#ff3b30">mdi-logout-variant</v-icon>
+            </div>
+          </div>
+          <h2 class="logout-modal-title">Sign Out</h2>
+          <p class="logout-modal-subtitle">Are you sure you want to sign out of your account?</p>
         </div>
-        <h3 class="logout-title">Sign Out</h3>
-        <p class="logout-message">You will be redirected to the sign in page</p>
-      </div>
 
-      <div class="logout-modal-actions">
-        <v-btn
-          class="logout-cancel-btn"
-          variant="outlined"
-          @click="showLogoutDialog = false"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          class="logout-confirm-btn"
-          variant="flat"
-          @click="confirmLogout"
-        >
-          Sign Out
-        </v-btn>
+        <!-- Action buttons -->
+        <div class="logout-modal-actions">
+          <button
+            class="logout-action-btn logout-cancel-btn"
+            @click="showLogoutDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="logout-action-btn logout-confirm-btn"
+            @click="confirmLogout"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -462,34 +467,6 @@
     </div>
   </div>
 
-  <!-- Dialog de confirmation de déconnexion -->
-  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
-    <div class="custom-modal-content logout-modal" @click.stop>
-      <div class="logout-modal-header">
-        <div class="logout-icon-container">
-          <v-icon size="32" color="white">mdi-logout</v-icon>
-        </div>
-        <h3 class="logout-title">Sign Out</h3>
-      </div>
-      <p class="logout-message">Are you sure you want to sign out?</p>
-      <div class="logout-actions">
-        <v-btn
-          class="logout-cancel-btn"
-          variant="outlined"
-          @click="showLogoutDialog = false"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          class="logout-confirm-btn"
-          variant="flat"
-          @click="confirmLogout"
-        >
-          Sign Out
-        </v-btn>
-      </div>
-    </div>
-  </div>
 
 
 </template>
@@ -732,10 +709,12 @@ watch(showCreateModal, (isOpen) => {
   margin: 0 0 0.75rem 0;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.1));
 }
 
 .search-subtitle {
@@ -1140,9 +1119,15 @@ watch(showCreateModal, (isOpen) => {
 .section-title {
   font-weight: 800;
   font-size: 2rem;
-  color: var(--color-text-primary);
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.1));
 }
 
 .section-subtitle {
@@ -1434,91 +1419,197 @@ body.modal-open {
   scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
 }
 
-/* Styles pour le modal de déconnexion - Cohérent avec CreateArea */
-.logout-modal {
+.logout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.logout-modal-container {
   max-width: 400px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-xl);
-  padding: 0;
+  width: 90%;
+  margin: 0 auto;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logout-modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 .logout-modal-header {
-  padding: 2rem;
+  padding: 32px 24px 24px 24px;
   text-align: center;
-  background: var(--gradient-accent);
 }
 
-.logout-icon-container {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
+.logout-icon-wrapper {
+  margin-bottom: 20px;
+}
+
+.logout-icon-bg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff3b30, #ff6b6b);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem auto;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin: 0 auto;
+  box-shadow: 0 8px 20px rgba(255, 59, 48, 0.3);
 }
 
-.logout-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 0.5rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.logout-modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
 }
 
-.logout-message {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+.logout-modal-subtitle {
+  font-size: 16px;
+  color: #86868b;
   margin: 0;
+  line-height: 1.4;
   font-weight: 400;
-  line-height: 1.5;
 }
 
 .logout-modal-actions {
-  padding: 1.5rem 2rem 2rem 2rem;
+  padding: 0 24px 24px 24px;
   display: flex;
-  gap: 1rem;
-  justify-content: center;
+  gap: 12px;
+}
+
+.logout-action-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
 }
 
 .logout-cancel-btn {
-  background: var(--color-bg-card) !important;
-  color: var(--color-text-primary) !important;
-  border: 1px solid var(--color-border-primary) !important;
-  border-radius: var(--radius-lg);
-  font-weight: 500;
-  text-transform: none;
-  transition: var(--transition-normal);
+  background: rgba(142, 142, 147, 0.12);
+  color: #1d1d1f;
 }
 
 .logout-cancel-btn:hover {
-  background: var(--color-hover-bg) !important;
-  border-color: var(--color-border-secondary) !important;
+  background: rgba(142, 142, 147, 0.18);
   transform: translateY(-1px);
 }
 
 .logout-confirm-btn {
-  background: var(--gradient-accent) !important;
-  color: var(--color-text-primary) !important;
-  border: none !important;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  text-transform: none;
-  transition: var(--transition-normal);
-  box-shadow: var(--shadow-glow);
+  background: linear-gradient(135deg, #ff3b30, #ff6b6b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
 
 .logout-confirm-btn:hover {
+  background: linear-gradient(135deg, #ff2d55, #ff5252);
   transform: translateY(-1px);
-  box-shadow:
-    var(--shadow-glow),
-    0 8px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .logout-modal-content {
+    background: rgba(28, 28, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .logout-modal-title {
+    color: #f2f2f7;
+  }
+
+  .logout-modal-subtitle {
+    color: #8e8e93;
+  }
+
+  .logout-cancel-btn {
+    background: rgba(142, 142, 147, 0.2);
+    color: #f2f2f7;
+  }
+
+  .logout-cancel-btn:hover {
+    background: rgba(142, 142, 147, 0.3);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .logout-modal-container {
+    width: 95%;
+    margin: 0 16px;
+  }
+
+  .logout-modal-header {
+    padding: 24px 20px 20px 20px;
+  }
+
+  .logout-modal-actions {
+    padding: 0 20px 20px 20px;
+    flex-direction: column;
+  }
+
+  .logout-action-btn {
+    width: 100%;
+  }
+
+  .logout-icon-bg {
+    width: 56px;
+    height: 56px;
+  }
+
+  .logout-modal-title {
+    font-size: 20px;
+  }
+
+  .logout-modal-subtitle {
+    font-size: 14px;
+  }
+}
+
 
 .github-gmail-modal {
   max-width: 600px;
@@ -2019,10 +2110,12 @@ body.modal-open {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  background: var(--gradient-accent);
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.3));
 }
 
 .company-tagline {
