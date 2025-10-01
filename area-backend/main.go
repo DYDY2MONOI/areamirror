@@ -106,6 +106,7 @@ func main() {
 	r.GET("/areas/recommended", controllers.GetRecommendedAreas)
 
 	r.POST("/test/email", controllers.TestEmail)
+	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)
 
 	r.GET("/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetRoles)
