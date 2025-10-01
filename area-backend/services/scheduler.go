@@ -12,7 +12,8 @@ import (
 )
 
 type SchedulerService struct {
-	emailService *EmailService
+	emailService   *EmailService
+	discordService *DiscordService
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -21,8 +22,14 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Email service not available: %v", err)
 	}
 
+	discordService, err := NewDiscordService()
+	if err != nil {
+		log.Printf("Warning: Discord service not available: %v", err)
+	}
+
 	return &SchedulerService{
-		emailService: emailService,
+		emailService:   emailService,
+		discordService: discordService,
 	}, nil
 }
 
@@ -88,6 +95,8 @@ func (s *SchedulerService) executeArea(area models.Area) error {
 	switch area.ActionService {
 	case "Gmail":
 		return s.executeGmailAction(area, actionConfig)
+	case "Discord":
+		return s.executeDiscordAction(area, actionConfig)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -136,6 +145,55 @@ func (s *SchedulerService) executeGmailAction(area models.Area, actionConfig map
 	}
 
 	log.Printf("Email sent successfully for AREA: %s", area.Name)
+
+	area.LastRunAt = &time.Time{}
+	*area.LastRunAt = time.Now()
+	area.RunCount++
+	area.LastRunStatus = "success"
+
+	if err := database.DB.Save(&area).Error; err != nil {
+		log.Printf("Failed to update area status: %v", err)
+	}
+
+	log.Printf("Successfully executed area: %s", area.Name)
+	return nil
+}
+
+func (s *SchedulerService) executeDiscordAction(area models.Area, actionConfig map[string]interface{}) error {
+	if s.discordService == nil {
+		return fmt.Errorf("Discord service not available")
+	}
+
+	webhookURL, _ := actionConfig["webhookUrl"].(string)
+	if webhookURL == "" {
+		if alt, ok := actionConfig["webhookURL"].(string); ok {
+			webhookURL = alt
+		}
+	}
+	if webhookURL == "" {
+		return fmt.Errorf("webhookUrl not found in action config")
+	}
+
+	message, _ := actionConfig["message"].(string)
+	if message == "" {
+		message = fmt.Sprintf("Notification from area %s", area.Name)
+	}
+
+	templateVars := map[string]string{
+		"eventTitle": "Scheduled Event",
+		"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
+		"areaName":   area.Name,
+	}
+
+	for key, value := range templateVars {
+		message = strings.ReplaceAll(message, "{{"+key+"}}", value)
+	}
+
+	if err := s.discordService.SendWebhookMessage(webhookURL, message); err != nil {
+		return fmt.Errorf("failed to send discord message: %v", err)
+	}
+
+	log.Printf("Discord message sent successfully for AREA: %s", area.Name)
 
 	area.LastRunAt = &time.Time{}
 	*area.LastRunAt = time.Now()
