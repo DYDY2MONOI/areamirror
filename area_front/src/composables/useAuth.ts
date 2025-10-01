@@ -171,6 +171,26 @@ export function useAuth() {
     }
   }
 
+  const forgotPassword = async (email: string) => {
+    try {
+      const result = await authService.forgotPassword(email)
+      return result
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      throw error
+    }
+  }
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    try {
+      const result = await authService.resetPassword(token, newPassword)
+      return result
+    } catch (error) {
+      console.error('Reset password error:', error)
+      throw error
+    }
+  }
+
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
     currentUser: computed(() => currentUser.value),
@@ -189,6 +209,8 @@ export function useAuth() {
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
+    forgotPassword,
+    resetPassword,
     initAuth
   }
 }

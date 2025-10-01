@@ -9,6 +9,8 @@ import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
+import ForgotPasswordPage from '../views/ForgotPasswordPage.vue'
+import ResetPasswordPage from '../views/ResetPasswordPage.vue'
 import { authService } from '../services/auth'
 
 const router = createRouter({
@@ -36,6 +38,18 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: RegisterPage,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPasswordPage,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordPage,
       meta: { requiresAuth: false }
     },
     {
