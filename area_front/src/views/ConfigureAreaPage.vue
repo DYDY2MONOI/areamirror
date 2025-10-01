@@ -329,6 +329,47 @@
             </div>
           </div>
         </div>
+
+        <!-- Discord Action Configuration -->
+        <div v-if="template && template.actionService === 'Discord'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-discord</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">💬 Discord Message</h4>
+              <p class="config-subtitle">Configure the channel and content for your Discord notification</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">🔗 Webhook URL</label>
+                <input
+                  v-model="form.actionConfig.webhookUrl"
+                  type="url"
+                  class="form-input"
+                  placeholder="https://discord.com/api/webhooks/..."
+                  required
+                />
+                <small class="form-hint">Collez ici l'URL du webhook Discord généré pour ce salon.</small>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">💬 Message Content</label>
+                <textarea
+                  v-model="form.actionConfig.message"
+                  class="form-textarea"
+                  placeholder="Reminder: &#123;&#123;eventTitle&#125;&#125; starts at &#123;&#123;eventTime&#125;&#125;. Area: &#123;&#123;areaName&#125;&#125;"
+                  rows="4"
+                  required
+                ></textarea>
+                <small class="form-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;areaName&#125;&#125; as placeholders</small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Error Display -->
@@ -369,6 +410,29 @@
           </button>
           <div v-if="error" class="error-message">
             ❌ {{ error }}
+          </div>
+        </div>
+
+        <!-- Test Button for Discord messages -->
+        <div class="test-email-section" v-if="template?.actionService === 'Discord'">
+          <div class="test-email-info">
+            <h4>💬 Test Discord Message</h4>
+            <p>Send a test message to verify your Discord configuration works correctly.</p>
+            <div class="email-preview">
+              <strong>Webhook URL:</strong> {{ form.actionConfig.webhookUrl || 'Enter webhook URL' }}<br>
+              <strong>Message:</strong> {{ form.actionConfig.message || 'Enter message content' }}
+            </div>
+          </div>
+          <button
+            class="btn btn-test"
+            @click="sendTestDiscord"
+            :disabled="!canSendDiscordTest || isSendingDiscordTest"
+          >
+            <v-icon size="18">mdi-send</v-icon>
+            {{ isSendingDiscordTest ? 'Sending...' : 'Send Test Message' }}
+          </button>
+          <div v-if="discordTestError" class="error-message">
+            ❌ {{ discordTestError }}
           </div>
         </div>
 
@@ -454,9 +518,11 @@ const form = reactive({
 
 const isLoading = ref(false)
 const isSendingTest = ref(false)
+const isSendingDiscordTest = ref(false)
 const isTestingTrigger = ref(false)
 const error = ref<string | null>(null)
 const triggerError = ref<string | null>(null)
+const discordTestError = ref<string | null>(null)
 
 watch(() => template.value, (newTemplate) => {
   if (newTemplate) {
@@ -489,8 +555,16 @@ watch(() => template.value, (newTemplate) => {
         subject: 'Reminder: {{eventTitle}}',
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
+      discordTestError.value = null
+    } else if (newTemplate.actionService === 'Discord') {
+      form.actionConfig = {
+        webhookUrl: '',
+        message: 'Reminder: {{eventTitle}} starts at {{eventTime}}. Area: {{areaName}}'
+      }
+      discordTestError.value = null
     } else {
       form.actionConfig = {}
+      discordTestError.value = null
     }
 
     console.log('Form initialized:', form)
@@ -515,6 +589,12 @@ const isFormValid = computed(() => {
            form.triggerConfig.events.length > 0
   }
 
+  if (template.value.actionService === 'Discord') {
+    const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
+    const message = (form.actionConfig.message || '').trim()
+    return !!webhookUrl && !!message
+  }
+
   // For other area types, just require basic info (admin can create without detailed config)
   return true
 })
@@ -523,6 +603,12 @@ const canSendTestEmail = computed(() => {
   return form.actionConfig.toEmail &&
          form.actionConfig.subject &&
          form.actionConfig.body
+})
+
+const canSendDiscordTest = computed(() => {
+  const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
+  const message = (form.actionConfig.message || '').trim()
+  return !!webhookUrl && !!message
 })
 
 const canTestTrigger = computed(() => {
@@ -595,6 +681,17 @@ const getTodayDate = () => {
   return new Date().toISOString().split('T')[0]
 }
 
+const resolveActionType = (service: string) => {
+  switch (service) {
+    case 'Gmail':
+      return 'SendEmail'
+    case 'Discord':
+      return 'SendDiscordMessage'
+    default:
+      return 'Action'
+  }
+}
+
 const sendTestEmail = async () => {
   if (!canSendTestEmail.value) {
     console.log('Cannot send test email - form not valid')
@@ -646,6 +743,55 @@ const sendTestEmail = async () => {
   }
 }
 
+const sendTestDiscord = async () => {
+  if (!canSendDiscordTest.value) {
+    console.log('Cannot send test Discord message - form not valid')
+    return
+  }
+
+  const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
+  const message = (form.actionConfig.message || '').trim() || `Test message from ${template.value?.title || 'AREAmirror'}`
+
+  console.log('Sending test Discord message with data:', {
+    webhookUrl,
+    message
+  })
+
+  isSendingDiscordTest.value = true
+  discordTestError.value = null
+
+  try {
+    const response = await fetch('http://localhost:8080/test/discord', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        webhookUrl,
+        message
+      })
+    })
+
+    console.log('Discord test response status:', response.status)
+    const result = await response.json()
+    console.log('Discord test response data:', result)
+
+    if (response.ok) {
+      alert('✅ Test Discord message sent successfully! Check your channel.')
+      discordTestError.value = null
+    } else {
+      throw new Error(result.error || `Server error: ${response.status}`)
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to send test Discord message'
+    discordTestError.value = errorMessage
+    console.error('Error sending test Discord message:', err)
+    alert('❌ Failed to send test Discord message: ' + errorMessage)
+  } finally {
+    isSendingDiscordTest.value = false
+  }
+}
+
 const testTrigger = async () => {
   if (!canTestTrigger.value) {
     console.log('Cannot test trigger - date and time not set')
@@ -668,7 +814,7 @@ const testTrigger = async () => {
       triggerService: template.value?.triggerService || 'Google Calendar',
       triggerType: 'Event',
       actionService: template.value?.actionService || 'Gmail',
-      actionType: 'SendEmail',
+      actionType: resolveActionType(template.value?.actionService || 'Gmail'),
       triggerConfig: {
         ...form.triggerConfig,
         eventTime: getCombinedDateTime()
@@ -741,7 +887,7 @@ const testGitHubTrigger = async () => {
       triggerService: template.value?.triggerService || 'GitHub',
       triggerType: 'Webhook',
       actionService: template.value?.actionService || 'Gmail',
-      actionType: 'SendEmail',
+      actionType: resolveActionType(template.value?.actionService || 'Gmail'),
       triggerConfig: {
         ...form.triggerConfig,
         events: Array.isArray(form.triggerConfig.events) ? form.triggerConfig.events : [form.triggerConfig.events]
@@ -828,7 +974,7 @@ const createArea = async () => {
       triggerService: template.value.triggerService || 'Unknown',
       triggerType: template.value.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
       actionService: template.value.actionService || 'Unknown',
-      actionType: template.value.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+      actionType: resolveActionType(template.value.actionService || 'Unknown'),
       triggerConfig: triggerConfig,
       actionConfig: form.actionConfig
     }
