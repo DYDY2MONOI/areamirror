@@ -6,6 +6,7 @@ import (
 	"Golang-API-tutoriel/services"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
@@ -354,6 +355,45 @@ func TestEmail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test email sent successfully!",
 		"to":      req.To,
+	})
+}
+
+func TestDiscord(c *gin.Context) {
+	var req struct {
+		WebhookURL string `json:"webhookUrl"`
+		Message    string `json:"message"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	webhookURL := strings.TrimSpace(req.WebhookURL)
+	if webhookURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "webhookUrl is required"})
+		return
+	}
+
+	discordService, err := services.NewDiscordService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Discord service not available: " + err.Error()})
+		return
+	}
+
+	message := strings.TrimSpace(req.Message)
+	if message == "" {
+		message = "This is a test message from AREAmirror."
+	}
+
+	if err := discordService.SendWebhookMessage(webhookURL, message); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send discord message: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Test Discord message sent successfully!",
+		"webhookUrl": webhookURL,
 	})
 }
 
