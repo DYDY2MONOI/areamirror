@@ -1,5 +1,31 @@
 <template>
   <div class="landing-dark">
+    <!-- Space Background -->
+    <div class="space-background">
+      <div class="stars"></div>
+      <div class="stars2"></div>
+      <div class="stars3"></div>
+
+      <!-- Planets -->
+      <div class="planet-container">
+        <div class="planet planet-left">
+          <div class="planet-core"></div>
+          <div class="planet-surface"></div>
+          <div class="planet-glow-edge"></div>
+          <div class="planet-atmosphere"></div>
+        </div>
+        <div class="planet planet-right">
+          <div class="planet-core"></div>
+          <div class="planet-surface"></div>
+          <div class="planet-glow-edge"></div>
+          <div class="planet-atmosphere"></div>
+        </div>
+      </div>
+
+      <!-- Nebula Effect -->
+      <div class="nebula"></div>
+    </div>
+
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
@@ -369,31 +395,36 @@
     </footer>
   </div>
 
-  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
-    <div class="custom-modal-content logout-modal" @click.stop>
-      <div class="logout-modal-header">
-        <div class="logout-icon-container">
-          <v-icon size="32" color="white">mdi-logout</v-icon>
+  <!-- Modern Logout Confirmation Modal -->
+  <div v-if="showLogoutDialog" class="logout-modal-overlay" @click="showLogoutDialog = false">
+    <div class="logout-modal-container" @click.stop>
+      <div class="logout-modal-content">
+        <!-- Header with icon and title -->
+        <div class="logout-modal-header">
+          <div class="logout-icon-wrapper">
+            <div class="logout-icon-bg">
+              <v-icon size="24" color="#ff3b30">mdi-logout-variant</v-icon>
+            </div>
+          </div>
+          <h2 class="logout-modal-title">Sign Out</h2>
+          <p class="logout-modal-subtitle">Are you sure you want to sign out of your account?</p>
         </div>
-        <h3 class="logout-title">Sign Out</h3>
-        <p class="logout-message">You will be redirected to the sign in page</p>
-      </div>
 
-      <div class="logout-modal-actions">
-        <v-btn
-          class="logout-cancel-btn"
-          variant="outlined"
-          @click="showLogoutDialog = false"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          class="logout-confirm-btn"
-          variant="flat"
-          @click="confirmLogout"
-        >
-          Sign Out
-        </v-btn>
+        <!-- Action buttons -->
+        <div class="logout-modal-actions">
+          <button
+            class="logout-action-btn logout-cancel-btn"
+            @click="showLogoutDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="logout-action-btn logout-confirm-btn"
+            @click="confirmLogout"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -462,34 +493,6 @@
     </div>
   </div>
 
-  <!-- Dialog de confirmation de déconnexion -->
-  <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
-    <div class="custom-modal-content logout-modal" @click.stop>
-      <div class="logout-modal-header">
-        <div class="logout-icon-container">
-          <v-icon size="32" color="white">mdi-logout</v-icon>
-        </div>
-        <h3 class="logout-title">Sign Out</h3>
-      </div>
-      <p class="logout-message">Are you sure you want to sign out?</p>
-      <div class="logout-actions">
-        <v-btn
-          class="logout-cancel-btn"
-          variant="outlined"
-          @click="showLogoutDialog = false"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          class="logout-confirm-btn"
-          variant="flat"
-          @click="confirmLogout"
-        >
-          Sign Out
-        </v-btn>
-      </div>
-    </div>
-  </div>
 
 
 </template>
@@ -686,6 +689,432 @@ watch(showCreateModal, (isOpen) => {
 </script>
 
 <style scoped>
+/* Space Background Styles */
+.space-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, #1a1a2e 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, #16213e 0%, transparent 50%),
+    linear-gradient(135deg, #0f0f23 0%, #000000 50%, #0a0a0f 100%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Animated Stars */
+.stars, .stars2, .stars3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 23px 37px, #fff, transparent),
+    radial-gradient(2px 2px at 47px 73px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 89px 43px, #eee, transparent),
+    radial-gradient(1px 1px at 127px 83px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 163px 31px, #ddd, transparent),
+    radial-gradient(1px 1px at 201px 57px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 67px 19px, #fff, transparent),
+    radial-gradient(1px 1px at 143px 91px, rgba(255,255,255,0.6), transparent);
+  background-repeat: repeat;
+  background-size: 250px 120px;
+  animation: twinkle 8s ease-in-out infinite;
+}
+
+.stars2 {
+  background-image:
+    radial-gradient(1px 1px at 53px 23px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 97px 67px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 151px 13px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 197px 53px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 79px 41px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 113px 29px, rgba(255,255,255,0.8), transparent);
+  background-repeat: repeat;
+  background-size: 300px 150px;
+  animation: twinkle 12s ease-in-out infinite reverse;
+}
+
+.stars3 {
+  background-image:
+    radial-gradient(1px 1px at 31px 59px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 83px 27px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 119px 87px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 157px 13px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 191px 71px, rgba(255,255,255,0.8), transparent);
+  background-repeat: repeat;
+  background-size: 400px 200px;
+  animation: twinkle 15s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0px) scale(1);
+  }
+  25% {
+    opacity: 0.8;
+    transform: translateY(-15px) scale(1.1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translateY(-8px) scale(0.9);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translateY(-22px) scale(1.05);
+  }
+}
+
+/* Planet Container */
+.planet-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Planet Base Styles */
+.planet {
+  position: absolute;
+  border-radius: 50%;
+  animation: float 20s ease-in-out infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.planet-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.planet-atmosphere {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: atmosphere 8s ease-in-out infinite;
+}
+
+.planet-glow {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: glow 6s ease-in-out infinite;
+}
+
+/* Left Planet - Dramatic Style */
+.planet-left {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  top: 15%;
+  left: -200px;
+  animation-delay: 0s;
+  z-index: 1;
+}
+
+/* Right Planet - Dramatic Style */
+.planet-right {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  top: 10%;
+  right: -250px;
+  animation-delay: 2s;
+  z-index: 1;
+}
+
+/* Planet Core - Dark Base */
+.planet-core {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%,
+    #0f0f23 0%,
+    #1a1a2e 30%,
+    #16213e 60%,
+    #0a0a0f 100%);
+  box-shadow:
+    inset -30px -30px 80px rgba(0, 0, 0, 0.6),
+    inset 20px 20px 60px rgba(255, 255, 255, 0.05);
+}
+
+/* Planet Surface - Atmospheric Details */
+.planet-surface {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 120px 60px at 30% 40%, rgba(26, 26, 46, 0.8), transparent),
+    radial-gradient(ellipse 80px 40px at 60% 20%, rgba(22, 33, 62, 0.6), transparent),
+    radial-gradient(ellipse 100px 50px at 70% 70%, rgba(15, 15, 35, 0.7), transparent),
+    radial-gradient(ellipse 60px 30px at 40% 80%, rgba(26, 26, 46, 0.5), transparent);
+  animation: planet-drift 25s ease-in-out infinite;
+}
+
+/* Glowing Edge Effect */
+.planet-glow-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 100, 50, 0.8) 50%,
+      rgba(255, 150, 80, 0.6) 60%,
+      transparent 70%,
+      transparent 100%);
+  box-shadow:
+    0 0 60px rgba(255, 100, 50, 0.4),
+    0 0 120px rgba(255, 150, 80, 0.2);
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+/* Left Planet Glow Edge */
+.planet-left .planet-glow-edge {
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 120, 60, 0.9) 40%,
+      rgba(255, 180, 100, 0.7) 50%,
+      transparent 60%,
+      transparent 100%);
+  box-shadow:
+    0 0 80px rgba(255, 120, 60, 0.5),
+    0 0 160px rgba(255, 180, 100, 0.3);
+}
+
+/* Right Planet Glow Edge */
+.planet-right .planet-glow-edge {
+  background:
+    linear-gradient(270deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 80, 40, 0.9) 40%,
+      rgba(255, 140, 70, 0.7) 50%,
+      transparent 60%,
+      transparent 100%);
+  box-shadow:
+    0 0 100px rgba(255, 80, 40, 0.6),
+    0 0 200px rgba(255, 140, 70, 0.4);
+}
+
+/* Atmospheric Layer */
+.planet-atmosphere {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%,
+      rgba(26, 26, 46, 0.3) 0%,
+      rgba(22, 33, 62, 0.2) 50%,
+      transparent 100%);
+  animation: atmosphere-drift 15s ease-in-out infinite;
+}
+
+/* Nebula Effect */
+.nebula {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 20% 20%,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 80% 80%,
+      rgba(139, 92, 246, 0.08) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 60% 30%,
+      rgba(236, 72, 153, 0.05) 0%,
+      transparent 50%);
+  animation: nebula-drift 30s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-30px) rotate(8deg);
+  }
+}
+
+@keyframes atmosphere {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes nebula-drift {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(20px) translateY(-10px);
+  }
+  50% {
+    transform: translateX(-10px) translateY(20px);
+  }
+  75% {
+    transform: translateX(-20px) translateY(-5px);
+  }
+}
+
+/* Dramatic Planet Animations */
+@keyframes planet-drift {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+}
+
+@keyframes atmosphere-drift {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.08) rotate(180deg);
+    opacity: 0.4;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+/* Responsive Design for Space Background */
+@media (max-width: 1024px) {
+  .planet-left {
+    width: 300px;
+    height: 300px;
+    top: 20%;
+    left: -150px;
+  }
+
+  .planet-right {
+    width: 400px;
+    height: 400px;
+    top: 15%;
+    right: -200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .planet-left {
+    width: 250px;
+    height: 250px;
+    top: 25%;
+    left: -125px;
+  }
+
+  .planet-right {
+    width: 300px;
+    height: 300px;
+    top: 20%;
+    right: -150px;
+  }
+
+  .stars, .stars2, .stars3 {
+    background-size: 150px 75px;
+  }
+}
+
+@media (max-width: 480px) {
+  .planet-left {
+    width: 200px;
+    height: 200px;
+    top: 30%;
+    left: -100px;
+  }
+
+  .planet-right {
+    width: 250px;
+    height: 250px;
+    top: 25%;
+    right: -125px;
+  }
+
+  .stars, .stars2, .stars3 {
+    background-size: 100px 50px;
+  }
+}
+
 .landing-dark {
   background: var(--gradient-bg-primary);
   color: var(--color-text-primary);
@@ -694,6 +1123,7 @@ watch(showCreateModal, (isOpen) => {
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;
+  position: relative;
 }
 
 * {
@@ -704,6 +1134,8 @@ watch(showCreateModal, (isOpen) => {
   max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
+  position: relative;
+  z-index: 2;
 }
 
 .search-section {
@@ -732,10 +1164,12 @@ watch(showCreateModal, (isOpen) => {
   margin: 0 0 0.75rem 0;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.1));
 }
 
 .search-subtitle {
@@ -1140,9 +1574,15 @@ watch(showCreateModal, (isOpen) => {
 .section-title {
   font-weight: 800;
   font-size: 2rem;
-  color: var(--color-text-primary);
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.1));
 }
 
 .section-subtitle {
@@ -1265,6 +1705,8 @@ watch(showCreateModal, (isOpen) => {
 .nav-btn { color: white !important; text-transform: none; }
 .sidebar-desktop {
   display: none;
+  position: relative;
+  z-index: 3;
 }
 @media (min-width: 1280px) {
   .sidebar-desktop {
@@ -1434,91 +1876,197 @@ body.modal-open {
   scrollbar-color: #3b82f6 rgba(255, 255, 255, 0.05);
 }
 
-/* Styles pour le modal de déconnexion - Cohérent avec CreateArea */
-.logout-modal {
+.logout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.logout-modal-container {
   max-width: 400px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-xl);
-  padding: 0;
+  width: 90%;
+  margin: 0 auto;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logout-modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 .logout-modal-header {
-  padding: 2rem;
+  padding: 32px 24px 24px 24px;
   text-align: center;
-  background: var(--gradient-accent);
 }
 
-.logout-icon-container {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
+.logout-icon-wrapper {
+  margin-bottom: 20px;
+}
+
+.logout-icon-bg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff3b30, #ff6b6b);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem auto;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin: 0 auto;
+  box-shadow: 0 8px 20px rgba(255, 59, 48, 0.3);
 }
 
-.logout-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 0.5rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.logout-modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
 }
 
-.logout-message {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+.logout-modal-subtitle {
+  font-size: 16px;
+  color: #86868b;
   margin: 0;
+  line-height: 1.4;
   font-weight: 400;
-  line-height: 1.5;
 }
 
 .logout-modal-actions {
-  padding: 1.5rem 2rem 2rem 2rem;
+  padding: 0 24px 24px 24px;
   display: flex;
-  gap: 1rem;
-  justify-content: center;
+  gap: 12px;
+}
+
+.logout-action-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
 }
 
 .logout-cancel-btn {
-  background: var(--color-bg-card) !important;
-  color: var(--color-text-primary) !important;
-  border: 1px solid var(--color-border-primary) !important;
-  border-radius: var(--radius-lg);
-  font-weight: 500;
-  text-transform: none;
-  transition: var(--transition-normal);
+  background: rgba(142, 142, 147, 0.12);
+  color: #1d1d1f;
 }
 
 .logout-cancel-btn:hover {
-  background: var(--color-hover-bg) !important;
-  border-color: var(--color-border-secondary) !important;
+  background: rgba(142, 142, 147, 0.18);
   transform: translateY(-1px);
 }
 
 .logout-confirm-btn {
-  background: var(--gradient-accent) !important;
-  color: var(--color-text-primary) !important;
-  border: none !important;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  text-transform: none;
-  transition: var(--transition-normal);
-  box-shadow: var(--shadow-glow);
+  background: linear-gradient(135deg, #ff3b30, #ff6b6b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
 
 .logout-confirm-btn:hover {
+  background: linear-gradient(135deg, #ff2d55, #ff5252);
   transform: translateY(-1px);
-  box-shadow:
-    var(--shadow-glow),
-    0 8px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .logout-modal-content {
+    background: rgba(28, 28, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .logout-modal-title {
+    color: #f2f2f7;
+  }
+
+  .logout-modal-subtitle {
+    color: #8e8e93;
+  }
+
+  .logout-cancel-btn {
+    background: rgba(142, 142, 147, 0.2);
+    color: #f2f2f7;
+  }
+
+  .logout-cancel-btn:hover {
+    background: rgba(142, 142, 147, 0.3);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .logout-modal-container {
+    width: 95%;
+    margin: 0 16px;
+  }
+
+  .logout-modal-header {
+    padding: 24px 20px 20px 20px;
+  }
+
+  .logout-modal-actions {
+    padding: 0 20px 20px 20px;
+    flex-direction: column;
+  }
+
+  .logout-action-btn {
+    width: 100%;
+  }
+
+  .logout-icon-bg {
+    width: 56px;
+    height: 56px;
+  }
+
+  .logout-modal-title {
+    font-size: 20px;
+  }
+
+  .logout-modal-subtitle {
+    font-size: 14px;
+  }
+}
+
 
 .github-gmail-modal {
   max-width: 600px;
@@ -2019,10 +2567,12 @@ body.modal-open {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  background: var(--gradient-accent);
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.3));
 }
 
 .company-tagline {
