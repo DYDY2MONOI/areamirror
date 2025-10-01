@@ -11,7 +11,7 @@ export function useAreas() {
   const fetchAreas = async () => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const data = await areaService.getAreas()
       areas.value = data
@@ -26,7 +26,7 @@ export function useAreas() {
   const fetchPopularAreas = async () => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const data = await areaService.getPopularAreas()
       popularAreas.value = data
@@ -41,13 +41,28 @@ export function useAreas() {
   const fetchRecommendedAreas = async () => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const data = await areaService.getRecommendedAreas()
       recommendedAreas.value = data
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch recommended areas'
       console.error('Error fetching recommended areas:', err)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const fetchUserAreas = async (userId: number) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const data = await areaService.getUserAreas(userId)
+      areas.value = data
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch user areas'
+      console.error('Error fetching user areas:', err)
     } finally {
       isLoading.value = false
     }
@@ -63,7 +78,7 @@ export function useAreas() {
   }) => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const newArea = await areaService.createArea(areaData)
       areas.value.push(newArea)
@@ -86,7 +101,7 @@ export function useAreas() {
   }>) => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const updatedArea = await areaService.updateArea(id, areaData)
       const index = areas.value.findIndex(area => area.id === id)
@@ -105,7 +120,7 @@ export function useAreas() {
   const deleteArea = async (id: string) => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       await areaService.deleteArea(id)
       areas.value = areas.value.filter(area => area.id !== id)
@@ -120,7 +135,7 @@ export function useAreas() {
   const toggleArea = async (id: string) => {
     isLoading.value = true
     error.value = null
-    
+
     try {
       const updatedArea = await areaService.toggleArea(id)
       const index = areas.value.findIndex(area => area.id === id)
@@ -156,10 +171,11 @@ export function useAreas() {
     error: computed(() => error.value),
     activeAreas: getActiveAreas,
     publicAreas: getPublicAreas,
-    
+
     fetchAreas,
     fetchPopularAreas,
     fetchRecommendedAreas,
+    fetchUserAreas,
     createArea,
     updateArea,
     deleteArea,

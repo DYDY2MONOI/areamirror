@@ -12,6 +12,8 @@ export interface Area {
   isPublic: boolean
   createdAt: string
   updatedAt: string
+  triggerIconUrl?: string
+  actionIconUrl?: string
 }
 
 export interface AreaTemplate {
@@ -126,10 +128,34 @@ class AreaService {
     }
   }
 
+  async getUserAreas(userId: number): Promise<Area[]> {
+    try {
+      const token = localStorage.getItem('authToken')
+
+      const response = await fetch(`${API_BASE_URL}/user/me/areas`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user areas: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data.data || []
+    } catch (error) {
+      console.error('Error fetching user areas:', error)
+      throw error
+    }
+  }
+
   async createArea(areaData: CreateAreaRequest): Promise<Area> {
     try {
       const token = localStorage.getItem('authToken')
-      
+
       const response = await fetch(this.baseURL, {
         method: 'POST',
         headers: {
@@ -154,7 +180,7 @@ class AreaService {
   async updateArea(id: string, areaData: Partial<CreateAreaRequest>): Promise<Area> {
     try {
       const token = localStorage.getItem('authToken')
-      
+
       const response = await fetch(`${this.baseURL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -179,7 +205,7 @@ class AreaService {
   async deleteArea(id: string): Promise<void> {
     try {
       const token = localStorage.getItem('authToken')
-      
+
       const response = await fetch(`${this.baseURL}/${id}`, {
         method: 'DELETE',
         headers: {
@@ -199,7 +225,7 @@ class AreaService {
   async toggleArea(id: string): Promise<Area> {
     try {
       const token = localStorage.getItem('authToken')
-      
+
       const response = await fetch(`${this.baseURL}/${id}/toggle`, {
         method: 'PATCH',
         headers: {

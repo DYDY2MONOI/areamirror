@@ -164,7 +164,6 @@
             <span class="label-text">Configuration</span>
           </div>
 
-          <!-- Calendar Trigger Configuration -->
           <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -225,81 +224,63 @@
             </div>
 
             <div class="config-content">
-              <div class="input-container">
-                <label class="input-label">📁 Repository</label>
-                <input
-                  v-model="form.triggerConfig.repository"
-                  type="text"
-                  class="modern-input"
-                  placeholder="owner/repository-name"
-                  required
-                />
-                <small class="input-hint">Enter the repository in format: owner/repository-name (e.g., microsoft/vscode)</small>
-              </div>
-
-              <div class="input-container">
-                <label class="input-label">🌿 Branch (Optional)</label>
-                <input
-                  v-model="form.triggerConfig.branch"
-                  type="text"
-                  class="modern-input"
-                  placeholder="main"
-                />
-                <small class="input-hint">Specific branch to monitor (leave empty for all branches)</small>
-              </div>
-
-              <div class="input-container">
-                <label class="input-label">📋 Event Types</label>
-                <div class="checkbox-group">
-                  <label class="checkbox-item">
-                    <input
-                      v-model="form.triggerConfig.events"
-                      type="checkbox"
-                      value="push"
-                    />
-                    <span class="checkbox-label">Push Events</span>
-                    <small class="checkbox-hint">Triggered when code is pushed to the repository</small>
-                  </label>
-                  <label class="checkbox-item">
-                    <input
-                      v-model="form.triggerConfig.events"
-                      type="checkbox"
-                      value="pull_request"
-                    />
-                    <span class="checkbox-label">Pull Request Events</span>
-                    <small class="checkbox-hint">Triggered when PRs are opened, closed, or merged</small>
-                  </label>
-                  <label class="checkbox-item">
-                    <input
-                      v-model="form.triggerConfig.events"
-                      type="checkbox"
-                      value="issues"
-                    />
-                    <span class="checkbox-label">Issue Events</span>
-                    <small class="checkbox-hint">Triggered when issues are opened, closed, or commented on</small>
-                  </label>
-                  <label class="checkbox-item">
-                    <input
-                      v-model="form.triggerConfig.events"
-                      type="checkbox"
-                      value="release"
-                    />
-                    <span class="checkbox-label">Release Events</span>
-                    <small class="checkbox-hint">Triggered when new releases are published</small>
-                  </label>
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">Select Repository</label>
+                  <select
+                    v-model="form.triggerConfig.repositoryId"
+                    class="modern-input"
+                    @change="onRepositoryChange"
+                    :disabled="isLoadingRepositories"
+                    required
+                  >
+                    <option value="">{{ isLoadingRepositories ? 'Loading repositories...' : 'Choose a repository...' }}</option>
+                    <option
+                      v-for="repo in repositories"
+                      :key="repo.id"
+                      :value="repo.id"
+                    >
+                      {{ repo.full_name }} {{ repo.private ? '(Private)' : '' }}
+                    </option>
+                  </select>
+                  <small class="input-hint">
+                    {{ isLoadingRepositories ? 'Loading your GitHub repositories...' : 'Select the repository you want to monitor' }}
+                  </small>
                 </div>
-                <small class="input-hint">Select which GitHub events should trigger this area</small>
-              </div>
 
-              <div class="input-container">
-                <label class="input-label">🔐 Webhook Secret (Optional)</label>
-                <input
-                  v-model="form.triggerConfig.webhookSecret"
-                  type="password"
-                  class="modern-input"
-                  placeholder="your-webhook-secret"
-                />
-                <small class="input-hint">Secret token for webhook verification (recommended for security)</small>
+                <div class="input-container">
+                  <label class="input-label">Event Types</label>
+                  <div class="checkbox-group">
+                    <label class="checkbox-item">
+                      <input
+                        type="checkbox"
+                        v-model="form.triggerConfig.notificationTypes"
+                        value="push"
+                        @change="onNotificationTypeChange"
+                      />
+                      <span class="checkbox-label">Push Events</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input
+                        type="checkbox"
+                        v-model="form.triggerConfig.notificationTypes"
+                        value="pull_request"
+                        @change="onNotificationTypeChange"
+                      />
+                      <span class="checkbox-label">Pull Requests</span>
+                    </label>
+                    <label class="checkbox-item">
+                      <input
+                        type="checkbox"
+                        v-model="form.triggerConfig.notificationTypes"
+                        value="issues"
+                        @change="onNotificationTypeChange"
+                      />
+                      <span class="checkbox-label">Issues</span>
+                    </label>
+                  </div>
+                  <small class="input-hint">Choose which GitHub events should trigger this area</small>
+                </div>
               </div>
             </div>
           </div>
@@ -356,7 +337,6 @@
             </div>
           </div>
 
-          <!-- Email Preview for Calendar → Gmail -->
           <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="preview-section">
             <div class="preview-header">
               <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
@@ -372,6 +352,32 @@
                 </div>
                 <div class="email-body">
                   {{ form.actionConfig.body || 'Hello! This is a reminder about your upcoming event: Event Title at Event Time' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'GitHub' && form.actionService === 'Gmail'" class="preview-section">
+            <div class="preview-header">
+              <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
+              <span class="preview-title">GitHub → Gmail Preview</span>
+            </div>
+            <div class="preview-content">
+              <div class="github-preview">
+                <div class="preview-item">
+                  <strong>Repository:</strong> {{ getSelectedRepositoryName() || 'Select a repository' }}
+                </div>
+                <div class="preview-item">
+                  <strong>Events:</strong> {{ form.triggerConfig.notificationTypes?.join(', ') || 'Select event types' }}
+                </div>
+                <div class="preview-item">
+                  <strong>Email To:</strong> {{ form.actionConfig.toEmail || 'your-email@gmail.com' }}
+                </div>
+                <div class="preview-item">
+                  <strong>Subject:</strong> {{ form.actionConfig.subject || 'GitHub Activity Notification' }}
+                </div>
+                <div class="preview-item">
+                  <strong>Body:</strong> {{ form.actionConfig.body || 'New activity detected in your repository' }}
                 </div>
               </div>
             </div>
@@ -404,10 +410,26 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
+        <button
+          v-if="form.triggerService === 'GitHub' && form.actionService === 'Gmail'"
+          class="action-btn test-email-btn"
+          @click="sendTestEmail"
+          :disabled="!canSendTestEmail || isSendingTest"
+        >
+          <v-icon size="18">mdi-email-send</v-icon>
+          {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
+        </button>
+
         <!-- Debug info for Calendar → Gmail (Hidden for admins) -->
         <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
-            Debug: {{ isFormValid ? '✅ Ready to create' : '❌ Missing: ' + getMissingFields() }}
+            Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
+          </small>
+        </div>
+
+        <div v-if="form.triggerService === 'GitHub' && form.actionService === 'Gmail'" class="debug-info">
+          <small style="color: #666; font-size: 0.75rem;">
+            Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
         </div>
       </div>
@@ -419,6 +441,7 @@
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import appsJson from '../../assets/apps.json'
 import { areaService } from '../../services/area'
+import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
 
 type AppDef = { name: string; icon: string }
@@ -459,6 +482,8 @@ const form = reactive({
   actionConfig: {} as any,
 })
 
+const repositories = ref<GitHubRepository[]>([])
+const isLoadingRepositories = ref(false)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -485,6 +510,18 @@ watch(() => props.template, (newTemplate) => {
         webhookSecret: ''
       }
     }
+
+    if (newTemplate.triggerService === 'GitHub' && newTemplate.actionService === 'Gmail') {
+      form.triggerConfig = {
+        repositoryId: '',
+        notificationTypes: ['push']
+      }
+      form.actionConfig = {
+        toEmail: '',
+        subject: 'GitHub Activity: {{repository_name}}',
+        body: 'New {{event_type}} activity detected in repository {{repository_name}}.\n\nDetails: {{event_details}}\n\nArea: {{areaName}}'
+      }
+    }
   }
 }, { immediate: true })
 
@@ -496,7 +533,6 @@ const isFormValid = computed(() => {
   if (currentUser.value?.role === 'admin') {
     return hasBasicInfo
   }
-
   if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
@@ -504,11 +540,12 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
-  if (form.triggerService === 'GitHub') {
+  if (form.triggerService === 'GitHub' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
-           form.triggerConfig.repository &&
-           form.triggerConfig.events &&
-           form.triggerConfig.events.length > 0
+           form.triggerConfig.repositoryId &&
+           form.triggerConfig.notificationTypes?.length > 0 &&
+           form.actionConfig.toEmail &&
+           form.actionConfig.subject
   }
 
   return hasBasicInfo
@@ -538,6 +575,14 @@ const selectTrigger = (serviceId: string) => {
   } else {
     form.triggerConfig = {}
   }
+
+  if (serviceId === 'GitHub') {
+    form.triggerConfig = {
+      repositoryId: '',
+      notificationTypes: ['push']
+    }
+    loadRepositories()
+  }
 }
 
 const selectAction = (serviceId: string) => {
@@ -545,10 +590,18 @@ const selectAction = (serviceId: string) => {
   showAllReactionServices.value = false
 
   if (serviceId === 'Gmail') {
-    form.actionConfig = {
-      toEmail: '',
-      subject: 'Reminder: {{eventTitle}}',
-      body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+    if (form.triggerService === 'GitHub') {
+      form.actionConfig = {
+        toEmail: '',
+        subject: 'GitHub Activity: {{repository_name}}',
+        body: 'New {{event_type}} activity detected in repository {{repository_name}}.\n\nDetails: {{event_details}}\n\nArea: {{areaName}}'
+      }
+    } else {
+      form.actionConfig = {
+        toEmail: '',
+        subject: 'Reminder: {{eventTitle}}',
+        body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
+      }
     }
   }
 }
@@ -561,10 +614,65 @@ const getServiceName = (serviceId: string) => {
 const getMissingFields = () => {
   const missing = []
   if (!form.areaName.trim()) missing.push('Area Name')
-  if (!form.triggerConfig.eventTime) missing.push('Event Time')
-  if (!form.actionConfig.toEmail) missing.push('Email Address')
-  if (!form.actionConfig.subject) missing.push('Email Subject')
+
+  if (form.triggerService === 'Google Calendar') {
+    if (!form.triggerConfig.eventTime) missing.push('Event Time')
+  }
+
+  if (form.triggerService === 'GitHub') {
+    if (!form.triggerConfig.repositoryId) missing.push('Repository')
+    if (!form.triggerConfig.notificationTypes?.length) missing.push('Event Types')
+  }
+
+  if (form.actionService === 'Gmail') {
+    if (!form.actionConfig.toEmail) missing.push('Email Address')
+    if (!form.actionConfig.subject) missing.push('Email Subject')
+  }
+
   return missing.join(', ')
+}
+
+const loadRepositories = async () => {
+  if (repositories.value.length > 0) return
+
+  isLoadingRepositories.value = true
+  try {
+    repositories.value = await githubService.getRepositories()
+    if (repositories.value.length === 0) {
+      error.value = 'No repositories found. Make sure you have GitHub repositories and your GitHub account is linked.'
+    }
+  } catch (err) {
+    console.error('Failed to load repositories:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load GitHub repositories'
+    if (errorMessage.indexOf('GitHub username not configured') !== -1 || errorMessage.indexOf('No GitHub account linked') !== -1) {
+      error.value = 'Please link your GitHub account first in your profile settings.'
+    } else {
+      error.value = `Failed to load repositories: ${errorMessage}`
+    }
+  } finally {
+    isLoadingRepositories.value = false
+  }
+}
+
+const onRepositoryChange = () => {
+  if (form.triggerConfig.repositoryId) {
+    const repo = repositories.value.find(r => r.id === parseInt(form.triggerConfig.repositoryId))
+    if (repo) {
+      form.description = `Monitor ${repo.full_name} for GitHub events and send email notifications`
+    }
+  }
+}
+
+const onNotificationTypeChange = () => {
+  if (!form.triggerConfig.notificationTypes || form.triggerConfig.notificationTypes.length === 0) {
+    form.triggerConfig.notificationTypes = ['push']
+  }
+}
+
+const getSelectedRepositoryName = () => {
+  if (!form.triggerConfig.repositoryId) return ''
+  const repo = repositories.value.find(r => r.id === parseInt(form.triggerConfig.repositoryId))
+  return repo?.full_name || ''
 }
 
 const isLoading = ref(false)
@@ -621,32 +729,40 @@ const createArea = async () => {
   error.value = null
 
   try {
-    let triggerConfig = form.triggerConfig
-    let actionConfig = form.actionConfig
+    if (form.triggerService === 'GitHub' && form.actionService === 'Gmail') {
+      await githubService.createArea(
+        parseInt(form.triggerConfig.repositoryId),
+        form.actionConfig.toEmail,
+        form.triggerConfig.notificationTypes
+      )
+    } else {
+      let triggerConfig = form.triggerConfig
+      let actionConfig = form.actionConfig
 
-    if (currentUser.value?.role === 'admin') {
-      triggerConfig = {
-        type: 'default',
-        enabled: true
+      if (currentUser.value?.role === 'admin') {
+        triggerConfig = {
+          type: 'default',
+          enabled: true
+        }
+        actionConfig = {
+          type: 'default',
+          enabled: true
+        }
       }
-      actionConfig = {
-        type: 'default',
-        enabled: true
+
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: triggerConfig,
+        actionConfig: actionConfig
       }
-    }
 
-    const areaData = {
-      name: form.areaName,
-      description: form.description,
-      triggerService: form.triggerService!,
-      triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
-      actionService: form.actionService!,
-      actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-      triggerConfig: triggerConfig,
-      actionConfig: actionConfig
+      await areaService.createArea(areaData)
     }
-
-    await areaService.createArea(areaData)
     emit('save')
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to create area'
@@ -1490,6 +1606,67 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-select .v-field__outline) {
   color: var(--color-border-primary) !important;
+}
+
+/* GitHub-specific styles */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
+.checkbox-label {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.github-preview {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--color-border-primary);
+}
+
+.preview-item {
+  margin-bottom: 0.75rem;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.preview-item:last-child {
+  margin-bottom: 0;
+}
+
+.preview-item strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 </style>

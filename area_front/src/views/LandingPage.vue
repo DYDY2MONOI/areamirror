@@ -1,7 +1,6 @@
 <template>
   <div class="landing-dark">
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
-      <!-- Section utilisateur dans la sidebar -->
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
           <img
@@ -28,10 +27,10 @@
             <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
           </template>
         </v-tooltip>
-        <SidebarButton 
+        <SidebarButton
           v-if="isAuthenticated && currentUser?.role === 'admin'"
-          tooltip="Create" 
-          @open="() => requireAdmin(() => showCreateModal = true)" 
+          tooltip="Create"
+          @open="() => requireAdmin(() => showCreateModal = true)"
         />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
@@ -178,10 +177,10 @@
         </button>
       </div>
       <div class="cards-grid">
-        <AreaCard 
-          v-for="area in popularAreas" 
-          :key="area.id" 
-          :area="area" 
+        <AreaCard
+          v-for="area in popularAreas"
+          :key="area.id"
+          :area="area"
           @click="handleAreaClick"
         />
       </div>
@@ -189,14 +188,34 @@
 
     <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
       <div class="custom-modal-content" @click.stop>
-        <CreateArea 
-          :template="selectedArea" 
-          @close="showCreateModal = false" 
-          @save="handleAreaCreated" 
+        <CreateArea
+          :template="selectedArea"
+          @close="showCreateModal = false"
+          @save="handleAreaCreated"
         />
       </div>
     </div>
 
+    <v-container v-if="isAuthenticated && areas.length > 0" class="mt-6">
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">My Areas</h2>
+          <p class="section-subtitle">Your created automation areas</p>
+        </div>
+        <button class="view-all-btn">
+          <span>View All</span>
+          <v-icon size="16">mdi-arrow-right</v-icon>
+        </button>
+      </div>
+      <div class="cards-grid">
+        <AreaCard
+          v-for="area in areas"
+          :key="area.id"
+          :area="area"
+          @click="handleAreaClick"
+        />
+      </div>
+    </v-container>
 
     <v-container class="mt-6">
       <div class="section-header">
@@ -210,10 +229,10 @@
         </button>
       </div>
       <div class="cards-grid">
-        <AreaCard 
-          v-for="area in recommendedAreas" 
-          :key="area.id" 
-          :area="area" 
+        <AreaCard
+          v-for="area in recommendedAreas"
+          :key="area.id"
+          :area="area"
           @click="handleAreaClick"
         />
       </div>
@@ -245,13 +264,13 @@
           </div>
         </div>
         <div class="cards-grid">
-          <CardButton 
+          <CardButton
             v-if="isAuthenticated && currentUser?.role === 'admin'"
-            @open="() => requireAdmin(() => showCreateModal = true)" 
+            @open="() => requireAdmin(() => showCreateModal = true)"
           />
-          <CardButton 
+          <CardButton
             v-else
-            @open="() => requireAuth(() => showCreateModal = true)" 
+            @open="() => requireAuth(() => showCreateModal = true)"
           />
         </div>
       </div>
@@ -267,7 +286,7 @@
             <p class="company-tagline">Intelligent Automation Platform</p>
           </div>
           <p class="footer-description">
-            Connect your favorite services with intelligent automation. 
+            Connect your favorite services with intelligent automation.
             Build powerful workflows that work for you.
           </p>
         </div>
@@ -350,7 +369,6 @@
     </footer>
   </div>
 
-  <!-- Dialog de confirmation de déconnexion -->
   <div v-if="showLogoutDialog" class="custom-modal-overlay" @click="showLogoutDialog = false">
     <div class="custom-modal-content logout-modal" @click.stop>
       <div class="logout-modal-header">
@@ -485,6 +503,8 @@ import { ref, watch, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
+import { githubService, type GitHubRepository } from '@/services/github'
+import { type Area } from '@/services/area'
 
 interface AreaTemplate {
   id: string
@@ -505,13 +525,16 @@ const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
-const { popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas } = useAreas()
+const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas } = useAreas()
 const router = useRouter()
 
 onMounted(async () => {
   await refreshProfile()
   await fetchPopularAreas()
   await fetchRecommendedAreas()
+  if (currentUser.value?.id) {
+    await fetchUserAreas(currentUser.value.id)
+  }
 })
 
 
@@ -554,22 +577,28 @@ const confirmLogout = async () => {
   }
 }
 
-const handleAreaClick = (area: AreaTemplate) => {
-  if (!isAuthenticated.value) {
-    router.push('/login')
-    return
-  }
-  
-  console.log('Area clicked:', area)
-  selectedArea.value = area
-  showAreaModal.value = true
+const handleAreaClick = (area: AreaTemplate | Area) => {
+  requireAuth(() => {
+    console.log('Area clicked:', area)
+
+    // Only show area modal for templates, not user-created areas
+    if ('title' in area) {
+      // This is an AreaTemplate
+      selectedArea.value = area as AreaTemplate
+      showAreaModal.value = true
+    } else {
+      // This is a user-created Area - could show area details or edit modal
+      console.log('User area clicked:', area)
+      // For now, just log it. In the future, we could show an edit modal
+    }
+  })
 }
 
 const createAreaFromTemplate = () => {
   console.log('Creating area from template:', selectedArea.value)
   console.log('Template data structure:', JSON.stringify(selectedArea.value, null, 2))
   showAreaModal.value = false
-  
+
   router.push({
     name: 'configure-area',
     query: {
@@ -582,6 +611,9 @@ const handleAreaCreated = async () => {
   showCreateModal.value = false
   await fetchPopularAreas()
   await fetchRecommendedAreas()
+  if (currentUser.value?.id) {
+    await fetchUserAreas(currentUser.value.id)
+  }
 }
 
 const getTriggerIcon = (service: string) => {
@@ -1357,7 +1389,7 @@ body.modal-open {
   bottom: 0;
   background: var(--gradient-bg-modal);
   backdrop-filter: blur(12px);
-  z-index: 9999;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1488,14 +1520,199 @@ body.modal-open {
     0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
+.github-gmail-modal {
+  max-width: 600px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.github-gmail-modal-header {
+  padding: 2rem;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.github-gmail-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.arrow-icon {
+  opacity: 0.8;
+}
+
+.github-gmail-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.github-gmail-message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.github-gmail-modal-content {
+  padding: 2rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: var(--radius-md);
+  color: #f44336;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.repository-select,
+.email-input {
+  width: 100%;
+}
+
+.repository-select :deep(.v-field),
+.email-input :deep(.v-field) {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+}
+
+.repository-select :deep(.v-menu) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-list) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-overlay) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-overlay__content) {
+  z-index: 1001 !important;
+}
+
+.repository-select :deep(.v-field--focused),
+.email-input :deep(.v-field--focused) {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.repository-select :deep(.v-field__input),
+.email-input :deep(.v-field__input) {
+  color: var(--color-text-primary);
+}
+
+.repository-select :deep(.v-field__input::placeholder),
+.email-input :deep(.v-field__input::placeholder) {
+  color: var(--color-text-secondary);
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-group :deep(.v-checkbox) {
+  margin: 0;
+}
+
+.checkbox-group :deep(.v-checkbox .v-label) {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.github-gmail-modal-actions {
+  padding: 1.5rem 2rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.github-gmail-cancel-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-transform: none;
+  transition: var(--transition-normal);
+}
+
+.github-gmail-cancel-btn:hover {
+  background: var(--color-hover-bg) !important;
+  border-color: var(--color-border-secondary) !important;
+  transform: translateY(-1px);
+}
+
+.github-gmail-confirm-btn {
+  background: var(--gradient-accent) !important;
+  color: var(--color-text-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-transform: none;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-glow);
+}
+
+.github-gmail-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    var(--shadow-glow),
+    0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.github-gmail-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
-  .logout-modal {
+  .logout-modal,
+  .github-gmail-modal {
     margin: 1rem;
     max-width: calc(100vw - 2rem);
   }
 
-  .logout-modal-header {
+  .logout-modal-header,
+  .github-gmail-modal-header {
     padding: 1.5rem;
   }
 
@@ -1505,22 +1722,35 @@ body.modal-open {
     margin-bottom: 0.75rem;
   }
 
-  .logout-title {
+  .logout-title,
+  .github-gmail-title {
     font-size: 1.25rem;
   }
 
-  .logout-message {
+  .logout-message,
+  .github-gmail-message {
     font-size: 0.875rem;
   }
 
-  .logout-modal-actions {
+  .logout-modal-actions,
+  .github-gmail-modal-actions {
     padding: 1rem 1.5rem 1.5rem 1.5rem;
     flex-direction: column;
   }
 
   .logout-cancel-btn,
-  .logout-confirm-btn {
+  .logout-confirm-btn,
+  .github-gmail-cancel-btn,
+  .github-gmail-confirm-btn {
     width: 100%;
+  }
+
+  .github-gmail-modal-content {
+    padding: 1.5rem;
+  }
+
+  .github-gmail-icon-container {
+    gap: 0.75rem;
   }
 }
 
@@ -1922,7 +2152,7 @@ body.modal-open {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 2rem;
   }
-  
+
   .footer-section:first-child {
     grid-column: 1 / -1;
   }
@@ -1934,17 +2164,17 @@ body.modal-open {
     gap: 2rem;
     padding: 0 1rem;
   }
-  
+
   .footer-bottom-content {
     flex-direction: column;
     text-align: center;
     padding: 0 1rem;
   }
-  
+
   .footer-bottom-links {
     justify-content: center;
   }
-  
+
   .social-links {
     justify-content: center;
   }
@@ -1954,20 +2184,20 @@ body.modal-open {
   .site-footer {
     padding: 2rem 0 0 0;
   }
-  
+
   .footer-content {
     gap: 1.5rem;
     padding: 0 1rem;
   }
-  
+
   .footer-bottom {
     padding: 1.5rem 0;
   }
-  
+
   .footer-bottom-content {
     padding: 0 1rem;
   }
-  
+
   .footer-bottom-links {
     flex-direction: column;
     gap: 1rem;
