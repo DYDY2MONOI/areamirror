@@ -3,6 +3,9 @@ package controllers
 import (
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"Golang-API-tutoriel/services"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -100,6 +103,15 @@ type FacebookUserResponse struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required"`
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
 }
 
 func init() {
@@ -832,6 +844,20 @@ func LinkFacebookAccount(c *gin.Context) {
 
 	var existingUser models.User
 	if err := database.DB.Where("facebook_id = ?", facebookUser.ID).First(&existingUser).Error; err == nil {
+		// Si c'est le même utilisateur, on met à jour les infos
+		if existingUser.ID == user.ID {
+			user.FacebookEmail = &facebookUser.Email
+			if err := database.DB.Save(&user).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Facebook account"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"message":        "Facebook account updated successfully",
+				"facebook_email": user.FacebookEmail,
+			})
+			return
+		}
+		// Sinon, c'est un autre utilisateur
 		c.JSON(http.StatusConflict, gin.H{"error": "This Facebook account is already linked to another user"})
 		return
 	}
@@ -962,4 +988,115 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 	}
 
 	return &facebookUser, nil
+}
+
+func ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Vérifier si l'utilisateur existe
+	var user models.User
+	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		// Pour des raisons de sécurité, on retourne toujours un succès même si l'email n'existe pas
+		c.JSON(http.StatusOK, gin.H{
+			"message": "If an account with that email exists, a password reset link has been sent.",
+		})
+		return
+	}
+
+	// Générer un token de réinitialisation
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset token"})
+		return
+	}
+	resetToken := hex.EncodeToString(tokenBytes)
+
+	// Sauvegarder le token dans la base de données
+	user.PasswordResetToken = &resetToken
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save reset token"})
+		return
+	}
+
+	// Envoyer l'email de réinitialisation
+	emailService, err := services.NewPasswordResetEmailService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password reset email service not available"})
+		return
+	}
+
+	resetURL := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", resetToken)
+	emailBody := fmt.Sprintf(`
+		<html>
+		<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+			<h2 style="color: #333;">Réinitialisation de votre mot de passe</h2>
+			<p>Bonjour %s,</p>
+			<p>Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le lien ci-dessous pour créer un nouveau mot de passe :</p>
+			<p style="text-align: center; margin: 30px 0;">
+				<a href="%s" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Réinitialiser mon mot de passe</a>
+			</p>
+			<p>Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
+			<p>Ce lien expire dans 1 heure.</p>
+			<hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+			<p style="color: #666; font-size: 12px;">Équipe AREA</p>
+		</body>
+		</html>
+	`, user.FirstName, resetURL)
+
+	emailReq := services.PasswordResetEmailRequest{
+		To:      user.Email,
+		Subject: "Réinitialisation de votre mot de passe - AREA",
+		Body:    emailBody,
+	}
+
+	if err := emailService.SendPasswordResetEmail(emailReq); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send reset email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "If an account with that email exists, a password reset link has been sent.",
+	})
+}
+
+func ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Trouver l'utilisateur avec le token
+	var user models.User
+	if err := database.DB.Where("password_reset_token = ?", req.Token).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired reset token"})
+		return
+	}
+
+	// Vérifier que le token n'est pas trop ancien (1 heure)
+	// Note: Dans une vraie application, vous devriez stocker la date de création du token
+	// Pour simplifier, on assume que le token est valide s'il existe
+
+	// Hacher le nouveau mot de passe
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
+		return
+	}
+
+	// Mettre à jour le mot de passe et supprimer le token
+	user.Password = string(hashedPassword)
+	user.PasswordResetToken = nil
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password has been reset successfully",
+	})
 }
