@@ -70,7 +70,7 @@ func SeedData() {
 		{ServiceID: gmail.ID, Name: "Envoyer email", Description: "Envoie un email", Parameters: `{"to": "", "subject": "", "body": ""}`},
 		{ServiceID: github.ID, Name: "Créer issue", Description: "Crée une nouvelle issue", Parameters: `{"repository": "", "title": "", "body": ""}`},
 		{ServiceID: gmail.ID, Name: "Envoyer email de notification", Description: "Envoie un email de notification", Parameters: `{"to": "", "subject": "", "body": ""}`},
-		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"channel": "", "message": ""}`},
+		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
 	}
 
 	for _, reaction := range reactions {
