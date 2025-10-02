@@ -1637,28 +1637,27 @@ watch(showCreateModal, (isOpen) => {
   transform: translateY(0) scale(1);
   background-size: 130% 130%;
   background-position: 50% 50%;
+  opacity: 1;
+  position: relative;
   transition:
-    transform .25s ease,
-    box-shadow .25s ease,
+    transform .4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow .4s cubic-bezier(0.16, 1, 0.3, 1),
     background-position .6s ease,
-    filter .25s ease;
+    filter .25s ease,
+    opacity .3s ease,
+    border-color .3s ease;
 }
 .area-card :deep(.v-icon) {
   transition: transform .25s ease, opacity .25s ease;
 }
-.area-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-  background-position: 80% 20%;
-}
 .area-card:hover :deep(.v-icon) {
-  transform: translateY(-2px) scale(1.06);
-}
-.area-card:active {
-  transform: translateY(-2px) scale(0.99);
+  transform: translateY(-3px) scale(1.08);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
-.cards-grid .card-col { animation: fadeUp .45s ease both; }
+.cards-grid .card-col {
+  animation: fadeUp .45s ease both;
+}
 .cards-grid .card-col:nth-child(2) { animation-delay: .05s; }
 .cards-grid .card-col:nth-child(3) { animation-delay: .1s; }
 .cards-grid .card-col:nth-child(4) { animation-delay: .15s; }
@@ -1666,6 +1665,15 @@ watch(showCreateModal, (isOpen) => {
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.area-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  background-position: 80% 20%;
+}
+.area-card:active {
+  transform: translateY(-2px) scale(0.99);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1836,6 +1844,7 @@ body.modal-open {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
+  animation: modalOverlayFadeIn 0.3s ease-out;
 }
 
 .custom-modal-content {
@@ -2026,6 +2035,27 @@ body.modal-open {
   from {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Area Modal Animations */
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalContentSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
   }
   to {
     opacity: 1;
@@ -2310,6 +2340,7 @@ body.modal-open {
   border-radius: var(--radius-xl);
   padding: 0;
   overflow: hidden;
+  animation: modalContentSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .area-modal-header {
