@@ -1358,6 +1358,56 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 	return &facebookUser, nil
 }
 
+// Mobile OAuth2 Login - returns tokens in response body for mobile apps
+func MobileOAuth2Login(c *gin.Context) {
+	var req OAuth2LoginRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect email or password"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect email or password"})
+		return
+	}
+
+	accessToken, err := generateAccessToken(user.ID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
+		return
+	}
+
+	refreshToken, err := generateRefreshToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
+		return
+	}
+
+	// Mobile response with tokens in body (not cookies)
+	c.JSON(http.StatusOK, OAuth2TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    900, // 15 minutes
+		User: gin.H{
+			"id":            user.ID,
+			"email":         user.Email,
+			"first_name":    user.FirstName,
+			"last_name":     user.LastName,
+			"profile_image": user.ProfileImage,
+			"role":          user.Role,
+			"is_active":     user.IsActive,
+		},
+	})
+}
+
 func GitHubDirectLogin(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
