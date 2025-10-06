@@ -70,6 +70,24 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/oauth2/github/callback',
+      name: 'oauth2-github-callback',
+      component: () => import('@/views/OAuth2GitHubCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/oauth2/google/callback',
+      name: 'oauth2-google-callback',
+      component: () => import('@/views/OAuth2GoogleCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/oauth2/facebook/callback',
+      name: 'oauth2-facebook-callback',
+      component: () => import('@/views/OAuth2FacebookCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/profile/edit',
       name: 'edit-profile',
       component: EditProfilePage,

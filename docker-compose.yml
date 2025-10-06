@@ -27,15 +27,23 @@ services:
       DB_USER: area_user
       DB_PASSWORD: area_password
       DB_NAME: area_db
-      JWT_SECRET: your_jwt_secret_key_here
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production-min-32-chars
+      JWT_ACCESS_TOKEN_EXPIRY: 15m
+      JWT_REFRESH_TOKEN_EXPIRY: 30d
+      OAUTH2_ACCESS_TOKEN_EXPIRY: 900
+      OAUTH2_REFRESH_TOKEN_EXPIRY: 2592000
+      OAUTH2_TOKEN_CLEANUP_INTERVAL: 24h
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      CORS_ALLOW_CREDENTIALS: true
+      RATE_LIMIT_REQUESTS_PER_MINUTE: 60
+      RATE_LIMIT_BURST: 10
       GITHUB_CLIENT_ID: Ov23liQ7GPEEWs0hVzyM
       GITHUB_CLIENT_SECRET: d20831e34517a30903d8166a67d7aee11969be99
       GOOGLE_CLIENT_ID: 635456942993-cl4hm8rvh0pcslhjfko23cbgh18o4cdq.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: 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
 
-      GOOGLE_ACCESS_TOKEN: ya29.a0AQQ_BDT-HpcOc_6OXejqtEXdNEsE4dla2UT81tvTRMtiNUUqiBk1Gif-J1svJKMBfoow26oMe4l3uOPkUhnjMkLqVlN8jxY6r2SVn3QK60dO47l4N_fp3VeQ3oaKUKWCQqYU_ra9cxKp-7T5tsAJL9VjvE3XT_hfgNk-s_pXSbE-9j8tguGGBE4MSP1o5zQmJDF7fQ8aCgYKAXESARcSFQHGX2MimkIfnyXyZWRysecvu4P3yQ0206
-      GOOGLE_REFRESH_TOKEN: 1//047cXMBXpvKxjCgYIARAAGAQSNwF-L9IrJ21cttifS9E64XoOuUBHmguqixoBpPZ6js-cHjU0Gq9H93JhxqQ-4CjzVgI_eMbawhQ
-      GOOGLE_REDIRECT_URI: http://localhost:3000/callback
+      GOOGLE_REDIRECT_URI: http://localhost:3000/oauth2/google/callback
+      GITHUB_REDIRECT_URI: http://localhost:3000/oauth2/github/callback
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:8080/webhooks/github}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6}
@@ -43,7 +51,7 @@ services:
       GMAIL_PASSWORD: ${GMAIL_PASSWORD:-}
       FACEBOOK_CLIENT_ID: 827003503004798
       FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
-      FACEBOOK_REDIRECT_URI: http://localhost:3000/auth/facebook/callback
+      FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
     ports:
       - "8080:8080"
     depends_on:
