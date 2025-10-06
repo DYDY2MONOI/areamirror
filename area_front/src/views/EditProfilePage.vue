@@ -218,7 +218,6 @@
         <span>{{ successMessage }}</span>
       </div>
 
-      <!-- Action Buttons -->
       <div class="actions-section">
         <div class="action-buttons">
           <button type="button" class="btn btn-secondary" @click="goBack">

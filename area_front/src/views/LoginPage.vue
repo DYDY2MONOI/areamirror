@@ -62,12 +62,10 @@
             <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
           </button>
 
-          <!-- Séparateur -->
           <div class="divider">
             <span class="divider-text">or</span>
           </div>
 
-          <!-- Bouton Google OAuth -->
           <button
             type="button"
             @click="loginWithGoogle"
@@ -77,7 +75,6 @@
             <span>Continue with Google</span>
           </button>
 
-          <!-- Bouton Guest -->
           <button
             type="button"
             @click="continueAsGuest"

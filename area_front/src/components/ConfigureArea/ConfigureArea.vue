@@ -13,13 +13,12 @@
         </div>
       </div>
       <div class="card-content">
-        <!-- Template Info Section -->
         <div class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-information-outline</v-icon>
             <span class="label-text">Template Information</span>
           </div>
-          
+
           <div class="template-info-card">
             <div class="template-header">
               <div class="template-icon">
@@ -31,7 +30,7 @@
                 <p class="template-description">{{ template?.description }}</p>
               </div>
             </div>
-            
+
             <div class="template-workflow">
               <div class="workflow-step">
               <div class="step-icon trigger-icon">
@@ -58,14 +57,12 @@
           </div>
         </div>
 
-        <!-- Configuration Section - Hidden for admins -->
         <div v-if="currentUser?.role !== 'admin'" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
           </div>
 
-          <!-- Calendar Trigger Configuration -->
           <div v-if="template?.triggerService === 'Google Calendar'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -118,7 +115,6 @@
             </div>
           </div>
 
-          <!-- Gmail Action Configuration -->
           <div v-if="template?.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -171,13 +167,11 @@
           </div>
         </div>
 
-        <!-- Error Display -->
         <div v-if="error" class="error-message">
           <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
           <span>{{ error }}</span>
         </div>
 
-        <!-- Action Buttons -->
         <div class="card-actions">
           <button class="action-btn secondary" @click="$emit('close')">
             <v-icon size="18">mdi-close</v-icon>
@@ -187,12 +181,11 @@
             <v-icon size="18">mdi-check</v-icon>
             {{ isLoading ? 'Creating...' : 'Create Area' }}
           </button>
-          
-          <!-- Test Email Button for Calendar → Gmail (Hidden for admins) -->
-          <button 
+
+          <button
             v-if="template?.triggerService === 'Google Calendar' && template?.actionService === 'Gmail' && currentUser?.role !== 'admin'"
-            class="action-btn test-email-btn" 
-            @click="sendTestEmail" 
+            class="action-btn test-email-btn"
+            @click="sendTestEmail"
             :disabled="!canSendTestEmail || isSendingTest"
           >
             <v-icon size="18">mdi-email-send</v-icon>
@@ -251,23 +244,23 @@ watch(() => props.template, (newTemplate) => {
 
 const isFormValid = computed(() => {
   if (!props.template) return false
-  
+
   if (currentUser.value?.role === 'admin') {
     return true
   }
-  
+
   if (props.template.triggerService === 'Google Calendar' && props.template.actionService === 'Gmail') {
     return form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
   }
-  
+
   return true
 })
 
 const canSendTestEmail = computed(() => {
-  return form.actionConfig.toEmail && 
-         form.actionConfig.subject && 
+  return form.actionConfig.toEmail &&
+         form.actionConfig.subject &&
          form.actionConfig.body
 })
 
@@ -277,17 +270,17 @@ const error = ref<string | null>(null)
 
 const sendTestEmail = async () => {
   if (!canSendTestEmail.value) return
-  
+
   isSendingTest.value = true
   error.value = null
-  
+
   try {
     const testEmailData = {
       to: form.actionConfig.toEmail,
       subject: form.actionConfig.subject,
       body: form.actionConfig.body
     }
-    
+
     const response = await fetch('http://localhost:8080/test/email', {
       method: 'POST',
       headers: {
@@ -295,9 +288,9 @@ const sendTestEmail = async () => {
       },
       body: JSON.stringify(testEmailData)
     })
-    
+
     const result = await response.json()
-    
+
     if (response.ok) {
       alert('✅ Test email sent successfully!')
     } else {
@@ -314,14 +307,14 @@ const sendTestEmail = async () => {
 
 const createArea = async () => {
   if (!isFormValid.value || !props.template) return
-  
+
   isLoading.value = true
   error.value = null
-  
+
   try {
     let triggerConfig = form.triggerConfig
     let actionConfig = form.actionConfig
-    
+
     if (currentUser.value?.role === 'admin') {
       triggerConfig = {
         type: 'default',
@@ -332,7 +325,7 @@ const createArea = async () => {
         enabled: true
       }
     }
-    
+
     const areaData = {
       name: props.template.title,
       description: props.template.description,
@@ -343,7 +336,7 @@ const createArea = async () => {
       triggerConfig: triggerConfig,
       actionConfig: actionConfig
     }
-    
+
     await areaService.createArea(areaData)
     emit('save')
   } catch (err) {
