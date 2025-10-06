@@ -519,7 +519,6 @@ watch(() => template.value, (newTemplate) => {
     console.log('Trigger service:', newTemplate.triggerService)
     console.log('Action service:', newTemplate.actionService)
 
-    // Initialize config based on the services used
     if (newTemplate.triggerService === 'Google Calendar') {
       form.triggerConfig = {
         eventDate: '',
@@ -563,15 +562,13 @@ watch(() => template.value, (newTemplate) => {
 const isFormValid = computed(() => {
   if (!template.value) return false
 
-  // For Google Calendar + Gmail areas, require specific fields
   if (template.value.triggerService === 'Google Calendar' && template.value.actionService === 'Gmail') {
     return form.triggerConfig.eventDate &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
   }
-
-  // For GitHub triggers, require repository and at least one event type
+  
   if (template.value.triggerService === 'GitHub') {
     return form.triggerConfig.repository &&
            form.triggerConfig.events &&
@@ -584,7 +581,6 @@ const isFormValid = computed(() => {
     return !!webhookUrl && !!message
   }
 
-  // For other area types, just require basic info (admin can create without detailed config)
   return true
 })
 
