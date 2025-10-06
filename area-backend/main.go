@@ -45,6 +45,12 @@ func main() {
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
+
+	// Mobile OAuth2 routes
+	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
+	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
+	r.GET("/mobile/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
+
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
 	r.POST("/profile/github/link", controllers.AuthMiddleware(), controllers.LinkGitHubAccount)
