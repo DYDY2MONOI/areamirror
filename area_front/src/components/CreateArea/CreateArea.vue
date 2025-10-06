@@ -157,7 +157,6 @@
           </div>
         </div>
 
-        <!-- Configuration Section - Hidden for admins -->
         <div v-if="form.triggerService && form.actionService && currentUser?.role !== 'admin'" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
@@ -285,7 +284,6 @@
             </div>
           </div>
 
-          <!-- Gmail Action Configuration -->
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -420,7 +418,6 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
-        <!-- Debug info for Calendar → Gmail (Hidden for admins) -->
         <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}

@@ -32,7 +32,7 @@ onMounted(() => {
 
 const switchView = (view: 'login' | 'register') => {
   if (isAnimating.value || currentView.value === view) return
-  
+
   isAnimating.value = true
   setTimeout(() => {
     currentView.value = view
@@ -45,7 +45,7 @@ const switchView = (view: 'login' | 'register') => {
 const handleLogin = async () => {
   isLoading.value = true
   console.log('Login attempt:', loginData)
-  
+
   setTimeout(() => {
     isLoading.value = false
     alert('Login functionality would be implemented here!')
@@ -57,10 +57,10 @@ const handleRegister = async () => {
     alert('Passwords do not match!')
     return
   }
-  
+
   isLoading.value = true
   console.log('Register attempt:', registerData)
-  
+
   setTimeout(() => {
     isLoading.value = false
     alert('Registration functionality would be implemented here!')
@@ -73,18 +73,18 @@ const handleRegister = async () => {
     <div class="geometric-shape top-0 left-0 w-96 h-96 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full transform -translate-x-48 -translate-y-48"></div>
     <div class="geometric-shape bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-cyan-500 to-purple-600 rounded-full transform translate-x-40 translate-y-40"></div>
     <div class="geometric-shape top-1/2 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full transform -translate-y-32 opacity-10"></div>
-    
+
     <div class="relative z-10 flex items-center justify-center min-h-screen px-4">
       <div class="w-full max-w-md perspective-container">
         <div class="auth-container" :class="{ 'slide-out': isAnimating }">
-          
+
           <div v-if="currentView === 'login'" class="auth-panel" :class="{ 'slide-in': !isAnimating }">
             <div class="text-center mb-8">
               <h1 class="text-4xl font-bold text-white mb-2">AREA.</h1>
               <h2 class="text-2xl font-semibold text-white mb-2">LOGIN TO YOUR ACCOUNT</h2>
               <p class="text-gray-400">Enter your login information.</p>
             </div>
-            
+
             <div class="form-card">
               <form @submit.prevent="handleLogin" class="space-y-6">
                 <div class="form-group">
@@ -105,7 +105,7 @@ const handleRegister = async () => {
                     <div class="input-focus-effect"></div>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label class="form-label">
                     <svg class="w-4 h-4 inline-block mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ const handleRegister = async () => {
                     <div class="input-focus-effect"></div>
                   </div>
                 </div>
-                
+
                 <div class="flex items-center justify-between px-1">
                   <label class="custom-checkbox">
                     <input
@@ -152,7 +152,7 @@ const handleRegister = async () => {
                     Forgot password?
                   </a>
                 </div>
-                
+
                 <button type="submit" class="btn-primary-modern">
                   <span v-if="isLoading" class="flex items-center justify-center">
                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -168,14 +168,13 @@ const handleRegister = async () => {
                     </svg>
                   </span>
                 </button>
-                
-                <!-- Divider with better styling -->
+
                 <div class="divider-container">
                   <div class="divider-line"></div>
                   <span class="divider-text">OR</span>
                   <div class="divider-line"></div>
                 </div>
-                
+
                 <div class="social-buttons">
                   <button type="button" class="social-btn google-btn">
                     <svg class="h-5 w-5" viewBox="0 0 24 24">
@@ -194,11 +193,11 @@ const handleRegister = async () => {
                   </button>
                 </div>
               </form>
-              
+
               <div class="mt-6 text-center">
                 <p class="text-gray-400">
                   Don't have an account?
-                  <button 
+                  <button
                     @click="switchView('register')"
                     class="text-blue-500 hover:text-blue-400 font-medium transition-colors"
                   >
@@ -208,14 +207,14 @@ const handleRegister = async () => {
               </div>
             </div>
           </div>
-          
+
           <div v-if="currentView === 'register'" class="auth-panel" :class="{ 'slide-in': !isAnimating }">
             <div class="text-center mb-8">
               <h1 class="text-4xl font-bold text-white mb-2">AREA.</h1>
               <h2 class="text-2xl font-semibold text-white mb-2">CREATE ACCOUNT</h2>
               <p class="text-gray-400">Join us and start automating!</p>
             </div>
-            
+
             <div class="form-card">
               <form @submit.prevent="handleRegister" class="space-y-6">
                 <div class="grid grid-cols-2 gap-4">
@@ -256,7 +255,7 @@ const handleRegister = async () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label class="form-label">
                     <svg class="w-4 h-4 inline-block mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,7 +274,7 @@ const handleRegister = async () => {
                     <div class="input-focus-effect"></div>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label class="form-label">
                     <svg class="w-4 h-4 inline-block mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +306,7 @@ const handleRegister = async () => {
                     <div class="input-focus-effect"></div>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label class="form-label">
                     <svg class="w-4 h-4 inline-block mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,7 +338,7 @@ const handleRegister = async () => {
                     <div class="input-focus-effect"></div>
                   </div>
                 </div>
-                
+
                 <div class="terms-container">
                   <label class="custom-checkbox">
                     <input
@@ -357,7 +356,7 @@ const handleRegister = async () => {
                     </span>
                   </label>
                 </div>
-                
+
                 <button type="submit" class="btn-primary-modern">
                   <span v-if="isLoading" class="flex items-center justify-center">
                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -373,14 +372,13 @@ const handleRegister = async () => {
                     </svg>
                   </span>
                 </button>
-                
+
                 <div class="divider-container">
                   <div class="divider-line"></div>
                   <span class="divider-text">OR SIGN UP WITH</span>
                   <div class="divider-line"></div>
                 </div>
-                
-                <!-- Social login buttons -->
+
                 <div class="social-buttons">
                   <button type="button" class="social-btn google-btn">
                     <svg class="h-5 w-5" viewBox="0 0 24 24">
@@ -399,11 +397,11 @@ const handleRegister = async () => {
                   </button>
                 </div>
               </form>
-              
+
               <div class="mt-6 text-center">
                 <p class="text-gray-400">
                   Already have an account?
-                  <button 
+                  <button
                     @click="switchView('login')"
                     class="text-blue-500 hover:text-blue-400 font-medium transition-colors"
                   >
@@ -413,7 +411,7 @@ const handleRegister = async () => {
               </div>
             </div>
           </div>
-          
+
         </div>
       </div>
     </div>

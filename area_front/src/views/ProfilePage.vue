@@ -1,14 +1,10 @@
 <template>
   <div class="profile-page">
-    <div class="animated-background">
-      <div class="floating-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
-        <div class="shape shape-5"></div>
-      </div>
-      <div class="gradient-overlay"></div>
+    <div class="space-background">
+      <div class="stars"></div>
+      <div class="stars2"></div>
+      <div class="stars3"></div>
+      <div class="nebula"></div>
     </div>
 
     <div class="page-header">
@@ -581,83 +577,127 @@ onMounted(async () => {
   overflow-x: hidden;
 }
 
-.animated-background {
+/* Space Background */
+.space-background {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  background:
+    radial-gradient(ellipse at center,
+      rgba(87, 128, 232, 0.05) 0%,
+      rgba(135, 81, 209, 0.03) 50%,
+      rgba(0, 0, 0, 0.8) 100%),
+    linear-gradient(135deg,
+      rgba(0, 0, 0, 0.9) 0%,
+      rgba(26, 26, 51, 0.8) 25%,
+      rgba(0, 0, 0, 0.9) 50%,
+      rgba(26, 26, 51, 0.8) 75%,
+      rgba(0, 0, 0, 0.9) 100%);
+  z-index: 0;
   pointer-events: none;
 }
 
-.floating-shapes {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.shape {
-  position: absolute;
-  border-radius: 50%;
-  background: linear-gradient(45deg, rgba(87, 128, 232, 0.1), rgba(135, 81, 209, 0.1));
-  filter: blur(2px);
-  animation: float 8s ease-in-out infinite;
-}
-
-.shape-1 {
-  width: 300px;
-  height: 300px;
-  top: 10%;
-  left: 5%;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 200px;
-  height: 200px;
-  top: 20%;
-  right: 10%;
-  animation-delay: 2s;
-}
-
-.shape-3 {
-  width: 150px;
-  height: 150px;
-  bottom: 30%;
-  left: 15%;
-  animation-delay: 4s;
-}
-
-.shape-4 {
-  width: 250px;
-  height: 250px;
-  bottom: 10%;
-  right: 20%;
-  animation-delay: 6s;
-}
-
-.shape-5 {
-  width: 100px;
-  height: 100px;
-  top: 50%;
-  left: 50%;
-  animation-delay: 1s;
-}
-
-.gradient-overlay {
+.stars {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 30% 20%, rgba(87, 128, 232, 0.1) 0%, transparent 50%),
-              radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 160px 30px, #fff, transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: twinkle 4s ease-in-out infinite alternate;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-30px) rotate(10deg); }
+.stars2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(1px 1px at 30px 50px, rgba(133, 206, 235, 0.8), transparent),
+    radial-gradient(2px 2px at 60px 20px, rgba(135, 81, 209, 0.6), transparent),
+    radial-gradient(1px 1px at 100px 60px, rgba(133, 206, 235, 0.7), transparent),
+    radial-gradient(2px 2px at 140px 40px, rgba(135, 81, 209, 0.5), transparent),
+    radial-gradient(1px 1px at 170px 90px, rgba(133, 206, 235, 0.8), transparent);
+  background-repeat: repeat;
+  background-size: 180px 120px;
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+
+.stars3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(1px 1px at 25px 80px, rgba(135, 81, 209, 0.7), transparent),
+    radial-gradient(2px 2px at 55px 30px, rgba(133, 206, 235, 0.5), transparent),
+    radial-gradient(1px 1px at 85px 70px, rgba(135, 81, 209, 0.6), transparent),
+    radial-gradient(2px 2px at 125px 50px, rgba(133, 206, 235, 0.4), transparent),
+    radial-gradient(1px 1px at 155px 25px, rgba(135, 81, 209, 0.8), transparent);
+  background-repeat: repeat;
+  background-size: 160px 140px;
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.8;
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.1);
+  }
+  100% {
+    opacity: 0.6;
+    transform: translateY(0px) scale(0.9);
+  }
+}
+
+/* Nebula Effect */
+.nebula {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 20% 20%,
+      rgba(87, 128, 232, 0.1) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 80% 80%,
+      rgba(135, 81, 209, 0.08) 0%,
+      transparent 50%),
+    radial-gradient(ellipse at 60% 30%,
+      rgba(133, 206, 235, 0.05) 0%,
+      transparent 50%);
+  animation: nebula-drift 30s ease-in-out infinite;
+}
+
+@keyframes nebula-drift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.6;
+  }
+  33% {
+    transform: translate(10px, -15px) rotate(1deg);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate(-5px, 10px) rotate(-1deg);
+    opacity: 1;
+  }
 }
 
 .page-header {
@@ -1353,7 +1393,10 @@ onMounted(async () => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shape,
+  .stars,
+  .stars2,
+  .stars3,
+  .nebula,
   .profile-card,
   .stat-card,
   .action-btn,

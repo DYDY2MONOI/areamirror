@@ -5,5 +5,3 @@
   <div class="shooting-star" aria-hidden="true"></div>
   <div class="shooting-star" aria-hidden="true"></div>
 </template>
-
-<!-- fonctionne pas encore -->
