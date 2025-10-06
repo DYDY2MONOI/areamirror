@@ -1,29 +1,14 @@
 <template>
   <div class="landing-dark">
-    <!-- Space Background -->
-    <div class="space-background">
-      <div class="stars"></div>
-      <div class="stars2"></div>
-      <div class="stars3"></div>
-
-      <!-- Planets -->
-      <div class="planet-container">
-        <div class="planet planet-left">
-          <div class="planet-core"></div>
-          <div class="planet-surface"></div>
-          <div class="planet-glow-edge"></div>
-          <div class="planet-atmosphere"></div>
-        </div>
-        <div class="planet planet-right">
-          <div class="planet-core"></div>
-          <div class="planet-surface"></div>
-          <div class="planet-glow-edge"></div>
-          <div class="planet-atmosphere"></div>
-        </div>
+    <div class="animated-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
       </div>
-
-      <!-- Nebula Effect -->
-      <div class="nebula"></div>
+      <div class="gradient-overlay"></div>
     </div>
 
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
@@ -303,7 +288,6 @@
     </v-container>
     </div>
 
-    <!-- Footer Section -->
     <footer class="site-footer">
       <div class="footer-content">
         <div class="footer-section">
@@ -395,11 +379,9 @@
     </footer>
   </div>
 
-  <!-- Modern Logout Confirmation Modal -->
   <div v-if="showLogoutDialog" class="logout-modal-overlay" @click="showLogoutDialog = false">
     <div class="logout-modal-container" @click.stop>
       <div class="logout-modal-content">
-        <!-- Header with icon and title -->
         <div class="logout-modal-header">
           <div class="logout-icon-wrapper">
             <div class="logout-icon-bg">
@@ -410,7 +392,6 @@
           <p class="logout-modal-subtitle">Are you sure you want to sign out of your account?</p>
         </div>
 
-        <!-- Action buttons -->
         <div class="logout-modal-actions">
           <button
             class="logout-action-btn logout-cancel-btn"
@@ -429,7 +410,6 @@
     </div>
   </div>
 
-  <!-- Area Details Modal -->
   <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
     <div class="custom-modal-content area-modal" @click.stop>
       <div class="area-modal-header">
@@ -690,58 +670,87 @@ watch(showCreateModal, (isOpen) => {
 
 <style scoped>
 /* Space Background Styles */
-.space-background {
+/* Animated Background */
+.animated-background {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse at 20% 30%, #1a1a2e 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 70%, #16213e 0%, transparent 50%),
-    linear-gradient(135deg, #0f0f23 0%, #000000 50%, #0a0a0f 100%);
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
   pointer-events: none;
 }
 
-/* Animated Stars */
-.stars, .stars2, .stars3 {
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(45deg, rgba(87, 128, 232, 0.1), rgba(135, 81, 209, 0.1));
+  filter: blur(2px);
+  animation: float 8s ease-in-out infinite;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 20%;
+  right: 10%;
+  animation-delay: 2s;
+}
+
+.shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 30%;
+  left: 15%;
+  animation-delay: 4s;
+}
+
+.shape-4 {
+  width: 250px;
+  height: 250px;
+  bottom: 10%;
+  right: 20%;
+  animation-delay: 6s;
+}
+
+.shape-5 {
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  left: 50%;
+  animation-delay: 1s;
+}
+
+.gradient-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: radial-gradient(circle at 30% 20%, rgba(87, 128, 232, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
-.stars {
-  background-image:
-    radial-gradient(1px 1px at 23px 37px, #fff, transparent),
-    radial-gradient(2px 2px at 47px 73px, rgba(255,255,255,0.9), transparent),
-    radial-gradient(1px 1px at 89px 43px, #eee, transparent),
-    radial-gradient(1px 1px at 127px 83px, rgba(255,255,255,0.7), transparent),
-    radial-gradient(2px 2px at 163px 31px, #ddd, transparent),
-    radial-gradient(1px 1px at 201px 57px, rgba(255,255,255,0.8), transparent),
-    radial-gradient(1px 1px at 67px 19px, #fff, transparent),
-    radial-gradient(1px 1px at 143px 91px, rgba(255,255,255,0.6), transparent);
-  background-repeat: repeat;
-  background-size: 250px 120px;
-  animation: twinkle 8s ease-in-out infinite;
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(10deg); }
 }
 
-.stars2 {
-  background-image:
-    radial-gradient(1px 1px at 53px 23px, rgba(255,255,255,0.8), transparent),
-    radial-gradient(1px 1px at 97px 67px, rgba(255,255,255,0.6), transparent),
-    radial-gradient(2px 2px at 151px 13px, rgba(255,255,255,0.9), transparent),
-    radial-gradient(1px 1px at 197px 53px, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1px 1px at 79px 41px, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 113px 29px, rgba(255,255,255,0.8), transparent);
-  background-repeat: repeat;
-  background-size: 300px 150px;
-  animation: twinkle 12s ease-in-out infinite reverse;
-}
+
 
 .stars3 {
   background-image:

@@ -14,7 +14,6 @@
     </div>
 
     <div class="page-content">
-      <!-- Template Info Section -->
       <div class="template-section">
         <div class="section-header">
           <div class="section-icon">
@@ -52,7 +51,6 @@
         </div>
       </div>
 
-      <!-- Configuration Section -->
       <div class="configuration-section">
         <div class="section-header">
           <h3 class="section-title">Configuration</h3>
@@ -183,7 +181,6 @@
           </div>
         </div>
 
-        <!-- GitHub Trigger Configuration -->
         <div v-if="template && template.triggerService === 'GitHub'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -277,7 +274,6 @@
           </div>
         </div>
 
-        <!-- Gmail Action Configuration -->
         <div v-if="template && template.actionService === 'Gmail'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -330,7 +326,6 @@
           </div>
         </div>
 
-        <!-- Discord Action Configuration -->
         <div v-if="template && template.actionService === 'Discord'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -372,13 +367,11 @@
         </div>
       </div>
 
-      <!-- Error Display -->
       <div v-if="error" class="error-message">
         <v-icon size="16" color="#ef4444">mdi-alert-circle</v-icon>
         <span>{{ error }}</span>
       </div>
 
-      <!-- Action Buttons -->
       <div class="action-buttons">
         <button class="btn btn-secondary" @click="goBack">
           <v-icon size="18">mdi-close</v-icon>
@@ -389,7 +382,6 @@
           {{ isLoading ? 'Creating...' : 'Create Area' }}
         </button>
 
-        <!-- Test Email Button for Calendar → Gmail -->
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
           <div class="test-email-info">
             <h4>📧 Test Email Configuration</h4>
@@ -413,7 +405,6 @@
           </div>
         </div>
 
-        <!-- Test Button for Discord messages -->
         <div class="test-email-section" v-if="template?.actionService === 'Discord'">
           <div class="test-email-info">
             <h4>💬 Test Discord Message</h4>
@@ -436,7 +427,6 @@
           </div>
         </div>
 
-        <!-- Test Trigger Button for Google Calendar -->
         <div class="test-trigger-section" v-if="template?.triggerService === 'Google Calendar'">
           <div class="test-trigger-info">
             <h4>🕐 Test Calendar Trigger</h4>
@@ -460,7 +450,6 @@
           </div>
         </div>
 
-        <!-- Test Trigger Button for GitHub -->
         <div class="test-trigger-section" v-if="template?.triggerService === 'GitHub'">
           <div class="test-trigger-info">
             <h4>🐙 Test GitHub Trigger</h4>
