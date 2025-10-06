@@ -1,0 +1,70 @@
+name: Docker Build CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Backend Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./area-backend
+        file: ./area-backend/Dockerfile
+        push: false
+        tags: area-backend:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Frontend Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.frontend
+        push: false
+        tags: area-frontend:test
+        build-args: |
+          VITE_FACEBOOK_CLIENT_ID=827003503004798
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  build-full-stack:
+    name: Build Full Stack with Docker Compose
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build all services with docker-compose
+      run: docker-compose build
+
+    - name: Verify docker-compose configuration
+      run: docker-compose config
+
