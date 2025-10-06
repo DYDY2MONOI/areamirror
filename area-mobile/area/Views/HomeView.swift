@@ -8,18 +8,14 @@
 import SwiftUI
 
 struct HomeView: View {
+    @StateObject private var areaService = AreaService.shared
     @State private var showTestView = false
     @State private var showNewArea = false
     @State private var selectedTab = 0
     let onLogout: () -> Void
     
-    private let popularAreas = Applet.testApplets
-    private let recommendedAreas = Applet.testApplets
-    
     init(onLogout: @escaping () -> Void) {
         self.onLogout = onLogout
-        print("HomeView init - popularAreas count: \(popularAreas.count)")
-        print("HomeView init - recommendedAreas count: \(recommendedAreas.count)")
     }
     
     var body: some View {
@@ -63,15 +59,32 @@ struct HomeView: View {
                         }
                         
                         VStack(spacing: 32) {
-                            AppletSection(
-                                title: "Popular AREAs",
-                                applets: popularAreas
-                            )
-                            
-                            AppletSection(
-                                title: "Recommended for you",
-                                applets: recommendedAreas
-                            )
+                            if areaService.isLoading {
+                                ProgressView("Loading areas...")
+                                    .foregroundColor(.white)
+                                    .padding()
+                            } else {
+                                if !areaService.popularAreas.isEmpty {
+                                    AppletSection(
+                                        title: "Popular AREAs",
+                                        applets: areaService.popularAreas.map { convertAreaTemplateToApplet($0) }
+                                    )
+                                }
+                                
+                                if !areaService.recommendedAreas.isEmpty {
+                                    AppletSection(
+                                        title: "Recommended for you",
+                                        applets: areaService.recommendedAreas.map { convertAreaTemplateToApplet($0) }
+                                    )
+                                }
+                                
+                                if selectedTab == 1 && !areaService.userAreas.isEmpty {
+                                    AppletSection(
+                                        title: "My AREAs",
+                                        applets: areaService.userAreas.map { convertAreaToApplet($0) }
+                                    )
+                                }
+                            }
                             
                             AppletSection(
                                 title: "Create new AREA",
@@ -117,6 +130,82 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $showNewArea) {
             NewAreaView()
+        }
+        .onAppear {
+            Task {
+                await areaService.fetchAllAreas()
+            }
+        }
+    }
+    
+    private func convertAreaToApplet(_ area: Area) -> Applet {
+        return Applet(
+            title: area.name,
+            subtitle: "\(area.triggerService) → \(area.actionService)",
+            description: area.description,
+            icon: getServiceIcon(area.triggerService),
+            gradient: getServiceGradient(area.triggerService, area.actionService),
+            type: .create,
+            action: { print("Area tapped: \(area.name)") }
+        )
+    }
+    
+    private func convertAreaTemplateToApplet(_ template: AreaTemplate) -> Applet {
+        return Applet(
+            title: template.title,
+            subtitle: template.subtitle,
+            description: template.description,
+            icon: getServiceIcon(template.triggerService),
+            gradient: getServiceGradient(template.triggerService, template.actionService),
+            type: .create,
+            action: { print("Template tapped: \(template.title)") }
+        )
+    }
+    
+    private func getServiceIcon(_ service: String) -> String {
+        switch service.lowercased() {
+        case "github": return "hammer.fill"
+        case "gmail": return "envelope.fill"
+        case "discord": return "message.fill"
+        case "slack": return "message.circle.fill"
+        case "weather": return "cloud.sun.fill"
+        case "instagram": return "camera.fill"
+        case "twitter": return "bird.fill"
+        case "youtube": return "play.rectangle.fill"
+        case "spotify": return "music.note"
+        case "telegram": return "paperplane.fill"
+        case "dropbox": return "folder.fill"
+        case "notion": return "doc.text.fill"
+        default: return "gear.fill"
+        }
+    }
+    
+    private func getServiceGradient(_ trigger: String, _ action: String) -> LinearGradient {
+        let triggerColor = getServiceColor(trigger)
+        let actionColor = getServiceColor(action)
+        
+        return LinearGradient(
+            gradient: Gradient(colors: [triggerColor, actionColor]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private func getServiceColor(_ service: String) -> Color {
+        switch service.lowercased() {
+        case "github": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        case "gmail": return Color(red: 0.92, green: 0.26, blue: 0.21)
+        case "discord": return Color(red: 0.35, green: 0.4, blue: 0.95)
+        case "slack": return Color(red: 0.36, green: 0.8, blue: 0.36)
+        case "weather": return Color(red: 0.0, green: 0.7, blue: 1.0)
+        case "instagram": return Color(red: 0.8, green: 0.2, blue: 0.6)
+        case "twitter": return Color(red: 0.1, green: 0.6, blue: 0.9)
+        case "youtube": return Color(red: 1.0, green: 0.0, blue: 0.0)
+        case "spotify": return Color(red: 0.2, green: 0.8, blue: 0.2)
+        case "telegram": return Color(red: 0.0, green: 0.7, blue: 0.9)
+        case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
+        case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        default: return Color.blue
         }
     }
 }
