@@ -157,7 +157,7 @@
           </div>
         </div>
 
-        <div v-if="form.triggerService && form.actionService && currentUser?.role !== 'admin'" class="form-section">
+        <div v-if="form.triggerService && form.actionService" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
@@ -399,7 +399,7 @@
         </button>
 
         <button
-          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'"
+          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
           class="action-btn test-email-btn"
           @click="sendTestEmail"
           :disabled="!canSendTestEmail || isSendingTest"
@@ -418,7 +418,7 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
-        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail' && currentUser?.role !== 'admin'" class="debug-info">
+        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
@@ -527,9 +527,6 @@ const isFormValid = computed(() => {
                       form.triggerService !== '' &&
                       form.actionService !== ''
 
-  if (currentUser.value?.role === 'admin') {
-    return hasBasicInfo
-  }
   if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
@@ -733,20 +730,6 @@ const createArea = async () => {
         form.triggerConfig.notificationTypes
       )
     } else {
-      let triggerConfig = form.triggerConfig
-      let actionConfig = form.actionConfig
-
-      if (currentUser.value?.role === 'admin') {
-        triggerConfig = {
-          type: 'default',
-          enabled: true
-        }
-        actionConfig = {
-          type: 'default',
-          enabled: true
-        }
-      }
-
       const areaData = {
         name: form.areaName,
         description: form.description,
@@ -754,8 +737,8 @@ const createArea = async () => {
         triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-        triggerConfig: triggerConfig,
-        actionConfig: actionConfig
+        triggerConfig: form.triggerConfig,
+        actionConfig: form.actionConfig
       }
 
       await areaService.createArea(areaData)

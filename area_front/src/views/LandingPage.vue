@@ -39,9 +39,9 @@
           </template>
         </v-tooltip>
         <SidebarButton
-          v-if="isAuthenticated && currentUser?.role === 'admin'"
+          v-if="isAuthenticated"
           tooltip="Create"
-          @open="() => requireAdmin(() => showCreateModal = true)"
+          @open="() => requireAuth(() => showCreateModal = true)"
         />
         <v-tooltip text="Library" location="end">
           <template #activator="{ props }">
@@ -179,23 +179,36 @@
     <v-container>
       <div class="section-header">
         <div class="section-info">
-          <h2 class="section-title">Popular AREAs</h2>
-          <p class="section-subtitle">Most used automation templates</p>
+          <h2 class="section-title">Create new AREA</h2>
+          <p class="section-subtitle">Start building your automation</p>
         </div>
-        <button class="view-all-btn" @click="requireAuth(() => {})">
-          <span>View All</span>
-          <v-icon size="16">mdi-arrow-right</v-icon>
-        </button>
       </div>
-      <div class="cards-grid">
-        <AreaCard
-          v-for="area in popularAreas"
-          :key="area.id"
-          :area="area"
-          @click="handleAreaClick"
-        />
+      <div class="create-section">
+        <div class="floating-icons">
+          <div class="floating-card card-1">
+            <v-icon size="24" color="white">mdi-email-outline</v-icon>
+          </div>
+          <div class="floating-card card-2">
+            <v-icon size="24" color="white">mdi-music-note</v-icon>
+          </div>
+          <div class="floating-card card-3">
+            <v-icon size="24" color="white">mdi-github</v-icon>
+          </div>
+          <div class="floating-card card-4">
+            <v-icon size="24" color="white">mdi-chat</v-icon>
+          </div>
+          <div class="floating-card card-5">
+            <v-icon size="24" color="white">mdi-calendar</v-icon>
+          </div>
+        </div>
+        <div class="cards-grid">
+          <CardButton
+            @open="() => requireAuth(() => showCreateModal = true)"
+          />
+        </div>
       </div>
     </v-container>
+
 
     <div v-if="showCreateModal" class="custom-modal-overlay" @click="showCreateModal = false">
       <div class="custom-modal-content" @click.stop>
@@ -228,64 +241,7 @@
       </div>
     </v-container>
 
-    <v-container class="mt-6">
-      <div class="section-header">
-        <div class="section-info">
-          <h2 class="section-title">Recommended for you</h2>
-          <p class="section-subtitle">Based on your usage patterns</p>
-        </div>
-        <button class="view-all-btn">
-          <span>View All</span>
-          <v-icon size="16">mdi-arrow-right</v-icon>
-        </button>
-      </div>
-      <div class="cards-grid">
-        <AreaCard
-          v-for="area in recommendedAreas"
-          :key="area.id"
-          :area="area"
-          @click="handleAreaClick"
-        />
-      </div>
-    </v-container>
 
-    <v-container v-if="!isAuthenticated || currentUser?.role === 'admin'">
-      <div class="section-header">
-        <div class="section-info">
-          <h2 class="section-title">Create new AREA</h2>
-          <p class="section-subtitle">Start building your automation</p>
-        </div>
-      </div>
-      <div class="create-section">
-        <div class="floating-icons">
-          <div class="floating-card card-1">
-            <v-icon size="24" color="white">mdi-email-outline</v-icon>
-          </div>
-          <div class="floating-card card-2">
-            <v-icon size="24" color="white">mdi-music-note</v-icon>
-          </div>
-          <div class="floating-card card-3">
-            <v-icon size="24" color="white">mdi-github</v-icon>
-          </div>
-          <div class="floating-card card-4">
-            <v-icon size="24" color="white">mdi-chat</v-icon>
-          </div>
-          <div class="floating-card card-5">
-            <v-icon size="24" color="white">mdi-calendar</v-icon>
-          </div>
-        </div>
-        <div class="cards-grid">
-          <CardButton
-            v-if="isAuthenticated && currentUser?.role === 'admin'"
-            @open="() => requireAdmin(() => showCreateModal = true)"
-          />
-          <CardButton
-            v-else
-            @open="() => requireAuth(() => showCreateModal = true)"
-          />
-        </div>
-      </div>
-    </v-container>
     </div>
 
     <footer class="site-footer">
@@ -538,17 +494,6 @@ const requireAuth = (action: () => void) => {
   action()
 }
 
-const requireAdmin = (action: () => void) => {
-  if (!isAuthenticated.value) {
-    router.push('/login')
-    return
-  }
-  if (currentUser.value?.role !== 'admin') {
-    alert('Only administrators can create areas. Please contact an admin for access.')
-    return
-  }
-  action()
-}
 
 const confirmLogout = async () => {
   try {
