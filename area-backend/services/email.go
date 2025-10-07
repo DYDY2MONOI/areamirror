@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"fmt"
 	"html/template"
@@ -75,8 +74,6 @@ type GitHubEventData struct {
 }
 
 func NewEmailService() (*EmailService, error) {
-	ctx := context.Background()
-
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 
