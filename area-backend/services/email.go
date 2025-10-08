@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"fmt"
 	"html/template"
@@ -10,10 +9,7 @@ import (
 	"net/smtp"
 	"os"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
-	"google.golang.org/api/option"
 )
 
 type EmailService struct {
@@ -41,13 +37,13 @@ type GitHubEventData struct {
 		Description string `json:"description"`
 	} `json:"repository"`
 	Commits []struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
-		URL      string `json:"url"`
+		URL      string   `json:"url"`
 		Added    []string `json:"added"`
 		Removed  []string `json:"removed"`
 		Modified []string `json:"modified"`
@@ -64,13 +60,13 @@ type GitHubEventData struct {
 	Forced     bool   `json:"forced"`
 	Compare    string `json:"compare"`
 	HeadCommit struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
-		URL      string `json:"url"`
+		URL      string   `json:"url"`
 		Added    []string `json:"added"`
 		Removed  []string `json:"removed"`
 		Modified []string `json:"modified"`
@@ -78,42 +74,17 @@ type GitHubEventData struct {
 }
 
 func NewEmailService() (*EmailService, error) {
-	ctx := context.Background()
-
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	accessToken := os.Getenv("GOOGLE_ACCESS_TOKEN")
-	refreshToken := os.Getenv("GOOGLE_REFRESH_TOKEN")
 
-	if clientID == "" || clientSecret == "" || accessToken == "" {
+	if clientID == "" || clientSecret == "" {
 		return nil, fmt.Errorf("Google OAuth credentials not configured")
 	}
 
-	config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URI"),
-		Scopes: []string{
-			gmail.GmailSendScope,
-			gmail.GmailReadonlyScope,
-		},
-		Endpoint: google.Endpoint,
-	}
-
-	token := &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}
-
-	client := config.Client(ctx, token)
-
-	service, err := gmail.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Gmail service: %v", err)
-	}
-
+	// For now, use a simple SMTP-based email service instead of Gmail API
+	// This avoids the OAuth2 token complexity
 	return &EmailService{
-		service: service,
+		service: nil, // We'll use SMTP instead of Gmail API
 	}, nil
 }
 
@@ -247,18 +218,8 @@ func (es *EmailService) GetDefaultPushBodyTemplate() string {
 }
 
 func (e *EmailService) SendEmail(req EmailRequest) error {
-	message := e.createEmailMessage(req.To, req.Subject, req.Body)
-
-	_, err := e.service.Users.Messages.Send("me", &gmail.Message{
-		Raw: message,
-	}).Do()
-
-	if err != nil {
-		return fmt.Errorf("failed to send email: %v", err)
-	}
-
-	log.Printf("Email sent successfully to %s with subject: %s", req.To, req.Subject)
-	return nil
+	// Use SMTP instead of Gmail API
+	return e.sendEmail(req)
 }
 
 func (e *EmailService) createEmailMessage(to, subject, body string) string {
@@ -277,11 +238,31 @@ func (e *EmailService) createEmailMessage(to, subject, body string) string {
 }
 
 func (e *EmailService) TestConnection() error {
-	profile, err := e.service.Users.GetProfile("me").Do()
-	if err != nil {
-		return fmt.Errorf("Gmail connection failed: %v", err)
+	// Test SMTP connection instead of Gmail API
+	fromEmail := os.Getenv("GMAIL_USER")
+	fromPassword := os.Getenv("GMAIL_PASSWORD")
+
+	if fromEmail == "" || fromPassword == "" {
+		return fmt.Errorf("GMAIL_USER and GMAIL_PASSWORD environment variables must be set")
 	}
 
-	log.Printf("Gmail connection successful. User: %s", profile.EmailAddress)
+	// Test SMTP connection
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+
+	auth := smtp.PlainAuth("", fromEmail, fromPassword, smtpHost)
+
+	// Test connection by attempting to connect
+	conn, err := smtp.Dial(smtpHost + ":" + smtpPort)
+	if err != nil {
+		return fmt.Errorf("SMTP connection failed: %v", err)
+	}
+	defer conn.Close()
+
+	if err := conn.Auth(auth); err != nil {
+		return fmt.Errorf("SMTP authentication failed: %v", err)
+	}
+
+	log.Printf("SMTP connection successful. User: %s", fromEmail)
 	return nil
 }

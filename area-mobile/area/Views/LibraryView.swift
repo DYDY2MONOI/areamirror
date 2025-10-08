@@ -9,8 +9,8 @@ import SwiftUI
 
 struct LibraryView: View {
     @StateObject private var authService = AuthService.shared
+    @StateObject private var areaService = AreaService.shared
     @State private var selectedFilter = "All"
-    @State private var areas: [AreaItem] = []
     
     let filters = ["All", "Active", "Inactive", "Recent", "Favorites"]
     
@@ -57,7 +57,7 @@ struct LibraryView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            Text("\(areas.count) automation areas")
+                            Text("\(areaService.userAreas.count) automation areas")
                                 .font(.body)
                                 .foregroundColor(.gray)
                         }
@@ -89,7 +89,7 @@ struct LibraryView: View {
                             .padding(.horizontal, 20)
                         }
                         
-                        if areas.isEmpty {
+                        if areaService.userAreas.isEmpty {
                             VStack(spacing: 20) {
                                 Image(systemName: "plus.circle")
                                     .font(.system(size: 60))
@@ -122,8 +122,8 @@ struct LibraryView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(areas) { area in
-                                        AreaCard(area: area)
+                                    ForEach(areaService.userAreas) { area in
+                                        AreaCard(area: convertAreaToAreaItem(area))
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -138,16 +138,21 @@ struct LibraryView: View {
         .navigationTitle("Library")
         .navigationBarHidden(true)
         .onAppear {
-            loadAreas()
+            Task {
+                await areaService.fetchUserAreas()
+            }
         }
     }
     
-    private func loadAreas() {
-        areas = [
-            AreaItem(id: 1, name: "Email to Slack", description: "Send Slack message when new email arrives", isActive: true, action: "New Email", reaction: "Send Slack Message"),
-            AreaItem(id: 2, name: "GitHub to Discord", description: "Notify Discord when new commit", isActive: true, action: "New Commit", reaction: "Send Discord Message"),
-            AreaItem(id: 3, name: "Weather Alert", description: "Send email when temperature is high", isActive: false, action: "High Temperature", reaction: "Send Email")
-        ]
+    private func convertAreaToAreaItem(_ area: Area) -> AreaItem {
+        return AreaItem(
+            id: Int(area.id) ?? 0,
+            name: area.name,
+            description: area.description,
+            isActive: area.isActive,
+            action: area.triggerService,
+            reaction: area.actionService
+        )
     }
     
     private func filterAreas() {
