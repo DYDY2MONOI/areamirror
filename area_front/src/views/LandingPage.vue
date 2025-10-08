@@ -11,6 +11,10 @@
       <div class="gradient-overlay"></div>
     </div>
 
+    <div class="globe-background">
+      <Globe class="globe-container" />
+    </div>
+
     <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
@@ -232,12 +236,48 @@
         </button>
       </div>
       <div class="cards-grid">
-        <AreaCard
+        <GlareCard
           v-for="area in areas"
           :key="area.id"
-          :area="area"
-          @click="handleAreaClick"
-        />
+          class="area-glare-card"
+        >
+          <div class="card-content">
+            <div class="card-header">
+              <h3 class="card-title">{{ area.name }}</h3>
+              <p class="card-description">{{ area.description }}</p>
+            </div>
+            <div class="card-services">
+              <div class="service-item">
+                <div class="service-icon">
+                  <img
+                    :src="getServiceIcon((area as any).trigger_service)"
+                    :alt="(area as any).trigger_service"
+                    @error="console.error('Failed to load trigger icon:', (area as any).trigger_service, getServiceIcon((area as any).trigger_service))"
+                    @load="console.log('Loaded trigger icon:', (area as any).trigger_service)"
+                  />
+                </div>
+                <div class="service-info">
+                  <span class="service-label">Trigger:</span>
+                  <span class="service-name">{{ (area as any).trigger_service }}</span>
+                </div>
+              </div>
+              <div class="service-item">
+                <div class="service-icon">
+                  <img
+                    :src="getServiceIcon((area as any).action_service)"
+                    :alt="(area as any).action_service"
+                    @error="console.error('Failed to load action icon:', (area as any).action_service, getServiceIcon((area as any).action_service))"
+                    @load="console.log('Loaded action icon:', (area as any).action_service)"
+                  />
+                </div>
+                <div class="service-info">
+                  <span class="service-label">Action:</span>
+                  <span class="service-name">{{ (area as any).action_service }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlareCard>
       </div>
     </v-container>
 
@@ -438,7 +478,9 @@ import CreateArea from '../components/CreateArea/CreateArea.vue'
 import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
 import AreaCard from '../components/AreaCard.vue'
-import { ref, watch, onMounted } from 'vue'
+import Globe from '../components/Globe.vue'
+import { GlareCard } from '../components/ui/glare-card'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
@@ -467,12 +509,87 @@ const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl
 const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas } = useAreas()
 const router = useRouter()
 
+import appsJson from '../assets/apps.json'
+
+type AppDef = { name: string; icon: string }
+const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
+
+const getIconUrl = (file: string) =>
+  new URL(`../assets/app-icons/${file}`, import.meta.url).href
+
+const getServiceIcon = (serviceName: string | undefined) => {
+  console.log('=== DEBUGGING SERVICE ICON ===')
+  console.log('Service name received:', serviceName)
+  console.log('Service name type:', typeof serviceName)
+
+  if (!serviceName || serviceName === 'undefined' || serviceName === 'null') {
+    console.log('❌ Service name is undefined/null, using GitHub fallback')
+    const githubApp = apps.find(a => a.name === 'GitHub')
+    if (githubApp) {
+      const fallbackUrl = getIconUrl(githubApp.icon)
+      return fallbackUrl
+    }
+    return ''
+  }
+
+  console.log('Service name length:', serviceName.length)
+  console.log('All available apps:', apps.map(a => a.name))
+
+  const app = apps.find(a => a.name === serviceName)
+  console.log('Found app:', app)
+
+  if (app) {
+    const iconUrl = getIconUrl(app.icon)
+    console.log('✅ Found icon for', serviceName, ':', iconUrl)
+    return iconUrl
+  } else {
+    console.error('❌ Service not found in apps:', serviceName)
+    console.log('Available services:', apps.map(a => a.name))
+
+    const caseInsensitiveApp = apps.find(a => a.name.toLowerCase() === serviceName.toLowerCase())
+    if (caseInsensitiveApp) {
+      console.log('✅ Found case-insensitive match:', caseInsensitiveApp)
+      const iconUrl = getIconUrl(caseInsensitiveApp.icon)
+      return iconUrl
+    }
+
+    const githubApp = apps.find(a => a.name === 'GitHub')
+    if (githubApp) {
+      const fallbackUrl = getIconUrl(githubApp.icon)
+      console.log('Using GitHub fallback icon:', fallbackUrl)
+      return fallbackUrl
+    }
+    return ''
+  }
+}
+
+
+
 onMounted(async () => {
   await refreshProfile()
   await fetchPopularAreas()
   await fetchRecommendedAreas()
   if (currentUser.value?.id) {
     await fetchUserAreas(currentUser.value.id)
+  }
+
+  console.log('=== AREAS DEBUG ===')
+  console.log('Areas:', areas.value)
+  console.log('Areas count:', areas.value.length)
+  if (areas.value.length > 0) {
+    console.log('First area:', areas.value[0])
+    console.log('First area keys:', Object.keys(areas.value[0]))
+    console.log('First area triggerService:', areas.value[0].triggerService)
+    console.log('First area actionService:', areas.value[0].actionService)
+
+    console.log('Checking for alternative field names...')
+    const firstArea = areas.value[0] as any
+    console.log('trigger_service:', firstArea.trigger_service)
+    console.log('action_service:', firstArea.action_service)
+    console.log('triggerServiceName:', firstArea.triggerServiceName)
+    console.log('actionServiceName:', firstArea.actionServiceName)
+    console.log('trigger:', firstArea.trigger)
+    console.log('action:', firstArea.action)
   }
 })
 
@@ -509,15 +626,11 @@ const handleAreaClick = (area: AreaTemplate | Area) => {
   requireAuth(() => {
     console.log('Area clicked:', area)
 
-    // Only show area modal for templates, not user-created areas
     if ('title' in area) {
-      // This is an AreaTemplate
       selectedArea.value = area as AreaTemplate
       showAreaModal.value = true
     } else {
-      // This is a user-created Area - could show area details or edit modal
       console.log('User area clicked:', area)
-      // For now, just log it. In the future, we could show an edit modal
     }
   })
 }
@@ -690,6 +803,25 @@ watch(showCreateModal, (isOpen) => {
               radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
+/* Globe Background */
+.globe-background {
+  position: absolute;
+  top: 0;
+  right: -200px;
+  width: 600px;
+  height: 100vh;
+  z-index: 999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.globe-container {
+  opacity: 0.4;
+  filter: blur(0.5px);
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-30px) rotate(10deg); }
@@ -817,7 +949,6 @@ watch(showCreateModal, (isOpen) => {
     inset 20px 20px 60px rgba(255, 255, 255, 0.05);
 }
 
-/* Planet Surface - Atmospheric Details */
 .planet-surface {
   position: absolute;
   top: 0;
@@ -833,7 +964,6 @@ watch(showCreateModal, (isOpen) => {
   animation: planet-drift 25s ease-in-out infinite;
 }
 
-/* Glowing Edge Effect */
 .planet-glow-edge {
   position: absolute;
   top: 0;
@@ -2739,6 +2869,94 @@ body.modal-open {
   }
 }
 
+/* Cards Grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+  justify-items: center;
+}
+
+.area-glare-card {
+  width: 320px;
+  height: 420px; /* 320 * (21/17) = 420px for proper aspect ratio */
+}
+
+.card-content {
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-header {
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.card-services {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.service-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.service-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.service-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.service-name {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 
 </style>
 
