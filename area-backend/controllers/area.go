@@ -416,3 +416,81 @@ func TestScheduler(c *gin.Context) {
 		"area_id": areaID,
 	})
 }
+
+func TestSlack(c *gin.Context) {
+	var req struct {
+		WebhookURL  string `json:"webhookUrl"`
+		Message     string `json:"message"`
+		MessageType string `json:"messageType"`
+		Username    string `json:"username,omitempty"`
+		Channel     string `json:"channel,omitempty"`
+		IconEmoji   string `json:"iconEmoji,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	webhookURL := strings.TrimSpace(req.WebhookURL)
+	if webhookURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "webhookUrl is required"})
+		return
+	}
+
+	slackService, err := services.NewSlackService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Slack service not available: " + err.Error()})
+		return
+	}
+
+	message := strings.TrimSpace(req.Message)
+	if message == "" {
+		message = "🚀 This is a test message from AREAmirror!"
+	}
+
+	messageType := req.MessageType
+	if messageType == "" {
+		messageType = "simple"
+	}
+
+	var sendErr error
+
+	switch messageType {
+	case "simple":
+		sendErr = slackService.SendWebhookMessage(webhookURL, message)
+
+	case "rich":
+		attachment := services.CreateGitHubNotificationAttachment(
+			"test-repository",
+			message,
+			"AREA Bot",
+			"https://github.com/test/repo/commit/abc123",
+		)
+		sendErr = slackService.SendRichMessage(webhookURL, "📬 Notification enrichie", []services.Attachment{attachment})
+
+	case "custom":
+		customMsg := services.SlackWebhookMessage{
+			Text:      message,
+			Username:  req.Username,
+			Channel:   req.Channel,
+			IconEmoji: req.IconEmoji,
+		}
+		sendErr = slackService.SendCustomMessage(webhookURL, customMsg)
+
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid messageType. Use: simple, rich, or custom"})
+		return
+	}
+
+	if sendErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send slack message: " + sendErr.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Test Slack message sent successfully!",
+		"webhookUrl":  webhookURL,
+		"messageType": messageType,
+	})
+}
