@@ -91,7 +91,7 @@ class AuthService {
   }
 
   get canCreateAreas(): boolean {
-    return this.isAdmin
+    return this.isAuthenticated
   }
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {
