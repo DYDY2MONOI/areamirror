@@ -94,7 +94,8 @@ func main() {
 	r.GET("/service/:id/reactions", controllers.GetServiceReactions)
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
-	r.GET("/areas/:id", controllers.AuthMiddleware(), controllers.GetArea)
+	r.GET("/areas/:id", controllers.GetArea)
+	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
 	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
 	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)

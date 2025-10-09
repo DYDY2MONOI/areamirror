@@ -640,11 +640,17 @@ onMounted(async () => {
   console.log('Route query:', route.query)
   console.log('Route params:', route.params)
   console.log('Current route:', route.path)
+  console.log('Full URL:', window.location.href)
 
   if (route.query.areaId) {
     try {
       console.log('Loading existing area with ID:', route.query.areaId)
       console.log('Calling areaService.getAreaById...')
+
+      const token = localStorage.getItem('authToken')
+      console.log('Auth token exists:', !!token)
+      console.log('Auth token preview:', token ? token.substring(0, 20) + '...' : 'null')
+
       existingArea.value = await areaService.getAreaById(route.query.areaId as string)
       console.log('Area loaded successfully:', existingArea.value)
       isEditingExisting.value = true
@@ -667,8 +673,8 @@ onMounted(async () => {
       console.error('Error details:', error)
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-      console.error('NOT redirecting to home page - staying on configure page to debug')
-      // router.push('/') // Temporarily commented out for debugging
+      console.error('NOT redirecting - staying on page to debug')
+      // router.push('/') // Commented out for debugging
     }
   } else if (route.query.template) {
     try {

@@ -1,5 +1,25 @@
 import { API_BASE_URL } from '@/config/api'
 
+const transformAreaData = (backendArea: any): Area => {
+  return {
+    id: backendArea.id,
+    name: backendArea.name,
+    description: backendArea.description,
+    triggerService: backendArea.trigger_service,
+    triggerType: backendArea.trigger_type,
+    actionService: backendArea.action_service,
+    actionType: backendArea.action_type,
+    isActive: backendArea.is_active,
+    isPublic: backendArea.is_public,
+    createdAt: backendArea.created_at,
+    updatedAt: backendArea.updated_at,
+    triggerIconUrl: backendArea.trigger_icon_url,
+    actionIconUrl: backendArea.action_icon_url,
+    triggerConfig: backendArea.trigger_config,
+    actionConfig: backendArea.action_config
+  }
+}
+
 export interface Area {
   id: string
   name: string
@@ -69,19 +89,28 @@ class AreaService {
 
   async getAreaById(id: string): Promise<Area> {
     try {
-      const response = await fetch(`${this.baseURL}/${id}`, {
+      const token = localStorage.getItem('authToken')
+
+      const response = await fetch(`${API_BASE_URL}/user/me/areas`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch area: ${response.statusText}`)
+        throw new Error(`Failed to fetch areas: ${response.statusText}`)
       }
 
       const data = await response.json()
-      return data.data
+      const area = data.data.find((area: any) => area.id === id)
+
+      if (!area) {
+        throw new Error('Area not found')
+      }
+
+      return transformAreaData(area)
     } catch (error) {
       console.error('Error fetching area:', error)
       throw error
@@ -147,7 +176,7 @@ class AreaService {
       }
 
       const data = await response.json()
-      return data.data || []
+      return (data.data || []).map((area: any) => transformAreaData(area))
     } catch (error) {
       console.error('Error fetching user areas:', error)
       throw error

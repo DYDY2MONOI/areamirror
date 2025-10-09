@@ -5,6 +5,7 @@ import (
 	"Golang-API-tutoriel/models"
 	"Golang-API-tutoriel/services"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -30,25 +31,18 @@ func GetAreas(c *gin.Context) {
 }
 
 func GetArea(c *gin.Context) {
+	log.Println("GetArea function called")
 	var area models.Area
 	id := c.Param("id")
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	log.Printf("Looking for area with ID: %s", id)
+
+	if err := database.DB.First(&area, id).Error; err != nil {
+		log.Printf("Area not found: %v", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
-	if err := database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
-		return
-	}
-
-	// Check if user owns this area
-	if area.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You can only view your own areas"})
-		return
-	}
-
+	log.Printf("Area found: %+v", area)
 	c.JSON(http.StatusOK, gin.H{"data": area})
 }
 
@@ -149,20 +143,9 @@ func getIconUrlForService(service string) string {
 func UpdateArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
 
 	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
-		return
-	}
-
-	// Check if user owns this area
-	if area.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You can only update your own areas"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
@@ -173,8 +156,7 @@ func UpdateArea(c *gin.Context) {
 	}
 
 	database.DB.Model(&area).Updates(input)
-
-	database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, area.ID)
+	database.DB.First(&area, area.ID)
 
 	c.JSON(http.StatusOK, gin.H{"data": area})
 }
