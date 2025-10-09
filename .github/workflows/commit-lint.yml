@@ -1,0 +1,96 @@
+name: Conventional Commits Lint
+
+on:
+  pull_request:
+    branches: [ main, develop, MVP ]
+  push:
+    branches: [ main, develop, MVP ]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install commitlint and conventional config
+      run: |
+        npm install --save-dev @commitlint/cli @commitlint/config-conventional
+    
+    - name: Create commitlint config
+      run: |
+        echo 'module.exports = {
+          extends: ["@commitlint/config-conventional"],
+          rules: {
+            "type-enum": [
+              2,
+              "always",
+              [
+                "feat",
+                "fix",
+                "docs",
+                "style",
+                "refactor",
+                "perf",
+                "test",
+                "build",
+                "ci",
+                "chore",
+                "revert"
+              ]
+            ],
+            "type-case": [2, "always", "lower-case"],
+            "type-empty": [2, "never"],
+            "scope-case": [2, "always", "lower-case"],
+            "subject-case": [2, "always", "lower-case"],
+            "subject-empty": [2, "never"],
+            "subject-full-stop": [2, "never", "."],
+            "header-max-length": [2, "always", 100]
+          }
+        };' > commitlint.config.js
+    
+    - name: Lint commit messages
+      run: |
+        # Get all commits in the PR or push
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          COMMITS=$(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+        else
+          COMMITS=$(git log --pretty=format:"%s" ${{ github.event.before }}..${{ github.event.after }})
+        fi
+        
+        # Check each commit message
+        echo "$COMMITS" | while read -r commit; do
+          if [ -n "$commit" ]; then
+            echo "Checking commit: $commit"
+            echo "$commit" | npx commitlint
+          fi
+        done
+    
+    - name: Validate commit message format
+      run: |
+        # Get the latest commit message
+        COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+        echo "Latest commit message: $COMMIT_MSG"
+        
+        # Check if commit message follows conventional format
+        if echo "$COMMIT_MSG" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"; then
+          echo "✅ Commit message follows conventional format"
+        else
+          echo "❌ Commit message does not follow conventional format"
+          echo "Expected format: type(scope): description"
+          echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+          echo "Examples:"
+          echo "  feat: add new authentication system"
+          echo "  fix(auth): resolve login issue"
+          echo "  docs: update API documentation"
+          exit 1
+        fi
