@@ -5,6 +5,7 @@
     @pointermove="handlePointerMove"
     @pointerenter="handlePointerEnter"
     @pointerleave="handlePointerLeave"
+    @click="handleClick"
   >
     <div class="glare-card-inner">
       <div class="glare-card-content">
@@ -28,6 +29,9 @@ interface GlareCardProps {
 }
 
 const props = defineProps<GlareCardProps>();
+const emit = defineEmits<{
+  click: [event: MouseEvent]
+}>();
 
 const isPointerInside = ref(false);
 const refElement = ref<HTMLElement | null>(null);
@@ -79,6 +83,11 @@ function handlePointerLeave() {
     state.value.rotate = { x: 0, y: 0 };
   }
 }
+
+function handleClick(event: MouseEvent) {
+  console.log('GlareCard clicked!', event)
+  emit('click', event)
+}
 </script>
 
 <style scoped>
@@ -87,6 +96,7 @@ function handlePointerLeave() {
   height: 420px;
   perspective: 600px;
   position: relative;
+  cursor: pointer;
   --m-x: v-bind(state.glare.x + "%");
   --m-y: v-bind(state.glare.y + "%");
   --r-x: v-bind(state.rotate.x + "deg");

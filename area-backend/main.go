@@ -96,7 +96,7 @@ func main() {
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
 	r.GET("/areas/:id", controllers.AuthMiddleware(), controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
-	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateArea)
+	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
 	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)
 	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.ToggleArea)
 

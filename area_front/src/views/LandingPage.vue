@@ -240,6 +240,7 @@
           v-for="area in areas"
           :key="area.id"
           class="area-glare-card"
+          @click="handleAreaClick(area)"
         >
           <div class="card-content">
             <div class="card-header">
@@ -623,15 +624,25 @@ const confirmLogout = async () => {
 }
 
 const handleAreaClick = (area: AreaTemplate | Area) => {
-  requireAuth(() => {
-    console.log('Area clicked:', area)
+  console.log('=== AREA CLICK DEBUG ===')
+  console.log('Area clicked:', area)
+  console.log('Area type:', typeof area)
+  console.log('Area keys:', Object.keys(area))
+  console.log('Has title property:', 'title' in area)
+  console.log('Area ID:', area.id)
 
-    if ('title' in area) {
-      selectedArea.value = area as AreaTemplate
-      showAreaModal.value = true
-    } else {
-      console.log('User area clicked:', area)
-    }
+  requireAuth(() => {
+    console.log('User is authenticated, proceeding with click handling')
+
+    // Since these are user areas (not templates), they should always go to configuration
+    console.log('This is a user area, navigating to configuration')
+    console.log('Navigating to configure-area with areaId:', area.id)
+    router.push({
+      name: 'configure-area',
+      query: {
+        areaId: area.id
+      }
+    })
   })
 }
 
@@ -2881,6 +2892,12 @@ body.modal-open {
 .area-glare-card {
   width: 320px;
   height: 420px; /* 320 * (21/17) = 420px for proper aspect ratio */
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.area-glare-card:hover {
+  transform: translateY(-4px);
 }
 
 .card-content {

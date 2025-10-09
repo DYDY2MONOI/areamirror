@@ -14,6 +14,8 @@ export interface Area {
   updatedAt: string
   triggerIconUrl?: string
   actionIconUrl?: string
+  triggerConfig?: any
+  actionConfig?: any
 }
 
 export interface AreaTemplate {

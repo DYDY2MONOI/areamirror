@@ -7,8 +7,8 @@
           Back to Home
         </button>
         <div class="header-text">
-          <h1 class="page-title">Configure Your Area</h1>
-          <p class="page-subtitle">Set up your automation with the selected template</p>
+          <h1 class="page-title">{{ isEditingExisting ? 'Edit Your Area' : 'Configure Your Area' }}</h1>
+          <p class="page-subtitle">{{ isEditingExisting ? 'Modify your existing automation area' : 'Set up your automation with the selected template' }}</p>
         </div>
       </div>
     </div>
@@ -378,8 +378,8 @@
           Cancel
         </button>
         <button class="btn btn-primary" @click="createArea" :disabled="!isFormValid || isLoading">
-          <v-icon size="18">mdi-check</v-icon>
-          {{ isLoading ? 'Creating...' : 'Create Area' }}
+          <v-icon size="18">{{ isEditingExisting ? 'mdi-content-save' : 'mdi-check' }}</v-icon>
+          {{ isLoading ? 'Saving...' : (isEditingExisting ? 'Save Changes' : 'Create Area') }}
         </button>
 
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
@@ -480,7 +480,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { areaService } from '@/services/area'
+import { areaService, type Area } from '@/services/area'
 import { useAuth } from '@/composables/useAuth'
 
 interface AreaTemplate {
@@ -500,6 +500,8 @@ const route = useRoute()
 const { currentUser } = useAuth()
 
 const template = ref<AreaTemplate | null>(null)
+const existingArea = ref<Area | null>(null)
+const isEditingExisting = ref(false)
 const form = reactive({
   triggerConfig: {} as any,
   actionConfig: {} as any,
@@ -559,6 +561,24 @@ watch(() => template.value, (newTemplate) => {
   }
 }, { immediate: true })
 
+watch(() => existingArea.value, (newArea) => {
+  if (newArea && isEditingExisting.value) {
+    console.log('Loading existing area configuration:', newArea)
+
+    // Load existing trigger configuration
+    if (newArea.triggerConfig) {
+      form.triggerConfig = { ...newArea.triggerConfig }
+    }
+
+    // Load existing action configuration
+    if (newArea.actionConfig) {
+      form.actionConfig = { ...newArea.actionConfig }
+    }
+
+    console.log('Existing configuration loaded:', { triggerConfig: form.triggerConfig, actionConfig: form.actionConfig })
+  }
+}, { immediate: true })
+
 const isFormValid = computed(() => {
   if (!template.value) return false
 
@@ -568,7 +588,7 @@ const isFormValid = computed(() => {
            form.actionConfig.toEmail &&
            form.actionConfig.subject
   }
-  
+
   if (template.value.triggerService === 'GitHub') {
     return form.triggerConfig.repository &&
            form.triggerConfig.events &&
@@ -615,9 +635,42 @@ const getCombinedDateTime = () => {
   return 'Not set'
 }
 
-onMounted(() => {
+onMounted(async () => {
+  console.log('=== CONFIGURE AREA PAGE DEBUG ===')
   console.log('Route query:', route.query)
-  if (route.query.template) {
+  console.log('Route params:', route.params)
+  console.log('Current route:', route.path)
+
+  if (route.query.areaId) {
+    try {
+      console.log('Loading existing area with ID:', route.query.areaId)
+      console.log('Calling areaService.getAreaById...')
+      existingArea.value = await areaService.getAreaById(route.query.areaId as string)
+      console.log('Area loaded successfully:', existingArea.value)
+      isEditingExisting.value = true
+
+      template.value = {
+        id: existingArea.value.id,
+        title: existingArea.value.name,
+        subtitle: `${existingArea.value.triggerService} → ${existingArea.value.actionService}`,
+        description: existingArea.value.description,
+        icon: '',
+        gradientClass: '',
+        triggerService: existingArea.value.triggerService,
+        actionService: existingArea.value.actionService,
+        isActive: existingArea.value.isActive
+      }
+
+      console.log('Template created:', template.value)
+    } catch (error) {
+      console.error('=== ERROR LOADING EXISTING AREA ===')
+      console.error('Error details:', error)
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('NOT redirecting to home page - staying on configure page to debug')
+      // router.push('/') // Temporarily commented out for debugging
+    }
+  } else if (route.query.template) {
     try {
       template.value = JSON.parse(route.query.template as string)
       console.log('Template loaded:', template.value)
@@ -628,7 +681,7 @@ onMounted(() => {
       router.push('/')
     }
   } else {
-    console.log('No template found in route, redirecting to home')
+    console.log('No template or areaId found in route, redirecting to home')
     router.push('/')
   }
 })
@@ -964,12 +1017,18 @@ const createArea = async () => {
       actionConfig: form.actionConfig
     }
 
-    console.log('Creating area with data:', areaData)
-    await areaService.createArea(areaData)
+    if (isEditingExisting.value && existingArea.value) {
+      console.log('Updating existing area with data:', areaData)
+      await areaService.updateArea(existingArea.value.id, areaData)
+    } else {
+      console.log('Creating new area with data:', areaData)
+      await areaService.createArea(areaData)
+    }
+
     router.push('/')
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to create area'
-    console.error('Error creating area:', err)
+    error.value = err instanceof Error ? err.message : `Failed to ${isEditingExisting.value ? 'update' : 'create'} area`
+    console.error(`Error ${isEditingExisting.value ? 'updating' : 'creating'} area:`, err)
   } finally {
     isLoading.value = false
   }

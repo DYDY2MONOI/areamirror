@@ -32,9 +32,20 @@ func GetAreas(c *gin.Context) {
 func GetArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	if err := database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+		return
+	}
+
+	// Check if user owns this area
+	if area.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only view your own areas"})
 		return
 	}
 
@@ -138,9 +149,20 @@ func getIconUrlForService(service string) string {
 func UpdateArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
 
 	if err := database.DB.First(&area, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+		return
+	}
+
+	// Check if user owns this area
+	if area.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only update your own areas"})
 		return
 	}
 
