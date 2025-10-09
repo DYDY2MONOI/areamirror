@@ -36,4 +36,3 @@ jobs:
         docker-compose ps
         docker-compose logs --tail=50
         docker-compose down
-
