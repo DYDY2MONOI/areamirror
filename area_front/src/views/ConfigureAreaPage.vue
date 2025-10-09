@@ -503,8 +503,21 @@ const template = ref<AreaTemplate | null>(null)
 const existingArea = ref<Area | null>(null)
 const isEditingExisting = ref(false)
 const form = reactive({
-  triggerConfig: {} as any,
-  actionConfig: {} as any,
+  triggerConfig: {
+    eventDate: '',
+    eventTime: '',
+    eventTitle: '',
+    calendarId: 'primary',
+    repository: '',
+    branch: 'main'
+  } as any,
+  actionConfig: {
+    toEmail: '',
+    subject: '',
+    body: '',
+    webhookUrl: '',
+    message: ''
+  } as any,
 })
 
 const isLoading = ref(false)
@@ -516,8 +529,8 @@ const triggerError = ref<string | null>(null)
 const discordTestError = ref<string | null>(null)
 
 watch(() => template.value, (newTemplate) => {
-  if (newTemplate) {
-    console.log('Initializing form for template:', newTemplate)
+  if (newTemplate && !isEditingExisting.value) {
+    console.log('Initializing form for new template:', newTemplate)
     console.log('Trigger service:', newTemplate.triggerService)
     console.log('Action service:', newTemplate.actionService)
 
@@ -557,7 +570,7 @@ watch(() => template.value, (newTemplate) => {
       discordTestError.value = null
     }
 
-    console.log('Form initialized:', form)
+    console.log('Form initialized for new template:', form)
   }
 }, { immediate: true })
 
@@ -567,15 +580,27 @@ watch(() => existingArea.value, (newArea) => {
 
     // Load existing trigger configuration
     if (newArea.triggerConfig) {
-      form.triggerConfig = { ...newArea.triggerConfig }
+      const triggerConfig = { ...form.triggerConfig, ...newArea.triggerConfig }
+
+      // Parse eventTime if it's a datetime string
+      if (triggerConfig.eventTime && typeof triggerConfig.eventTime === 'string' && triggerConfig.eventTime.includes('T')) {
+        const dateTime = new Date(triggerConfig.eventTime)
+        triggerConfig.eventDate = dateTime.toISOString().split('T')[0] // Extract date part (YYYY-MM-DD)
+        triggerConfig.eventTime = dateTime.toTimeString().split(' ')[0].substring(0, 5) // Extract time part (HH:MM)
+        console.log('Parsed datetime:', { original: newArea.triggerConfig.eventTime, date: triggerConfig.eventDate, time: triggerConfig.eventTime })
+      }
+
+      form.triggerConfig = triggerConfig
+      console.log('Trigger config loaded:', form.triggerConfig)
     }
 
     // Load existing action configuration
     if (newArea.actionConfig) {
-      form.actionConfig = { ...newArea.actionConfig }
+      form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
+      console.log('Action config loaded:', form.actionConfig)
     }
 
-    console.log('Existing configuration loaded:', { triggerConfig: form.triggerConfig, actionConfig: form.actionConfig })
+    console.log('Final form state:', { triggerConfig: form.triggerConfig, actionConfig: form.actionConfig })
   }
 }, { immediate: true })
 
