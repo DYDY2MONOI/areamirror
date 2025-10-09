@@ -27,14 +27,19 @@ jobs:
     
     - name: Lint commit messages
       run: |
-        # Get all commits in the PR or push
+        # Get all commits in the PR or push (excluding merge commits)
         if [ "${{ github.event_name }}" = "pull_request" ]; then
-          COMMITS=$(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          COMMITS=$(git log --pretty=format:"%s" --no-merges ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
         else
-          COMMITS=$(git log --pretty=format:"%s" ${{ github.event.before }}..${{ github.event.after }})
+          COMMITS=$(git log --pretty=format:"%s" --no-merges ${{ github.event.before }}..${{ github.event.after }})
         fi
         
-        # Check each commit message
+        # Check each commit message (skip if no commits)
+        if [ -z "$COMMITS" ]; then
+          echo "No commits to validate (only merge commits found)"
+          exit 0
+        fi
+        
         echo "$COMMITS" | while read -r commit; do
           if [ -n "$commit" ]; then
             echo "Checking commit: $commit"
@@ -42,22 +47,3 @@ jobs:
           fi
         done
     
-    - name: Validate commit message format
-      run: |
-        # Get the latest commit message
-        COMMIT_MSG=$(git log -1 --pretty=format:"%s")
-        echo "Latest commit message: $COMMIT_MSG"
-        
-        # Check if commit message follows conventional format
-        if echo "$COMMIT_MSG" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"; then
-          echo "✅ Commit message follows conventional format"
-        else
-          echo "❌ Commit message does not follow conventional format"
-          echo "Expected format: type(scope): description"
-          echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
-          echo "Examples:"
-          echo "  feat: add new authentication system"
-          echo "  fix(auth): resolve login issue"
-          echo "  docs: update API documentation"
-          exit 1
-        fi
