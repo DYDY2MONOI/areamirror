@@ -59,6 +59,8 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
+	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
+	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 
 	api := r.Group("/api")
 	{
