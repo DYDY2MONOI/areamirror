@@ -108,17 +108,22 @@
         <div class="search-bar">
           <div class="search-input-container">
             <v-icon size="20" color="#9ca3af" class="search-icon">mdi-magnify</v-icon>
-            <input type="text" placeholder="Search automations, services, or templates..." class="search-input">
-            <button class="search-filter-btn">
-              <v-icon size="16" color="#9ca3af">mdi-tune</v-icon>
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Search automations, services, or templates..." 
+              class="search-input"
+            >
+            <button v-if="searchQuery" @click="searchQuery = ''" class="search-filter-btn">
+              <v-icon size="16" color="#9ca3af">mdi-close</v-icon>
             </button>
           </div>
           <div class="search-suggestions">
             <span class="suggestion-label">Popular:</span>
-            <button class="suggestion-chip" @click="requireAuth(() => {})">Gmail</button>
-            <button class="suggestion-chip" @click="requireAuth(() => {})">Discord</button>
-            <button class="suggestion-chip" @click="requireAuth(() => {})">Spotify</button>
-            <button class="suggestion-chip" @click="requireAuth(() => {})">GitHub</button>
+            <button class="suggestion-chip" @click="searchQuery = 'Gmail'">Gmail</button>
+            <button class="suggestion-chip" @click="searchQuery = 'Discord'">Discord</button>
+            <button class="suggestion-chip" @click="searchQuery = 'Spotify'">Spotify</button>
+            <button class="suggestion-chip" @click="searchQuery = 'GitHub'">GitHub</button>
           </div>
         </div>
       </div>
@@ -164,10 +169,10 @@
           </div>
         </div>
         <div class="filter-tabs">
-          <button class="filter-tab active" @click="requireAuth(() => {})">All</button>
-          <button class="filter-tab" @click="requireAuth(() => {})">My AREAs</button>
-          <button class="filter-tab" @click="requireAuth(() => {})">Popular</button>
-          <button class="filter-tab" @click="requireAuth(() => {})">Templates</button>
+          <button class="filter-tab active">All</button>
+          <button class="filter-tab" @click="scrollToMyAreas">My AREAs</button>
+          <button class="filter-tab">Popular</button>
+          <button class="filter-tab">Templates</button>
         </div>
         <div class="action-buttons">
           <button class="action-btn-icon" @click="requireAuth(() => {})">
@@ -177,6 +182,64 @@
             <v-icon size="20">mdi-bell-outline</v-icon>
           </button>
         </div>
+      </div>
+    </v-container>
+
+    <v-container v-if="isAuthenticated && areas.length > 0" id="my-areas-section" class="mt-6">
+      <div class="section-header">
+        <div class="section-info">
+          <h2 class="section-title">My Areas</h2>
+          <p class="section-subtitle">Your created automation areas</p>
+        </div>
+        <button class="view-all-btn" @click="goToAllAreas">
+          <span>View All</span>
+          <v-icon size="16">mdi-arrow-right</v-icon>
+        </button>
+      </div>
+
+      <div class="cards-grid">
+        <GlareCard
+          v-for="area in filteredAreas"
+          :key="area.id"
+          class="area-glare-card"
+        >
+          <div class="card-content">
+            <div class="card-header">
+              <h3 class="card-title">{{ area.name }}</h3>
+              <p class="card-description">{{ area.description }}</p>
+            </div>
+            <div class="card-services">
+              <div class="service-item">
+                <div class="service-icon">
+                  <img
+                    :src="getServiceIcon((area as any).trigger_service)"
+                    :alt="(area as any).trigger_service"
+                    @error="console.error('Failed to load trigger icon:', (area as any).trigger_service, getServiceIcon((area as any).trigger_service))"
+                    @load="console.log('Loaded trigger icon:', (area as any).trigger_service)"
+                  />
+                </div>
+                <div class="service-info">
+                  <span class="service-label">Trigger:</span>
+                  <span class="service-name">{{ (area as any).trigger_service }}</span>
+                </div>
+              </div>
+              <div class="service-item">
+                <div class="service-icon">
+                  <img
+                    :src="getServiceIcon((area as any).action_service)"
+                    :alt="(area as any).action_service"
+                    @error="console.error('Failed to load action icon:', (area as any).action_service, getServiceIcon((area as any).action_service))"
+                    @load="console.log('Loaded action icon:', (area as any).action_service)"
+                  />
+                </div>
+                <div class="service-info">
+                  <span class="service-label">Action:</span>
+                  <span class="service-name">{{ (area as any).action_service }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlareCard>
       </div>
     </v-container>
 
@@ -223,63 +286,6 @@
         />
       </div>
     </div>
-
-    <v-container v-if="isAuthenticated && areas.length > 0" class="mt-6">
-      <div class="section-header">
-        <div class="section-info">
-          <h2 class="section-title">My Areas</h2>
-          <p class="section-subtitle">Your created automation areas</p>
-        </div>
-        <button class="view-all-btn">
-          <span>View All</span>
-          <v-icon size="16">mdi-arrow-right</v-icon>
-        </button>
-      </div>
-      <div class="cards-grid">
-        <GlareCard
-          v-for="area in areas"
-          :key="area.id"
-          class="area-glare-card"
-        >
-          <div class="card-content">
-            <div class="card-header">
-              <h3 class="card-title">{{ area.name }}</h3>
-              <p class="card-description">{{ area.description }}</p>
-            </div>
-            <div class="card-services">
-              <div class="service-item">
-                <div class="service-icon">
-                  <img
-                    :src="getServiceIcon((area as any).trigger_service)"
-                    :alt="(area as any).trigger_service"
-                    @error="console.error('Failed to load trigger icon:', (area as any).trigger_service, getServiceIcon((area as any).trigger_service))"
-                    @load="console.log('Loaded trigger icon:', (area as any).trigger_service)"
-                  />
-                </div>
-                <div class="service-info">
-                  <span class="service-label">Trigger:</span>
-                  <span class="service-name">{{ (area as any).trigger_service }}</span>
-                </div>
-              </div>
-              <div class="service-item">
-                <div class="service-icon">
-                  <img
-                    :src="getServiceIcon((area as any).action_service)"
-                    :alt="(area as any).action_service"
-                    @error="console.error('Failed to load action icon:', (area as any).action_service, getServiceIcon((area as any).action_service))"
-                    @load="console.log('Loaded action icon:', (area as any).action_service)"
-                  />
-                </div>
-                <div class="service-info">
-                  <span class="service-label">Action:</span>
-                  <span class="service-name">{{ (area as any).action_service }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </GlareCard>
-      </div>
-    </v-container>
 
 
     </div>
@@ -504,10 +510,34 @@ const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
 const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
+const searchQuery = ref('')
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas } = useAreas()
 const router = useRouter()
+
+// Filtered areas based on search query
+const filteredAreas = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return areas.value
+  }
+
+  const query = searchQuery.value.toLowerCase().trim()
+
+  return areas.value.filter((area: any) => {
+    const name = area.name?.toLowerCase() || ''
+    const description = area.description?.toLowerCase() || ''
+    const triggerService = area.trigger_service?.toLowerCase() || ''
+    const actionService = area.action_service?.toLowerCase() || ''
+
+    return (
+      name.includes(query) ||
+      description.includes(query) ||
+      triggerService.includes(query) ||
+      actionService.includes(query)
+    )
+  })
+})
 
 import appsJson from '../assets/apps.json'
 
@@ -553,17 +583,29 @@ const getServiceIcon = (serviceName: string | undefined) => {
       return iconUrl
     }
 
-    const githubApp = apps.find(a => a.name === 'GitHub')
-    if (githubApp) {
-      const fallbackUrl = getIconUrl(githubApp.icon)
-      console.log('Using GitHub fallback icon:', fallbackUrl)
-      return fallbackUrl
+    for (const a of apps) {
+      if (a.name === 'GitHub') {
+        const fallbackUrl = getIconUrl(a.icon)
+        console.log('Using GitHub fallback icon:', fallbackUrl)
+        return fallbackUrl
+      }
+    }
     }
     return ''
   }
-}
 
 
+
+onMounted(() => {
+  refreshProfile()
+    .then(() => fetchPopularAreas())
+    .then(() => fetchRecommendedAreas())
+    .then(() => {
+      if (currentUser.value && currentUser.value.id) {
+        return fetchUserAreas(currentUser.value.id)
+      }
+    })
+})
 
 onMounted(async () => {
   await refreshProfile()
@@ -655,6 +697,24 @@ const handleAreaCreated = async () => {
   if (currentUser.value?.id) {
     await fetchUserAreas(currentUser.value.id)
   }
+}
+
+const scrollToMyAreas = () => {
+  requireAuth(() => {
+    const element = document.getElementById('my-areas-section')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      // Si l'utilisateur n'a pas encore d'areas, créer une première
+      showCreateModal.value = true
+    }
+  })
+}
+
+const goToAllAreas = () => {
+  requireAuth(() => {
+    router.push('/areas')
+  })
 }
 
 const getTriggerIcon = (service: string) => {
@@ -920,7 +980,6 @@ watch(showCreateModal, (isOpen) => {
   z-index: 1;
 }
 
-/* Right Planet - Dramatic Style */
 .planet-right {
   position: fixed;
   width: 500px;
@@ -931,7 +990,6 @@ watch(showCreateModal, (isOpen) => {
   z-index: 1;
 }
 
-/* Planet Core - Dark Base */
 .planet-core {
   position: absolute;
   top: 0;
