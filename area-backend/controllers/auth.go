@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -123,6 +124,24 @@ type FacebookUserResponse struct {
 	Name  string `json:"name"`
 }
 
+type SpotifyLinkRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type SpotifyTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	Scope        string `json:"scope"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type SpotifyUserResponse struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+}
+
 func init() {
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
@@ -178,6 +197,8 @@ func Register(c *gin.Context) {
 			"profile_image": user.ProfileImage,
 			"role":          user.Role,
 			"is_active":     user.IsActive,
+			"spotify_id":    user.SpotifyID,
+			"spotify_email": user.SpotifyEmail,
 		},
 	})
 }
@@ -218,6 +239,8 @@ func Login(c *gin.Context) {
 			"profile_image": user.ProfileImage,
 			"role":          user.Role,
 			"is_active":     user.IsActive,
+			"spotify_id":    user.SpotifyID,
+			"spotify_email": user.SpotifyEmail,
 		},
 	})
 }
@@ -266,6 +289,8 @@ func OAuth2Login(c *gin.Context) {
 			"profile_image": user.ProfileImage,
 			"role":          user.Role,
 			"is_active":     user.IsActive,
+			"spotify_id":    user.SpotifyID,
+			"spotify_email": user.SpotifyEmail,
 		},
 	})
 }
@@ -344,6 +369,8 @@ func GetMe(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
 		},
 	})
 }
@@ -384,6 +411,8 @@ func GetProfile(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
 		},
 	})
 }
@@ -466,6 +495,8 @@ func UpdateProfile(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
 		},
 	})
 }
@@ -644,6 +675,8 @@ func UploadProfileImage(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
 		},
 	})
 }
@@ -1276,6 +1309,105 @@ func UnlinkFacebookAccount(c *gin.Context) {
 	})
 }
 
+func LinkSpotifyAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req SpotifyLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "http://localhost:5173/auth/spotify/callback"
+	}
+
+	if spotifyClientID == "" || spotifyClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
+		return
+	}
+
+	tokenResp, err := exchangeSpotifyCodeForToken(req.Code, spotifyClientID, spotifyClientSecret, redirectURI)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
+
+	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existingUser models.User
+	if err := database.DB.Where("spotify_id = ?", spotifyUser.ID).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Spotify account is already linked to another user"})
+		return
+	}
+
+	user.SpotifyID = &spotifyUser.ID
+	if spotifyUser.Email != "" {
+		user.SpotifyEmail = &spotifyUser.Email
+	} else {
+		user.SpotifyEmail = nil
+	}
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Spotify account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Spotify account linked successfully",
+		"spotify_id":    user.SpotifyID,
+		"spotify_email": user.SpotifyEmail,
+	})
+}
+
+func UnlinkSpotifyAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.SpotifyID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Spotify account linked"})
+		return
+	}
+
+	user.SpotifyID = nil
+	user.SpotifyEmail = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Spotify account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Spotify account unlinked successfully",
+	})
+}
+
 func exchangeFacebookCodeForToken(code, clientID, clientSecret string) (string, error) {
 	url := "https://graph.facebook.com/v18.0/oauth/access_token"
 
@@ -1358,6 +1490,85 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 	return &facebookUser, nil
 }
 
+func exchangeSpotifyCodeForToken(code, clientID, clientSecret, redirectURI string) (*SpotifyTokenResponse, error) {
+	tokenURL := "https://accounts.spotify.com/api/token"
+
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", code)
+	data.Set("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+	req.SetBasicAuth(clientID, clientSecret)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("Spotify token exchange failed: %s", string(body))
+	}
+
+	var tokenResp SpotifyTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, err
+	}
+
+	if tokenResp.AccessToken == "" {
+		return nil, fmt.Errorf("Spotify token response missing access token")
+	}
+
+	return &tokenResp, nil
+}
+
+func getSpotifyUser(accessToken string) (*SpotifyUserResponse, error) {
+	url := "https://api.spotify.com/v1/me"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("Spotify user fetch failed: %s", string(body))
+	}
+
+	var spotifyUser SpotifyUserResponse
+	if err := json.Unmarshal(body, &spotifyUser); err != nil {
+		return nil, err
+	}
+
+	return &spotifyUser, nil
+}
+
 // Mobile OAuth2 Login - returns tokens in response body for mobile apps
 func MobileOAuth2Login(c *gin.Context) {
 	var req OAuth2LoginRequest
@@ -1404,6 +1615,8 @@ func MobileOAuth2Login(c *gin.Context) {
 			"profile_image": user.ProfileImage,
 			"role":          user.Role,
 			"is_active":     user.IsActive,
+			"spotify_id":    user.SpotifyID,
+			"spotify_email": user.SpotifyEmail,
 		},
 	})
 }
@@ -1482,6 +1695,8 @@ func GitHubDirectLogin(c *gin.Context) {
 			"is_active":       user.IsActive,
 			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
 		},
 	})
 }
@@ -1559,6 +1774,8 @@ func GoogleDirectLogin(c *gin.Context) {
 			"is_active":     user.IsActive,
 			"google_id":     user.GoogleID,
 			"google_email":  user.GoogleEmail,
+			"spotify_id":    user.SpotifyID,
+			"spotify_email": user.SpotifyEmail,
 		},
 	})
 }
@@ -1635,6 +1852,8 @@ func FacebookDirectLogin(c *gin.Context) {
 			"is_active":      user.IsActive,
 			"facebook_id":    user.FacebookID,
 			"facebook_email": user.FacebookEmail,
+			"spotify_id":     user.SpotifyID,
+			"spotify_email":  user.SpotifyEmail,
 		},
 	})
 }
