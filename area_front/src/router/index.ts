@@ -10,6 +10,7 @@ import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import ConfigureAreaPage from '../views/ConfigureAreaPage.vue'
+import AllAreasPage from '../views/AllAreasPage.vue'
 import { authService } from '../services/auth'
 
 const router = createRouter({
@@ -97,6 +98,12 @@ const router = createRouter({
       path: '/configure-area',
       name: 'configure-area',
       component: ConfigureAreaPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/areas',
+      name: 'all-areas',
+      component: AllAreasPage,
       meta: { requiresAuth: true }
     },
   ],
