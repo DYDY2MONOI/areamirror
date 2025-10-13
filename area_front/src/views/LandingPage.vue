@@ -198,52 +198,14 @@
       </div>
 
       <div class="cards-grid">
-        <GlareCard
+        <CardSpotlight
           v-for="area in filteredAreas"
           :key="area.id"
-          class="area-glare-card"
-          @click="handleAreaClick(area)"
-        >
-          <div class="card-content">
-            <button
-              class="delete-button"
-              @click.stop="handleDeleteArea(area)"
-              type="button"
-            >
-              <v-icon size="18" color="white">mdi-delete</v-icon>
-            </button>
-            <div class="card-header">
-              <h3 class="card-title">{{ area.name }}</h3>
-              <p class="card-description">{{ area.description }}</p>
-            </div>
-            <div class="card-services">
-              <div class="service-item">
-                <div class="service-icon">
-                  <img
-                    :src="getServiceIcon((area as any).trigger_service)"
-                    :alt="(area as any).trigger_service"
-                  />
-                </div>
-                <div class="service-info">
-                  <span class="service-label">Trigger:</span>
-                  <span class="service-name">{{ (area as any).trigger_service }}</span>
-                </div>
-              </div>
-              <div class="service-item">
-                <div class="service-icon">
-                  <img
-                    :src="getServiceIcon((area as any).action_service)"
-                    :alt="(area as any).action_service"
-                  />
-                </div>
-                <div class="service-info">
-                  <span class="service-label">Action:</span>
-                  <span class="service-name">{{ (area as any).action_service }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </GlareCard>
+          :area="area"
+          :show-delete-button="true"
+          @click="handleAreaClick"
+          @delete="handleDeleteArea"
+        />
       </div>
     </v-container>
 
@@ -486,9 +448,8 @@
 import CreateArea from '../components/CreateArea/CreateArea.vue'
 import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
-import AreaCard from '../components/AreaCard.vue'
+import CardSpotlight from '../components/CardSpotlight.vue'
 import Globe from '../components/Globe.vue'
-import { GlareCard } from '../components/ui/glare-card'
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
@@ -1720,64 +1681,33 @@ watch(showCreateModal, (isOpen) => {
 }
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 32px;
   width: 100%;
   box-sizing: border-box;
+  justify-items: center;
 }
-.card-col { max-width: 320px; }
-.area-card {
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 24px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-  transform: translateY(0) scale(1);
-  background-size: 130% 130%;
-  background-position: 50% 50%;
-  opacity: 1;
-  position: relative;
-  transition:
-    transform .4s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow .4s cubic-bezier(0.16, 1, 0.3, 1),
-    background-position .6s ease,
-    filter .25s ease,
-    opacity .3s ease,
-    border-color .3s ease;
-}
-.area-card :deep(.v-icon) {
-  transition: transform .25s ease, opacity .25s ease;
-}
-.area-card:hover :deep(.v-icon) {
-  transform: translateY(-1px) scale(1.03);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.cards-grid .card-col {
+.cards-grid .card-spotlight-container {
   animation: fadeUp .45s ease both;
 }
-.cards-grid .card-col:nth-child(2) { animation-delay: .05s; }
-.cards-grid .card-col:nth-child(3) { animation-delay: .1s; }
-.cards-grid .card-col:nth-child(4) { animation-delay: .15s; }
+.cards-grid .card-spotlight-container:nth-child(2) { animation-delay: .05s; }
+.cards-grid .card-spotlight-container:nth-child(3) { animation-delay: .1s; }
+.cards-grid .card-spotlight-container:nth-child(4) { animation-delay: .15s; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.area-card:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-}
-.area-card:active {
-  transform: translateY(-2px) scale(0.99);
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .area-card,
-  .area-card :deep(.v-icon),
-  .cards-grid .card-col {
+  .cards-grid .card-spotlight-container {
     transition: none !important;
     animation: none !important;
   }
