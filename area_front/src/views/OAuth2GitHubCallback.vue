@@ -72,20 +72,18 @@ onMounted(async () => {
     }
 
     message.value = 'Authenticating with GitHub...'
-    
-    // Use the new OAuth2 direct login endpoint
+
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }))
       throw new Error(errorData.error || 'GitHub authentication failed')
     }
 
     const data = await response.json()
-    
-    // Handle the OAuth2 response
+
     oauth2AuthService.handleSuccessfulAuth(data)
-    
+
     success.value = true
     loading.value = false
     message.value = 'GitHub login successful!'

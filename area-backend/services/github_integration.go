@@ -71,7 +71,6 @@ func (gis *GitHubIntegrationService) deleteExistingWebhooks(owner, repo string) 
 		return fmt.Errorf("failed to decode response: %v", err)
 	}
 
-	// Delete all existing webhooks
 	for _, webhook := range webhooks {
 		fmt.Printf("🗑️ Deleting existing webhook ID: %d, URL: %s\n", webhook.ID, webhook.Config.URL)
 		if err := gis.DeleteWebhook(owner, repo, webhook.ID); err != nil {
@@ -92,7 +91,6 @@ func (gis *GitHubIntegrationService) CreateWebhook(owner, repo string) (*GitHubW
 		return nil, fmt.Errorf("WEBHOOK_URL not configured")
 	}
 
-	// First, try to delete any existing webhooks for this repository
 	if err := gis.deleteExistingWebhooks(owner, repo); err != nil {
 		fmt.Printf("⚠️ Warning: Failed to delete existing webhooks: %v\n", err)
 	}

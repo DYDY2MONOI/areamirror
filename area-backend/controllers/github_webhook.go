@@ -66,7 +66,6 @@ func (ghc *GitHubWebhookController) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Verify webhook signature
 	if !ghc.verifyWebhookSignature(body, signature) {
 		fmt.Printf("❌ Webhook signature verification failed\n")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook signature"})

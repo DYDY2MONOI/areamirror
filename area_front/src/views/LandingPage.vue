@@ -108,10 +108,10 @@
         <div class="search-bar">
           <div class="search-input-container">
             <v-icon size="20" color="#9ca3af" class="search-icon">mdi-magnify</v-icon>
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search automations, services, or templates..." 
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search automations, services, or templates..."
               class="search-input"
             >
             <button v-if="searchQuery" @click="searchQuery = ''" class="search-filter-btn">
@@ -202,8 +202,16 @@
           v-for="area in filteredAreas"
           :key="area.id"
           class="area-glare-card"
+          @click="handleAreaClick(area)"
         >
           <div class="card-content">
+            <button
+              class="delete-button"
+              @click.stop="handleDeleteArea(area)"
+              type="button"
+            >
+              <v-icon size="18" color="white">mdi-delete</v-icon>
+            </button>
             <div class="card-header">
               <h3 class="card-title">{{ area.name }}</h3>
               <p class="card-description">{{ area.description }}</p>
@@ -214,8 +222,6 @@
                   <img
                     :src="getServiceIcon((area as any).trigger_service)"
                     :alt="(area as any).trigger_service"
-                    @error="console.error('Failed to load trigger icon:', (area as any).trigger_service, getServiceIcon((area as any).trigger_service))"
-                    @load="console.log('Loaded trigger icon:', (area as any).trigger_service)"
                   />
                 </div>
                 <div class="service-info">
@@ -228,8 +234,6 @@
                   <img
                     :src="getServiceIcon((area as any).action_service)"
                     :alt="(area as any).action_service"
-                    @error="console.error('Failed to load action icon:', (area as any).action_service, getServiceIcon((area as any).action_service))"
-                    @load="console.log('Loaded action icon:', (area as any).action_service)"
                   />
                 </div>
                 <div class="service-info">
@@ -286,7 +290,6 @@
         />
       </div>
     </div>
-
 
     </div>
 
@@ -491,7 +494,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
 import { githubService, type GitHubRepository } from '@/services/github'
-import { type Area } from '@/services/area'
+import { type Area, areaService } from '@/services/area'
 
 interface AreaTemplate {
   id: string
@@ -513,10 +516,9 @@ const selectedArea = ref<AreaTemplate | null>(null)
 const searchQuery = ref('')
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
-const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas } = useAreas()
+const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas, deleteArea } = useAreas()
 const router = useRouter()
 
-// Filtered areas based on search query
 const filteredAreas = computed(() => {
   if (!searchQuery.value.trim()) {
     return areas.value
@@ -548,51 +550,31 @@ const getIconUrl = (file: string) =>
   new URL(`../assets/app-icons/${file}`, import.meta.url).href
 
 const getServiceIcon = (serviceName: string | undefined) => {
-  console.log('=== DEBUGGING SERVICE ICON ===')
-  console.log('Service name received:', serviceName)
-  console.log('Service name type:', typeof serviceName)
-
   if (!serviceName || serviceName === 'undefined' || serviceName === 'null') {
-    console.log('❌ Service name is undefined/null, using GitHub fallback')
     const githubApp = apps.find(a => a.name === 'GitHub')
     if (githubApp) {
-      const fallbackUrl = getIconUrl(githubApp.icon)
-      return fallbackUrl
+      return getIconUrl(githubApp.icon)
     }
     return ''
   }
-
-  console.log('Service name length:', serviceName.length)
-  console.log('All available apps:', apps.map(a => a.name))
 
   const app = apps.find(a => a.name === serviceName)
-  console.log('Found app:', app)
 
   if (app) {
-    const iconUrl = getIconUrl(app.icon)
-    console.log('✅ Found icon for', serviceName, ':', iconUrl)
-    return iconUrl
+    return getIconUrl(app.icon)
   } else {
-    console.error('❌ Service not found in apps:', serviceName)
-    console.log('Available services:', apps.map(a => a.name))
-
     const caseInsensitiveApp = apps.find(a => a.name.toLowerCase() === serviceName.toLowerCase())
     if (caseInsensitiveApp) {
-      console.log('✅ Found case-insensitive match:', caseInsensitiveApp)
-      const iconUrl = getIconUrl(caseInsensitiveApp.icon)
-      return iconUrl
+      return getIconUrl(caseInsensitiveApp.icon)
     }
 
-    for (const a of apps) {
-      if (a.name === 'GitHub') {
-        const fallbackUrl = getIconUrl(a.icon)
-        console.log('Using GitHub fallback icon:', fallbackUrl)
-        return fallbackUrl
-      }
+    const githubApp = apps.find(a => a.name === 'GitHub')
+    if (githubApp) {
+      return getIconUrl(githubApp.icon)
     }
-    }
-    return ''
   }
+  return ''
+}
 
 
 
@@ -614,31 +596,13 @@ onMounted(async () => {
   if (currentUser.value?.id) {
     await fetchUserAreas(currentUser.value.id)
   }
-
-  console.log('=== AREAS DEBUG ===')
-  console.log('Areas:', areas.value)
-  console.log('Areas count:', areas.value.length)
-  if (areas.value.length > 0) {
-    console.log('First area:', areas.value[0])
-    console.log('First area keys:', Object.keys(areas.value[0]))
-    console.log('First area triggerService:', areas.value[0].triggerService)
-    console.log('First area actionService:', areas.value[0].actionService)
-
-    console.log('Checking for alternative field names...')
-    const firstArea = areas.value[0] as any
-    console.log('trigger_service:', firstArea.trigger_service)
-    console.log('action_service:', firstArea.action_service)
-    console.log('triggerServiceName:', firstArea.triggerServiceName)
-    console.log('actionServiceName:', firstArea.actionServiceName)
-    console.log('trigger:', firstArea.trigger)
-    console.log('action:', firstArea.action)
-  }
 })
 
 
 watch(isAuthenticated, (newValue) => {
-  console.log('Authentication state changed:', newValue)
-  console.log('Current user:', currentUser.value)
+  if (newValue && currentUser.value?.id) {
+    fetchUserAreas(currentUser.value.id)
+  }
 })
 
 const goToLogin = () => {
@@ -660,26 +624,34 @@ const confirmLogout = async () => {
     showLogoutDialog.value = false
     router.push('/login')
   } catch (error) {
-    console.error('Error during sign out:', error)
   }
 }
 
 const handleAreaClick = (area: AreaTemplate | Area) => {
   requireAuth(() => {
-    console.log('Area clicked:', area)
+    router.push({
+      name: 'configure-area',
+      query: {
+        areaId: area.id
+      }
+    })
+  })
+}
 
-    if ('title' in area) {
-      selectedArea.value = area as AreaTemplate
-      showAreaModal.value = true
-    } else {
-      console.log('User area clicked:', area)
+const handleDeleteArea = async (area: AreaTemplate | Area) => {
+  requireAuth(async () => {
+    const areaName = 'name' in area ? area.name : area.title
+    if (confirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`)) {
+      try {
+        await deleteArea(area.id)
+      } catch (error) {
+        alert(`Failed to delete area: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
     }
   })
 }
 
 const createAreaFromTemplate = () => {
-  console.log('Creating area from template:', selectedArea.value)
-  console.log('Template data structure:', JSON.stringify(selectedArea.value, null, 2))
   showAreaModal.value = false
 
   router.push({
@@ -705,7 +677,6 @@ const scrollToMyAreas = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } else {
-      // Si l'utilisateur n'a pas encore d'areas, créer une première
       showCreateModal.value = true
     }
   })
@@ -787,8 +758,6 @@ watch(showCreateModal, (isOpen) => {
 </script>
 
 <style scoped>
-/* Space Background Styles */
-/* Animated Background */
 .animated-background {
   position: fixed;
   top: 0;
@@ -863,7 +832,6 @@ watch(showCreateModal, (isOpen) => {
               radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
-/* Globe Background */
 .globe-background {
   position: absolute;
   top: 0;
@@ -920,7 +888,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Planet Container */
 .planet-container {
   position: fixed;
   top: 0;
@@ -931,7 +898,6 @@ watch(showCreateModal, (isOpen) => {
   z-index: 1;
 }
 
-/* Planet Base Styles */
 .planet {
   position: absolute;
   border-radius: 50%;
@@ -969,7 +935,6 @@ watch(showCreateModal, (isOpen) => {
   animation: glow 6s ease-in-out infinite;
 }
 
-/* Left Planet - Dramatic Style */
 .planet-left {
   position: fixed;
   width: 400px;
@@ -1043,7 +1008,6 @@ watch(showCreateModal, (isOpen) => {
   animation: glow-pulse 4s ease-in-out infinite;
 }
 
-/* Left Planet Glow Edge */
 .planet-left .planet-glow-edge {
   background:
     linear-gradient(90deg,
@@ -1058,7 +1022,6 @@ watch(showCreateModal, (isOpen) => {
     0 0 160px rgba(255, 180, 100, 0.3);
 }
 
-/* Right Planet Glow Edge */
 .planet-right .planet-glow-edge {
   background:
     linear-gradient(270deg,
@@ -1073,7 +1036,6 @@ watch(showCreateModal, (isOpen) => {
     0 0 200px rgba(255, 140, 70, 0.4);
 }
 
-/* Atmospheric Layer */
 .planet-atmosphere {
   position: absolute;
   top: -20%;
@@ -1089,7 +1051,6 @@ watch(showCreateModal, (isOpen) => {
   animation: atmosphere-drift 15s ease-in-out infinite;
 }
 
-/* Nebula Effect */
 .nebula {
   position: absolute;
   top: 0;
@@ -1109,7 +1070,6 @@ watch(showCreateModal, (isOpen) => {
   animation: nebula-drift 30s ease-in-out infinite;
 }
 
-/* Animations */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -1162,7 +1122,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Dramatic Planet Animations */
 @keyframes planet-drift {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -1200,7 +1159,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Responsive Design for Space Background */
 @media (max-width: 1024px) {
   .planet-left {
     width: 300px;
@@ -1551,7 +1509,6 @@ watch(showCreateModal, (isOpen) => {
   font-weight: 400;
 }
 
-/* Section Guest */
 .guest-section {
   display: flex;
   align-items: center;
@@ -1793,8 +1750,8 @@ watch(showCreateModal, (isOpen) => {
   transition: transform .25s ease, opacity .25s ease;
 }
 .area-card:hover :deep(.v-icon) {
-  transform: translateY(-3px) scale(1.08);
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transform: translateY(-1px) scale(1.03);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .cards-grid .card-col {
@@ -1810,9 +1767,8 @@ watch(showCreateModal, (isOpen) => {
 }
 
 .area-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-  background-position: 80% 20%;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 .area-card:active {
   transform: translateY(-2px) scale(0.99);
@@ -2138,7 +2094,6 @@ body.modal-open {
   box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .logout-modal-content {
     background: rgba(28, 28, 30, 0.95);
@@ -2163,7 +2118,6 @@ body.modal-open {
   }
 }
 
-/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -2184,7 +2138,6 @@ body.modal-open {
   }
 }
 
-/* Area Modal Animations */
 @keyframes modalOverlayFadeIn {
   from {
     opacity: 0;
@@ -2205,7 +2158,6 @@ body.modal-open {
   }
 }
 
-/* Responsive design */
 @media (max-width: 480px) {
   .logout-modal-container {
     width: 95%;
@@ -2423,7 +2375,6 @@ body.modal-open {
   cursor: not-allowed;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .logout-modal,
   .github-gmail-modal {
@@ -2474,7 +2425,6 @@ body.modal-open {
   }
 }
 
-/* Area Modal Styles */
 .area-modal {
   max-width: 600px;
   background: var(--color-bg-card);
@@ -2661,7 +2611,6 @@ body.modal-open {
   box-shadow: none !important;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .area-modal {
     margin: 1rem;
@@ -2706,7 +2655,6 @@ body.modal-open {
   }
 }
 
-/* Footer Styles */
 .site-footer {
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border-primary);
@@ -2927,7 +2875,6 @@ body.modal-open {
   }
 }
 
-/* Cards Grid */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -2938,7 +2885,13 @@ body.modal-open {
 
 .area-glare-card {
   width: 320px;
-  height: 420px; /* 320 * (21/17) = 420px for proper aspect ratio */
+  height: 420px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.area-glare-card:hover {
+  transform: translateY(-4px);
 }
 
 .card-content {
@@ -2947,6 +2900,34 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
+}
+
+.delete-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.delete-button:hover {
+  background: rgba(255, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.delete-button:active {
+  transform: scale(0.95);
 }
 
 .card-header {

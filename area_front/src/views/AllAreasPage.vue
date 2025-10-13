@@ -32,21 +32,21 @@
             <v-icon size="18">mdi-close</v-icon>
           </button>
         </div>
-        
+
         <div class="filter-options">
-          <button 
+          <button
             :class="['filter-chip', { active: statusFilter === 'all' }]"
             @click="statusFilter = 'all'"
           >
             All ({{ areas.length }})
           </button>
-          <button 
+          <button
             :class="['filter-chip', { active: statusFilter === 'active' }]"
             @click="statusFilter = 'active'"
           >
             Active ({{ activeAreasCount }})
           </button>
-          <button 
+          <button
             :class="['filter-chip', { active: statusFilter === 'inactive' }]"
             @click="statusFilter = 'inactive'"
           >
@@ -102,20 +102,20 @@
       </div>
 
       <div v-else class="areas-grid">
-        <div v-for="area in filteredAreas" :key="area.id" class="area-card">
+        <div v-for="area in filteredAreas" :key="area.id" class="area-card" @click="editArea(area)">
           <div class="area-card-header">
             <div class="area-status">
               <div :class="['status-indicator', { active: (area as any).is_active || (area as any).isActive }]"></div>
               <span class="status-text">{{ ((area as any).is_active || (area as any).isActive) ? 'Active' : 'Inactive' }}</span>
             </div>
             <div class="area-actions">
-              <button class="action-btn" @click="toggleArea(area)" :title="((area as any).is_active || (area as any).isActive) ? 'Deactivate' : 'Activate'">
+              <button class="action-btn" @click.stop="toggleArea(area)" :title="((area as any).is_active || (area as any).isActive) ? 'Deactivate' : 'Activate'">
                 <v-icon size="18">{{ ((area as any).is_active || (area as any).isActive) ? 'mdi-pause' : 'mdi-play' }}</v-icon>
               </button>
-              <button class="action-btn" @click="editArea(area)" title="Edit">
+              <button class="action-btn" @click.stop="editArea(area)" title="Edit">
                 <v-icon size="18">mdi-pencil</v-icon>
               </button>
-              <button class="action-btn danger" @click="confirmDelete(area)" title="Delete">
+              <button class="action-btn danger" @click.stop="confirmDelete(area)" title="Delete">
                 <v-icon size="18">mdi-delete</v-icon>
               </button>
             </div>
@@ -642,6 +642,7 @@ onMounted(() => {
   padding: 1.5rem;
   backdrop-filter: blur(20px);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .area-card:hover {
