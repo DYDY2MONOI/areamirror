@@ -52,6 +52,9 @@ services:
       FACEBOOK_CLIENT_ID: 827003503004798
       FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
       FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
+      SPOTIFY_CLIENT_ID: 0118cf2246194b3cb4165f65a9074b36
+      SPOTIFY_CLIENT_SECRET: 9c7f2c3e3d7647f286cab87cb17faa9f
+      SPOTIFY_REDIRECT_URI: http://localhost:3000/auth/spotify/callback
     ports:
       - "8080:8080"
     depends_on:
@@ -69,6 +72,7 @@ services:
       dockerfile: Dockerfile.frontend
       args:
         VITE_FACEBOOK_CLIENT_ID: 827003503004798
+        VITE_SPOTIFY_CLIENT_ID: ${VITE_SPOTIFY_CLIENT_ID:-your_spotify_client_id_here}
     ports:
       - "3000:80"
     depends_on:
