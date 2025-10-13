@@ -237,6 +237,10 @@ class AreaService {
     try {
       const token = localStorage.getItem('authToken')
 
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(`${this.baseURL}/${id}`, {
         method: 'DELETE',
         headers: {
@@ -245,7 +249,8 @@ class AreaService {
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete area: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`Failed to delete area: ${response.status} ${response.statusText}`)
       }
     } catch (error) {
       console.error('Error deleting area:', error)
