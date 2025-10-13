@@ -236,7 +236,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount } = useAuth()
+const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkSpotifyAccount, unlinkSpotifyAccount } = useAuth()
 
 const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
@@ -249,6 +249,7 @@ const linkedServicesCount = computed(() => {
   let count = 0
   if (currentUser.value.github_username) count++
   if (currentUser.value.google_id) count++
+  if (currentUser.value.facebook_id) count++
   if (currentUser.value.discord_id) count++
   if (currentUser.value.spotify_id) count++
   return count
@@ -283,6 +284,8 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.github_username
     case 'google':
       return !!currentUser.value.google_id
+    case 'facebook':
+      return !!currentUser.value.facebook_id
     case 'discord':
       return !!currentUser.value.discord_id
     case 'spotify':
@@ -327,6 +330,31 @@ const linkService = async (serviceId: string) => {
       const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
 
       window.location.href = googleAuthUrl
+    } else if (serviceId === 'facebook') {
+      const facebookClientId = import.meta.env.VITE_FACEBOOK_CLIENT_ID || 'your_facebook_client_id_here'
+
+      if (!facebookClientId || facebookClientId === 'your_facebook_client_id_here') {
+        errorMessages.value[serviceId] = 'Facebook OAuth not configured. Please set the VITE_FACEBOOK_CLIENT_ID environment variable.'
+        return
+      }
+
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
+      const facebookAuthUrl = `${service.authUrl}?client_id=${facebookClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}&response_type=code`
+
+      window.location.href = facebookAuthUrl
+    } else if (serviceId === 'spotify') {
+      const spotifyClientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'your_spotify_client_id_here'
+
+      if (!spotifyClientId || spotifyClientId === 'your_spotify_client_id_here') {
+        errorMessages.value[serviceId] = 'Spotify OAuth not configured. Please set the VITE_SPOTIFY_CLIENT_ID environment variable.'
+        return
+      }
+
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
+      const scopesParam = encodeURIComponent(service.scopes.join(' '))
+      const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&redirect_uri=${redirectUri}&scope=${scopesParam}&response_type=code`
+
+      window.location.href = spotifyAuthUrl
     } else {
       errorMessages.value[serviceId] = `${service.name} integration is not yet implemented.`
     }
@@ -350,6 +378,12 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'google') {
       await unlinkGoogleAccount()
       successMessages.value[serviceId] = 'Google account unlinked successfully'
+    } else if (serviceId === 'facebook') {
+      await unlinkFacebookAccount()
+      successMessages.value[serviceId] = 'Facebook account unlinked successfully'
+    } else if (serviceId === 'spotify') {
+      await unlinkSpotifyAccount()
+      successMessages.value[serviceId] = 'Spotify account unlinked successfully'
     } else {
       errorMessages.value[serviceId] = `${serviceId} unlinking is not yet implemented.`
     }
@@ -373,6 +407,12 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)
       successMessages.value[serviceId] = 'Google account linked successfully!'
+    } else if (serviceId === 'facebook') {
+      const result = await linkFacebookAccount(code)
+      successMessages.value[serviceId] = 'Facebook account linked successfully!'
+    } else if (serviceId === 'spotify') {
+      const result = await linkSpotifyAccount(code)
+      successMessages.value[serviceId] = 'Spotify account linked successfully!'
     } else {
       errorMessages.value[serviceId] = `${serviceId} linking is not yet implemented.`
     }
