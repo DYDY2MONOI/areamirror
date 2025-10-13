@@ -553,6 +553,12 @@ watch(() => template.value, (newTemplate) => {
         events: [],
         webhookSecret: ''
       }
+    } else if (newTemplate.triggerService === 'Weather') {
+      form.triggerConfig = {
+        city: '',
+        temperature: 30,
+        condition: ''
+      }
     } else {
       form.triggerConfig = {}
     }
@@ -588,8 +594,8 @@ watch(() => existingArea.value, (newArea) => {
 
       if (triggerConfig.eventTime && typeof triggerConfig.eventTime === 'string' && triggerConfig.eventTime.includes('T')) {
         const dateTime = new Date(triggerConfig.eventTime)
-        triggerConfig.eventDate = dateTime.toISOString().split('T')[0] // Extract date part (YYYY-MM-DD)
-        triggerConfig.eventTime = dateTime.toTimeString().split(' ')[0].substring(0, 5) // Extract time part (HH:MM)
+        triggerConfig.eventDate = dateTime.toISOString().split('T')[0]
+        triggerConfig.eventTime = dateTime.toTimeString().split(' ')[0].substring(0, 5)
         console.log('Parsed datetime:', { original: newArea.triggerConfig.eventTime, date: triggerConfig.eventDate, time: triggerConfig.eventTime })
       }
 
@@ -1033,6 +1039,10 @@ const createArea = async () => {
         triggerConfig.events = [triggerConfig.events]
       }
       console.log('GitHub trigger config:', triggerConfig)
+    }
+
+    if (template.value.triggerService === 'Weather') {
+      console.log('Weather trigger config:', triggerConfig)
     }
 
     const areaData = {

@@ -238,6 +238,12 @@ watch(() => props.template, (newTemplate) => {
         subject: 'Reminder: {{eventTitle}}',
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
+    } else if (newTemplate.triggerService === 'Weather') {
+      form.triggerConfig = {
+        city: '',
+        temperature: 30,
+        condition: ''
+      }
     }
   }
 }, { immediate: true })
@@ -249,6 +255,11 @@ const isFormValid = computed(() => {
     return form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
+  }
+
+  if (props.template.triggerService === 'Weather') {
+    return form.triggerConfig.city &&
+           form.triggerConfig.temperature !== undefined
   }
 
   return true
