@@ -46,7 +46,6 @@ func main() {
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
 
-	// Mobile OAuth2 routes
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
 	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
 	r.GET("/mobile/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
@@ -98,8 +97,8 @@ func main() {
 	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
 	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
-	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)
-	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.ToggleArea)
+	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.DeleteArea)
+	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.ToggleArea)
 
 	r.GET("/user/me/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
 

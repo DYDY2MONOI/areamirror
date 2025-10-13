@@ -143,7 +143,6 @@ func getIconUrlForService(service string) string {
 func UpdateArea(c *gin.Context) {
 	log.Println("UpdateArea called with ID:", c.Param("id"))
 
-	// Check user authentication
 	userID, exists := c.Get("userID")
 	if !exists {
 		log.Printf("User not authenticated")
@@ -154,7 +153,6 @@ func UpdateArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
 
-	// Find area by ID and user ID to ensure ownership
 	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
 		log.Printf("Area not found for user %v: %v", userID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
@@ -219,7 +217,6 @@ func UpdateArea(c *gin.Context) {
 }
 
 func DeleteArea(c *gin.Context) {
-	// Check user authentication
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -229,7 +226,6 @@ func DeleteArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
 
-	// Find area by ID and user ID to ensure ownership
 	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
@@ -240,7 +236,6 @@ func DeleteArea(c *gin.Context) {
 }
 
 func ToggleArea(c *gin.Context) {
-	// Check user authentication
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -250,7 +245,6 @@ func ToggleArea(c *gin.Context) {
 	var area models.Area
 	id := c.Param("id")
 
-	// Find area by ID and user ID to ensure ownership
 	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
