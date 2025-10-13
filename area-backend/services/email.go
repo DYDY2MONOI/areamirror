@@ -81,10 +81,8 @@ func NewEmailService() (*EmailService, error) {
 		return nil, fmt.Errorf("Google OAuth credentials not configured")
 	}
 
-	// For now, use a simple SMTP-based email service instead of Gmail API
-	// This avoids the OAuth2 token complexity
 	return &EmailService{
-		service: nil, // We'll use SMTP instead of Gmail API
+		service: nil,
 	}, nil
 }
 
@@ -218,7 +216,6 @@ func (es *EmailService) GetDefaultPushBodyTemplate() string {
 }
 
 func (e *EmailService) SendEmail(req EmailRequest) error {
-	// Use SMTP instead of Gmail API
 	return e.sendEmail(req)
 }
 
@@ -238,7 +235,6 @@ func (e *EmailService) createEmailMessage(to, subject, body string) string {
 }
 
 func (e *EmailService) TestConnection() error {
-	// Test SMTP connection instead of Gmail API
 	fromEmail := os.Getenv("GMAIL_USER")
 	fromPassword := os.Getenv("GMAIL_PASSWORD")
 
@@ -246,13 +242,11 @@ func (e *EmailService) TestConnection() error {
 		return fmt.Errorf("GMAIL_USER and GMAIL_PASSWORD environment variables must be set")
 	}
 
-	// Test SMTP connection
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 
 	auth := smtp.PlainAuth("", fromEmail, fromPassword, smtpHost)
 
-	// Test connection by attempting to connect
 	conn, err := smtp.Dial(smtpHost + ":" + smtpPort)
 	if err != nil {
 		return fmt.Errorf("SMTP connection failed: %v", err)

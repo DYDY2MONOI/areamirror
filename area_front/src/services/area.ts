@@ -5,18 +5,18 @@ const transformAreaData = (backendArea: any): Area => {
     id: backendArea.id,
     name: backendArea.name,
     description: backendArea.description,
-    triggerService: backendArea.trigger_service,
-    triggerType: backendArea.trigger_type,
-    actionService: backendArea.action_service,
-    actionType: backendArea.action_type,
-    isActive: backendArea.is_active,
-    isPublic: backendArea.is_public,
-    createdAt: backendArea.created_at,
-    updatedAt: backendArea.updated_at,
-    triggerIconUrl: backendArea.trigger_icon_url,
-    actionIconUrl: backendArea.action_icon_url,
-    triggerConfig: backendArea.trigger_config,
-    actionConfig: backendArea.action_config
+    triggerService: backendArea.trigger_service || backendArea.triggerService,
+    triggerType: backendArea.trigger_type || backendArea.triggerType,
+    actionService: backendArea.action_service || backendArea.actionService,
+    actionType: backendArea.action_type || backendArea.actionType,
+    isActive: backendArea.is_active !== undefined ? backendArea.is_active : backendArea.isActive,
+    isPublic: backendArea.is_public !== undefined ? backendArea.is_public : backendArea.isPublic,
+    createdAt: backendArea.created_at || backendArea.createdAt,
+    updatedAt: backendArea.updated_at || backendArea.updatedAt,
+    triggerIconUrl: backendArea.trigger_icon_url || backendArea.triggerIconUrl,
+    actionIconUrl: backendArea.action_icon_url || backendArea.actionIconUrl,
+    triggerConfig: backendArea.trigger_config || backendArea.triggerConfig,
+    actionConfig: backendArea.action_config || backendArea.actionConfig
   }
 }
 

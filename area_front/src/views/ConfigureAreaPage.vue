@@ -379,8 +379,13 @@
         </button>
         <button class="btn btn-primary" @click="createArea" :disabled="!isFormValid || isLoading">
           <v-icon size="18">{{ isEditingExisting ? 'mdi-content-save' : 'mdi-check' }}</v-icon>
-          {{ isLoading ? 'Saving...' : (isEditingExisting ? 'Save Changes' : 'Create Area') }}
+          {{ isLoading ? 'Saving...' : (isEditingExisting ? 'Update Area' : 'Create Area') }}
         </button>
+
+        <div v-if="isEditingExisting" class="edit-mode-banner">
+          <v-icon size="16" color="#10b981">mdi-pencil</v-icon>
+          <span>Editing existing area - Changes will be saved to your current configuration</span>
+        </div>
 
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
           <div class="test-email-info">
@@ -578,11 +583,9 @@ watch(() => existingArea.value, (newArea) => {
   if (newArea && isEditingExisting.value) {
     console.log('Loading existing area configuration:', newArea)
 
-    // Load existing trigger configuration
     if (newArea.triggerConfig) {
       const triggerConfig = { ...form.triggerConfig, ...newArea.triggerConfig }
 
-      // Parse eventTime if it's a datetime string
       if (triggerConfig.eventTime && typeof triggerConfig.eventTime === 'string' && triggerConfig.eventTime.includes('T')) {
         const dateTime = new Date(triggerConfig.eventTime)
         triggerConfig.eventDate = dateTime.toISOString().split('T')[0] // Extract date part (YYYY-MM-DD)
@@ -594,7 +597,6 @@ watch(() => existingArea.value, (newArea) => {
       console.log('Trigger config loaded:', form.triggerConfig)
     }
 
-    // Load existing action configuration
     if (newArea.actionConfig) {
       form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
       console.log('Action config loaded:', form.actionConfig)
@@ -699,7 +701,6 @@ onMounted(async () => {
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
       console.error('NOT redirecting - staying on page to debug')
-      // router.push('/') // Commented out for debugging
     }
   } else if (route.query.template) {
     try {
@@ -1021,16 +1022,13 @@ const createArea = async () => {
   try {
     let triggerConfig = { ...form.triggerConfig }
 
-    // Only process Google Calendar specific config if it's a Google Calendar trigger
     if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = eventDateTime.toISOString()
       console.log('Combined event time:', triggerConfig.eventTime)
     }
 
-    // Process GitHub specific config if it's a GitHub trigger
     if (template.value.triggerService === 'GitHub') {
-      // Ensure events is an array
       if (typeof triggerConfig.events === 'string') {
         triggerConfig.events = [triggerConfig.events]
       }
@@ -1050,13 +1048,30 @@ const createArea = async () => {
 
     if (isEditingExisting.value && existingArea.value) {
       console.log('Updating existing area with data:', areaData)
-      await areaService.updateArea(existingArea.value.id, areaData)
+      try {
+        const updatedArea = await areaService.updateArea(existingArea.value.id, areaData)
+        console.log('Area updated successfully:', updatedArea)
+
+        alert(`✅ Area "${updatedArea.name}" updated successfully!`)
+
+        router.push('/')
+        return
+      } catch (updateError) {
+        console.error('Update failed:', updateError)
+        error.value = `Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`
+
+        alert(`❌ Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`)
+        return
+      }
     } else {
       console.log('Creating new area with data:', areaData)
-      await areaService.createArea(areaData)
-    }
+      const createdArea = await areaService.createArea(areaData)
+      console.log('New area created successfully:', createdArea)
 
-    router.push('/')
+      alert(`✅ Area "${createdArea.name}" created successfully!`)
+
+      router.push('/')
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : `Failed to ${isEditingExisting.value ? 'update' : 'create'} area`
     console.error(`Error ${isEditingExisting.value ? 'updating' : 'creating'} area:`, err)
@@ -1385,6 +1400,22 @@ const getActionIcon = (service: string) => {
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
+}
+
+.edit-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 1rem;
+  width: 100%;
   justify-content: center;
 }
 

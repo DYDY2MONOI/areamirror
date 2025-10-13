@@ -141,45 +141,118 @@ func getIconUrlForService(service string) string {
 }
 
 func UpdateArea(c *gin.Context) {
+	log.Println("UpdateArea called with ID:", c.Param("id"))
+
+	// Check user authentication
+	userID, exists := c.Get("userID")
+	if !exists {
+		log.Printf("User not authenticated")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var area models.Area
 	id := c.Param("id")
 
-	if err := database.DB.First(&area, id).Error; err != nil {
+	// Find area by ID and user ID to ensure ownership
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		log.Printf("Area not found for user %v: %v", userID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
-	var input models.Area
-	if err := c.ShouldBindJSON(&input); err != nil {
+	log.Printf("Area found: %+v", area)
+
+	var req CreateAreaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("JSON binding error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	database.DB.Model(&area).Updates(input)
+	log.Printf("Input data: %+v", req)
+
+	var triggerConfigJSON, actionConfigJSON datatypes.JSON
+	if req.TriggerConfig != nil {
+		triggerConfigBytes, _ := json.Marshal(req.TriggerConfig)
+		triggerConfigJSON = datatypes.JSON(triggerConfigBytes)
+	}
+	if req.ActionConfig != nil {
+		actionConfigBytes, _ := json.Marshal(req.ActionConfig)
+		actionConfigJSON = datatypes.JSON(actionConfigBytes)
+	}
+
+	updates := map[string]interface{}{
+		"name":            req.Name,
+		"description":     req.Description,
+		"trigger_service": req.TriggerService,
+		"trigger_type":   req.TriggerType,
+		"action_service": req.ActionService,
+		"action_type":    req.ActionType,
+	}
+
+	if req.TriggerConfig != nil {
+		updates["trigger_config"] = triggerConfigJSON
+	}
+	if req.ActionConfig != nil {
+		updates["action_config"] = actionConfigJSON
+	}
+
+	if req.TriggerService != "" {
+		updates["trigger_icon_url"] = getIconUrlForService(req.TriggerService)
+	}
+	if req.ActionService != "" {
+		updates["action_icon_url"] = getIconUrlForService(req.ActionService)
+	}
+
+	log.Printf("Updating area with: %+v", updates)
+	if err := database.DB.Model(&area).Updates(updates).Error; err != nil {
+		log.Printf("Database update error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update area"})
+		return
+	}
+
 	database.DB.First(&area, area.ID)
 
+	log.Printf("Updated area: %+v", area)
 	c.JSON(http.StatusOK, gin.H{"data": area})
 }
 
 func DeleteArea(c *gin.Context) {
+	// Check user authentication
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var area models.Area
 	id := c.Param("id")
 
-	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	// Find area by ID and user ID to ensure ownership
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
 	database.DB.Delete(&area)
-	c.JSON(http.StatusOK, gin.H{"message": "AREA supprimée avec succès"})
+	c.JSON(http.StatusOK, gin.H{"message": "Area deleted successfully"})
 }
 
 func ToggleArea(c *gin.Context) {
+	// Check user authentication
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var area models.Area
 	id := c.Param("id")
 
-	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	// Find area by ID and user ID to ensure ownership
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 

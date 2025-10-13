@@ -1,0 +1,49 @@
+name: Conventional Commits Lint
+
+on:
+  pull_request:
+    branches: [ main, develop, MVP ]
+  push:
+    branches: [ main, develop, MVP ]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Lint commit messages
+      run: |
+        # Get all commits in the PR or push (excluding merge commits)
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          COMMITS=$(git log --pretty=format:"%s" --no-merges ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+        else
+          COMMITS=$(git log --pretty=format:"%s" --no-merges ${{ github.event.before }}..${{ github.event.after }})
+        fi
+        
+        # Check each commit message (skip if no commits)
+        if [ -z "$COMMITS" ]; then
+          echo "No commits to validate (only merge commits found)"
+          exit 0
+        fi
+        
+        echo "$COMMITS" | while read -r commit; do
+          if [ -n "$commit" ]; then
+            echo "Checking commit: $commit"
+            echo "$commit" | npx commitlint
+          fi
+        done
+    
