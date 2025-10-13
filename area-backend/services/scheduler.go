@@ -14,6 +14,7 @@ import (
 type SchedulerService struct {
 	emailService   *EmailService
 	discordService *DiscordService
+	weatherService *WeatherService
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -27,18 +28,38 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Discord service not available: %v", err)
 	}
 
+	weatherService, err := NewWeatherService()
+	if err != nil {
+		log.Printf("Warning: Weather service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:   emailService,
 		discordService: discordService,
+		weatherService: weatherService,
 	}, nil
 }
 
 func (s *SchedulerService) CheckScheduledAreas() error {
+	// Check Google Calendar triggers
+	if err := s.checkCalendarTriggers(); err != nil {
+		log.Printf("Error checking calendar triggers: %v", err)
+	}
+
+	// Check Weather triggers
+	if err := s.checkWeatherTriggers(); err != nil {
+		log.Printf("Error checking weather triggers: %v", err)
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkCalendarTriggers() error {
 	var areas []models.Area
 
 	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Calendar", true).Find(&areas).Error
 	if err != nil {
-		return fmt.Errorf("failed to fetch areas: %v", err)
+		return fmt.Errorf("failed to fetch calendar areas: %v", err)
 	}
 
 	now := time.Now()
@@ -51,6 +72,31 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		}
 
 		if s.shouldTriggerArea(area, triggerConfig, now) {
+			if err := s.executeArea(area); err != nil {
+				log.Printf("Failed to execute area %s: %v", area.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkWeatherTriggers() error {
+	var areas []models.Area
+
+	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Weather", true).Find(&areas).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch weather areas: %v", err)
+	}
+
+	for _, area := range areas {
+		var triggerConfig map[string]interface{}
+		if err := json.Unmarshal(area.TriggerConfig, &triggerConfig); err != nil {
+			log.Printf("Failed to parse trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if s.shouldTriggerWeatherArea(area, triggerConfig) {
 			if err := s.executeArea(area); err != nil {
 				log.Printf("Failed to execute area %s: %v", area.Name, err)
 			}
@@ -82,6 +128,66 @@ func (s *SchedulerService) shouldTriggerArea(area models.Area, triggerConfig map
 
 	timeDiff := eventTime.Sub(now)
 	return timeDiff >= 0 && timeDiff <= 30*time.Second
+}
+
+func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerConfig map[string]interface{}) bool {
+	if s.weatherService == nil {
+		log.Printf("Weather service not available for area %s", area.Name)
+		return false
+	}
+
+	// Check if we should skip due to recent execution
+	if area.LastRunAt != nil {
+		timeSinceLastRun := time.Since(*area.LastRunAt)
+		if timeSinceLastRun < 10*time.Minute {
+			log.Printf("Weather area %s already executed recently, skipping", area.Name)
+			return false
+		}
+	}
+
+	// Parse weather trigger configuration
+	city, ok := triggerConfig["city"].(string)
+	if !ok || city == "" {
+		log.Printf("City not specified for weather area %s", area.Name)
+		return false
+	}
+
+	temperature, ok := triggerConfig["temperature"].(float64)
+	if !ok {
+		temperature = 0
+	}
+
+	condition, ok := triggerConfig["condition"].(string)
+	if !ok {
+		condition = ""
+	}
+
+	operator, ok := triggerConfig["operator"].(string)
+	if !ok {
+		operator = "greater_than"
+	}
+
+	// Create weather trigger config
+	weatherConfig := WeatherTriggerConfig{
+		City:        city,
+		Temperature: temperature,
+		Condition:   condition,
+		Operator:    operator,
+	}
+
+	// Check weather trigger
+	result, err := s.weatherService.CheckWeatherTrigger(weatherConfig)
+	if err != nil {
+		log.Printf("Failed to check weather trigger for area %s: %v", area.Name, err)
+		return false
+	}
+
+	if result.Triggered {
+		log.Printf("Weather trigger activated for area %s: %s", area.Name, result.Message)
+		return true
+	}
+
+	return false
 }
 
 func (s *SchedulerService) executeArea(area models.Area) error {
