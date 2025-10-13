@@ -588,7 +588,6 @@ onMounted(() => {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Loading and Empty States */
 .loading-state,
 .empty-state {
   display: flex;
@@ -630,7 +629,6 @@ onMounted(() => {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
 }
 
-/* Areas Grid */
 .areas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -786,7 +784,6 @@ onMounted(() => {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Delete Dialog */
 .delete-dialog {
   background: linear-gradient(135deg, #0f0e1e 0%, #1a1632 100%);
   border-radius: 20px;
