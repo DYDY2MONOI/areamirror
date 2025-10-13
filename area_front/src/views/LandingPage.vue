@@ -758,8 +758,6 @@ watch(showCreateModal, (isOpen) => {
 </script>
 
 <style scoped>
-/* Space Background Styles */
-/* Animated Background */
 .animated-background {
   position: fixed;
   top: 0;
@@ -834,7 +832,6 @@ watch(showCreateModal, (isOpen) => {
               radial-gradient(circle at 70% 80%, rgba(135, 81, 209, 0.1) 0%, transparent 50%);
 }
 
-/* Globe Background */
 .globe-background {
   position: absolute;
   top: 0;
@@ -891,7 +888,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Planet Container */
 .planet-container {
   position: fixed;
   top: 0;
@@ -902,7 +898,6 @@ watch(showCreateModal, (isOpen) => {
   z-index: 1;
 }
 
-/* Planet Base Styles */
 .planet {
   position: absolute;
   border-radius: 50%;
@@ -940,7 +935,6 @@ watch(showCreateModal, (isOpen) => {
   animation: glow 6s ease-in-out infinite;
 }
 
-/* Left Planet - Dramatic Style */
 .planet-left {
   position: fixed;
   width: 400px;
@@ -1014,7 +1008,6 @@ watch(showCreateModal, (isOpen) => {
   animation: glow-pulse 4s ease-in-out infinite;
 }
 
-/* Left Planet Glow Edge */
 .planet-left .planet-glow-edge {
   background:
     linear-gradient(90deg,
@@ -1029,7 +1022,6 @@ watch(showCreateModal, (isOpen) => {
     0 0 160px rgba(255, 180, 100, 0.3);
 }
 
-/* Right Planet Glow Edge */
 .planet-right .planet-glow-edge {
   background:
     linear-gradient(270deg,
@@ -1044,7 +1036,6 @@ watch(showCreateModal, (isOpen) => {
     0 0 200px rgba(255, 140, 70, 0.4);
 }
 
-/* Atmospheric Layer */
 .planet-atmosphere {
   position: absolute;
   top: -20%;
@@ -1060,7 +1051,6 @@ watch(showCreateModal, (isOpen) => {
   animation: atmosphere-drift 15s ease-in-out infinite;
 }
 
-/* Nebula Effect */
 .nebula {
   position: absolute;
   top: 0;
@@ -1080,7 +1070,6 @@ watch(showCreateModal, (isOpen) => {
   animation: nebula-drift 30s ease-in-out infinite;
 }
 
-/* Animations */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -1133,7 +1122,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Dramatic Planet Animations */
 @keyframes planet-drift {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -1171,7 +1159,6 @@ watch(showCreateModal, (isOpen) => {
   }
 }
 
-/* Responsive Design for Space Background */
 @media (max-width: 1024px) {
   .planet-left {
     width: 300px;
@@ -1522,7 +1509,6 @@ watch(showCreateModal, (isOpen) => {
   font-weight: 400;
 }
 
-/* Section Guest */
 .guest-section {
   display: flex;
   align-items: center;
@@ -2108,7 +2094,6 @@ body.modal-open {
   box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .logout-modal-content {
     background: rgba(28, 28, 30, 0.95);
@@ -2133,7 +2118,6 @@ body.modal-open {
   }
 }
 
-/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -2154,7 +2138,6 @@ body.modal-open {
   }
 }
 
-/* Area Modal Animations */
 @keyframes modalOverlayFadeIn {
   from {
     opacity: 0;
@@ -2175,7 +2158,6 @@ body.modal-open {
   }
 }
 
-/* Responsive design */
 @media (max-width: 480px) {
   .logout-modal-container {
     width: 95%;
@@ -2393,7 +2375,6 @@ body.modal-open {
   cursor: not-allowed;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .logout-modal,
   .github-gmail-modal {
@@ -2444,7 +2425,6 @@ body.modal-open {
   }
 }
 
-/* Area Modal Styles */
 .area-modal {
   max-width: 600px;
   background: var(--color-bg-card);
@@ -2631,7 +2611,6 @@ body.modal-open {
   box-shadow: none !important;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .area-modal {
     margin: 1rem;
@@ -2676,7 +2655,6 @@ body.modal-open {
   }
 }
 
-/* Footer Styles */
 .site-footer {
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border-primary);
@@ -2897,7 +2875,6 @@ body.modal-open {
   }
 }
 
-/* Cards Grid */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -2908,7 +2885,7 @@ body.modal-open {
 
 .area-glare-card {
   width: 320px;
-  height: 420px; /* 320 * (21/17) = 420px for proper aspect ratio */
+  height: 420px;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
