@@ -7,6 +7,7 @@ import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
 import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
+import SpotifyCallbackPage from '../views/SpotifyCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import ConfigureAreaPage from '../views/ConfigureAreaPage.vue'
@@ -62,6 +63,12 @@ const router = createRouter({
       path: '/auth/facebook/callback',
       name: 'facebook-callback',
       component: FacebookCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/auth/spotify/callback',
+      name: 'spotify-callback',
+      component: SpotifyCallbackPage,
       meta: { requiresAuth: true }
     },
     {
@@ -136,5 +143,3 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
-
-
