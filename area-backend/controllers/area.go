@@ -565,3 +565,77 @@ func TestSlack(c *gin.Context) {
 		"messageType": messageType,
 	})
 }
+
+type WeatherTriggerRequest struct {
+	City        string  `json:"city" binding:"required"`
+	Temperature float64 `json:"temperature"`
+	Condition   string  `json:"condition"`
+	Operator    string  `json:"operator"`
+}
+
+type WeatherTestRequest struct {
+	TriggerConfig WeatherTriggerRequest `json:"triggerConfig" binding:"required"`
+}
+
+func TestWeatherTrigger(c *gin.Context) {
+	var req WeatherTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	weatherService, err := services.NewWeatherService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize weather service"})
+		return
+	}
+
+	config := services.WeatherTriggerConfig{
+		City:        req.TriggerConfig.City,
+		Temperature: req.TriggerConfig.Temperature,
+		Condition:   req.TriggerConfig.Condition,
+		Operator:    req.TriggerConfig.Operator,
+	}
+
+	if config.Operator == "" {
+		config.Operator = "greater_than"
+	}
+
+	result, err := weatherService.TestWeatherTrigger(config)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"triggered": result.Triggered,
+		"message":   result.Message,
+		"data":      result.Data,
+	})
+}
+
+func GetWeatherData(c *gin.Context) {
+	city := c.Query("city")
+	if city == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "City parameter is required"})
+		return
+	}
+
+	weatherService, err := services.NewWeatherService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize weather service"})
+		return
+	}
+
+	weather, err := weatherService.GetCurrentWeather(city)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    weather,
+	})
+}

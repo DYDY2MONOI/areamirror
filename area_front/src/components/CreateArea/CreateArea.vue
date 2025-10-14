@@ -302,6 +302,152 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Weather'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('weather.png')" alt="Weather" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">Weather Trigger</h4>
+                <p class="config-subtitle">Configure weather conditions that should trigger this area</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">City</label>
+                  <select v-model="form.triggerConfig.city" class="modern-select" required>
+                    <option value="">Select a city...</option>
+                    <option value="Paris">Paris, France</option>
+                    <option value="London">London, UK</option>
+                    <option value="New York">New York, USA</option>
+                    <option value="Tokyo">Tokyo, Japan</option>
+                    <option value="Berlin">Berlin, Germany</option>
+                    <option value="Madrid">Madrid, Spain</option>
+                    <option value="Rome">Rome, Italy</option>
+                    <option value="Amsterdam">Amsterdam, Netherlands</option>
+                    <option value="Barcelona">Barcelona, Spain</option>
+                    <option value="Vienna">Vienna, Austria</option>
+                    <option value="Prague">Prague, Czech Republic</option>
+                    <option value="Warsaw">Warsaw, Poland</option>
+                    <option value="Budapest">Budapest, Hungary</option>
+                    <option value="Stockholm">Stockholm, Sweden</option>
+                    <option value="Copenhagen">Copenhagen, Denmark</option>
+                    <option value="Oslo">Oslo, Norway</option>
+                    <option value="Helsinki">Helsinki, Finland</option>
+                    <option value="Zurich">Zurich, Switzerland</option>
+                    <option value="Brussels">Brussels, Belgium</option>
+                    <option value="Dublin">Dublin, Ireland</option>
+                    <option value="Lisbon">Lisbon, Portugal</option>
+                    <option value="Athens">Athens, Greece</option>
+                    <option value="Istanbul">Istanbul, Turkey</option>
+                    <option value="Moscow">Moscow, Russia</option>
+                    <option value="Sydney">Sydney, Australia</option>
+                    <option value="Melbourne">Melbourne, Australia</option>
+                    <option value="Toronto">Toronto, Canada</option>
+                    <option value="Vancouver">Vancouver, Canada</option>
+                    <option value="Montreal">Montreal, Canada</option>
+                    <option value="Los Angeles">Los Angeles, USA</option>
+                    <option value="Chicago">Chicago, USA</option>
+                    <option value="San Francisco">San Francisco, USA</option>
+                    <option value="Boston">Boston, USA</option>
+                    <option value="Miami">Miami, USA</option>
+                    <option value="Seattle">Seattle, USA</option>
+                    <option value="Denver">Denver, USA</option>
+                    <option value="Las Vegas">Las Vegas, USA</option>
+                    <option value="Phoenix">Phoenix, USA</option>
+                    <option value="Houston">Houston, USA</option>
+                    <option value="Dallas">Dallas, USA</option>
+                    <option value="Atlanta">Atlanta, USA</option>
+                    <option value="Detroit">Detroit, USA</option>
+                    <option value="Philadelphia">Philadelphia, USA</option>
+                    <option value="Washington">Washington, USA</option>
+                    <option value="Beijing">Beijing, China</option>
+                    <option value="Shanghai">Shanghai, China</option>
+                    <option value="Hong Kong">Hong Kong, China</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="Bangkok">Bangkok, Thailand</option>
+                    <option value="Seoul">Seoul, South Korea</option>
+                    <option value="Mumbai">Mumbai, India</option>
+                    <option value="Delhi">Delhi, India</option>
+                    <option value="Bangalore">Bangalore, India</option>
+                    <option value="Dubai">Dubai, UAE</option>
+                    <option value="Tel Aviv">Tel Aviv, Israel</option>
+                    <option value="Cairo">Cairo, Egypt</option>
+                    <option value="Johannesburg">Johannesburg, South Africa</option>
+                    <option value="Cape Town">Cape Town, South Africa</option>
+                    <option value="São Paulo">São Paulo, Brazil</option>
+                    <option value="Rio de Janeiro">Rio de Janeiro, Brazil</option>
+                    <option value="Buenos Aires">Buenos Aires, Argentina</option>
+                    <option value="Santiago">Santiago, Chile</option>
+                    <option value="Lima">Lima, Peru</option>
+                    <option value="Bogotá">Bogotá, Colombia</option>
+                    <option value="Mexico City">Mexico City, Mexico</option>
+                  </select>
+                  <small class="input-hint">Select the city to monitor weather conditions</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Temperature Threshold</label>
+                  <div class="temperature-input-group">
+                    <select v-model="form.triggerConfig.operator" class="modern-select operator-select">
+                      <option value="greater_than">Greater than</option>
+                      <option value="less_than">Less than</option>
+                      <option value="equals">Equals</option>
+                    </select>
+                    <input
+                      v-model.number="form.triggerConfig.temperature"
+                      type="number"
+                      class="modern-input temperature-input"
+                      placeholder="25"
+                      step="0.1"
+                    />
+                    <span class="temperature-unit">°C</span>
+                  </div>
+                  <small class="input-hint">Set the temperature condition to trigger the area</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">Weather Condition</label>
+                  <select v-model="form.triggerConfig.condition" class="modern-select">
+                    <option value="">Any condition</option>
+                    <option value="Clear">Clear</option>
+                    <option value="Clouds">Cloudy</option>
+                    <option value="Rain">Rainy</option>
+                    <option value="Snow">Snowy</option>
+                    <option value="Thunderstorm">Thunderstorm</option>
+                    <option value="Drizzle">Drizzle</option>
+                    <option value="Mist">Misty</option>
+                    <option value="Fog">Foggy</option>
+                  </select>
+                  <small class="input-hint">Optional: Trigger only for specific weather conditions</small>
+                </div>
+              </div>
+
+              <div class="test-section">
+                <button
+                  type="button"
+                  class="test-weather-btn"
+                  @click="testWeatherTrigger"
+                  :disabled="!form.triggerConfig.city || isTestingWeather"
+                >
+                  <v-icon size="18">mdi-flash</v-icon>
+                  {{ isTestingWeather ? 'Testing...' : 'Test Weather Trigger' }}
+                </button>
+                <div v-if="weatherTestResult" class="test-result">
+                  <div :class="['test-status', weatherTestResult.triggered ? 'success' : 'info']">
+                    <v-icon size="16">{{ weatherTestResult.triggered ? 'mdi-check-circle' : 'mdi-information' }}</v-icon>
+                    {{ weatherTestResult.message }}
+                  </div>
+                  <div v-if="weatherTestResult.data" class="weather-data">
+                    <small>Current: {{ weatherTestResult.data.temperature }}°C, {{ weatherTestResult.data.condition }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -458,6 +604,7 @@ import appsJson from '../../assets/apps.json'
 import { areaService } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
+import { API_BASE_URL } from '../../config/api'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -704,6 +851,8 @@ const getSelectedRepositoryName = () => {
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const isSendingTest = ref(false)
+const isTestingWeather = ref(false)
+const weatherTestResult = ref<any>(null)
 
 const canSendTestEmail = computed(() => {
   return form.actionConfig.toEmail &&
@@ -756,6 +905,51 @@ const configureServices = () => {
 const testConnection = () => {
   console.log('Test connection clicked')
   alert('Test Connection functionality will be implemented')
+}
+
+const testWeatherTrigger = async () => {
+  if (!form.triggerConfig.city) {
+    alert('Please enter a city name first')
+    return
+  }
+
+  isTestingWeather.value = true
+  weatherTestResult.value = null
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/test/weather`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        triggerConfig: {
+          city: form.triggerConfig.city,
+          temperature: form.triggerConfig.temperature || 0,
+          condition: form.triggerConfig.condition || '',
+          operator: form.triggerConfig.operator || 'greater_than'
+        }
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const result = await response.json()
+    weatherTestResult.value = result
+
+    if (result.success) {
+      console.log('Weather trigger test result:', result)
+    } else {
+      console.error('Weather trigger test failed:', result.error)
+    }
+  } catch (err) {
+    console.error('Error testing weather trigger:', err)
+    alert('Failed to test weather trigger: ' + (err instanceof Error ? err.message : 'Unknown error'))
+  } finally {
+    isTestingWeather.value = false
+  }
 }
 
 const createArea = async () => {
@@ -1213,6 +1407,91 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 .test-btn:hover {
   background: rgba(34, 197, 94, 0.15);
   transform: translateY(-1px);
+}
+
+.temperature-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.operator-select {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+.temperature-input {
+  flex: 1;
+  min-width: 80px;
+}
+
+.temperature-unit {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.test-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.test-weather-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.test-weather-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.test-weather-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.test-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-primary);
+}
+
+.test-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.test-status.success {
+  color: #22c55e;
+}
+
+.test-status.info {
+  color: #3b82f6;
+}
+
+.weather-data {
+  margin-top: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
 }
 
 @media (max-width: 768px) {
