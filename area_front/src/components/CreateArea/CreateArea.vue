@@ -42,6 +42,24 @@
           </div>
         </div>
 
+        <div v-if="form.triggerService && form.actionService" class="form-section">
+          <div class="section-label">
+            <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
+            <span class="label-text">Configuration</span>
+          </div>
+
+          <div class="config-actions">
+            <button class="config-btn" @click="configureServices">
+              <v-icon size="18">mdi-cog</v-icon>
+              Configure Services
+            </button>
+            <button class="test-btn" @click="testConnection">
+              <v-icon size="18">mdi-flash</v-icon>
+              Test Connection
+            </button>
+          </div>
+        </div>
+
         <div class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-link-variant</v-icon>
@@ -506,6 +524,12 @@ watch(() => props.template, (newTemplate) => {
         events: [],
         webhookSecret: ''
       }
+    } else if (newTemplate.triggerService === 'Weather') {
+      form.triggerConfig = {
+        city: '',
+        temperature: 30,
+        condition: ''
+      }
     }
 
     if (newTemplate.triggerService === 'GitHub' && newTemplate.actionService === 'Gmail') {
@@ -542,6 +566,12 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
+  if (form.triggerService === 'Weather') {
+    return hasBasicInfo &&
+           form.triggerConfig.city &&
+           form.triggerConfig.temperature !== undefined
+  }
+
   return hasBasicInfo
 })
 
@@ -566,15 +596,17 @@ const selectTrigger = (serviceId: string) => {
       events: [],
       webhookSecret: ''
     }
+  } else if (serviceId === 'Weather') {
+    form.triggerConfig = {
+      city: '',
+      temperature: 30,
+      condition: ''
+    }
   } else {
     form.triggerConfig = {}
   }
 
   if (serviceId === 'GitHub') {
-    form.triggerConfig = {
-      repositoryId: '',
-      notificationTypes: ['push']
-    }
     loadRepositories()
   }
 }
@@ -716,6 +748,16 @@ const sendTestEmail = async () => {
   }
 }
 
+const configureServices = () => {
+  console.log('Configure services clicked')
+  alert('Configure Services functionality will be implemented')
+}
+
+const testConnection = () => {
+  console.log('Test connection clicked')
+  alert('Test Connection functionality will be implemented')
+}
+
 const createArea = async () => {
   if (!isFormValid.value) return
 
@@ -729,6 +771,19 @@ const createArea = async () => {
         form.actionConfig.toEmail,
         form.triggerConfig.notificationTypes
       )
+    } else if (form.triggerService === 'Weather') {
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: 'Webhook',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: form.triggerConfig,
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
     } else {
       const areaData = {
         name: form.areaName,
@@ -1116,6 +1171,48 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.config-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.config-btn, .test-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+.config-btn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.config-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.test-btn {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.test-btn:hover {
+  background: rgba(34, 197, 94, 0.15);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

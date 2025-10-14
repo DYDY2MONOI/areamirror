@@ -8,6 +8,10 @@
     "icon": "gmail.png"
   },
   {
+    "name": "Weather",
+    "icon": "weather.png"
+  },
+  {
     "name": "Discord",
     "icon": "discord.png"
   },
@@ -150,10 +154,6 @@
   {
     "name": "RSS",
     "icon": "rss.png"
-  },
-  {
-    "name": "Weather",
-    "icon": "weather.png"
   },
   {
     "name": "Calendar",
