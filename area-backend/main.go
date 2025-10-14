@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{})
 
 	database.SeedData()
 
@@ -62,6 +62,12 @@ func main() {
 	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
 	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 
+	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
+	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
+	r.GET("/gmail/oauth2/status", controllers.AuthMiddleware(), controllers.GetGmailTokenStatus)
+	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
+	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
+
 	api := r.Group("/api")
 	{
 		api.GET("/github/repositories", controllers.AuthMiddleware(), controllers.GetGitHubRepositories)
@@ -96,11 +102,12 @@ func main() {
 	r.GET("/service/:id/reactions", controllers.GetServiceReactions)
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
-	r.GET("/areas/:id", controllers.AuthMiddleware(), controllers.GetArea)
+	r.GET("/areas/:id", controllers.GetArea)
+	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
-	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateArea)
-	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)
-	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.ToggleArea)
+	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
+	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.DeleteArea)
+	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.ToggleArea)
 
 	r.GET("/user/me/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
 

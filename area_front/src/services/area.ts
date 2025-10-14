@@ -1,5 +1,25 @@
 import { API_BASE_URL } from '@/config/api'
 
+const transformAreaData = (backendArea: any): Area => {
+  return {
+    id: backendArea.id,
+    name: backendArea.name,
+    description: backendArea.description,
+    triggerService: backendArea.trigger_service || backendArea.triggerService,
+    triggerType: backendArea.trigger_type || backendArea.triggerType,
+    actionService: backendArea.action_service || backendArea.actionService,
+    actionType: backendArea.action_type || backendArea.actionType,
+    isActive: backendArea.is_active !== undefined ? backendArea.is_active : backendArea.isActive,
+    isPublic: backendArea.is_public !== undefined ? backendArea.is_public : backendArea.isPublic,
+    createdAt: backendArea.created_at || backendArea.createdAt,
+    updatedAt: backendArea.updated_at || backendArea.updatedAt,
+    triggerIconUrl: backendArea.trigger_icon_url || backendArea.triggerIconUrl,
+    actionIconUrl: backendArea.action_icon_url || backendArea.actionIconUrl,
+    triggerConfig: backendArea.trigger_config || backendArea.triggerConfig,
+    actionConfig: backendArea.action_config || backendArea.actionConfig
+  }
+}
+
 export interface Area {
   id: string
   name: string
@@ -14,6 +34,8 @@ export interface Area {
   updatedAt: string
   triggerIconUrl?: string
   actionIconUrl?: string
+  triggerConfig?: any
+  actionConfig?: any
 }
 
 export interface AreaTemplate {
@@ -67,19 +89,28 @@ class AreaService {
 
   async getAreaById(id: string): Promise<Area> {
     try {
-      const response = await fetch(`${this.baseURL}/${id}`, {
+      const token = localStorage.getItem('authToken')
+
+      const response = await fetch(`${API_BASE_URL}/user/me/areas`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch area: ${response.statusText}`)
+        throw new Error(`Failed to fetch areas: ${response.statusText}`)
       }
 
       const data = await response.json()
-      return data.data
+      const area = data.data.find((area: any) => area.id === id)
+
+      if (!area) {
+        throw new Error('Area not found')
+      }
+
+      return transformAreaData(area)
     } catch (error) {
       console.error('Error fetching area:', error)
       throw error
@@ -145,7 +176,7 @@ class AreaService {
       }
 
       const data = await response.json()
-      return data.data || []
+      return (data.data || []).map((area: any) => transformAreaData(area))
     } catch (error) {
       console.error('Error fetching user areas:', error)
       throw error
@@ -206,6 +237,10 @@ class AreaService {
     try {
       const token = localStorage.getItem('authToken')
 
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(`${this.baseURL}/${id}`, {
         method: 'DELETE',
         headers: {
@@ -214,7 +249,8 @@ class AreaService {
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete area: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`Failed to delete area: ${response.status} ${response.statusText}`)
       }
     } catch (error) {
       console.error('Error deleting area:', error)

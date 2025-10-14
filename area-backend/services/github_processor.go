@@ -114,7 +114,6 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		return fmt.Errorf("failed to unmarshal trigger config: %v", err)
 	}
 
-	// Match by repository full name instead of ID (more reliable)
 	if config.RepositoryFullName != payload.Repository.FullName {
 		log.Printf("Repository mismatch: config=%s, payload=%s", config.RepositoryFullName, payload.Repository.FullName)
 		return nil

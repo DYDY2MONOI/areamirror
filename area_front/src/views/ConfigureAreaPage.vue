@@ -7,8 +7,8 @@
           Back to Home
         </button>
         <div class="header-text">
-          <h1 class="page-title">Configure Your Area</h1>
-          <p class="page-subtitle">Set up your automation with the selected template</p>
+          <h1 class="page-title">{{ isEditingExisting ? 'Edit Your Area' : 'Configure Your Area' }}</h1>
+          <p class="page-subtitle">{{ isEditingExisting ? 'Modify your existing automation area' : 'Set up your automation with the selected template' }}</p>
         </div>
       </div>
     </div>
@@ -378,9 +378,14 @@
           Cancel
         </button>
         <button class="btn btn-primary" @click="createArea" :disabled="!isFormValid || isLoading">
-          <v-icon size="18">mdi-check</v-icon>
-          {{ isLoading ? 'Creating...' : 'Create Area' }}
+          <v-icon size="18">{{ isEditingExisting ? 'mdi-content-save' : 'mdi-check' }}</v-icon>
+          {{ isLoading ? 'Saving...' : (isEditingExisting ? 'Update Area' : 'Create Area') }}
         </button>
+
+        <div v-if="isEditingExisting" class="edit-mode-banner">
+          <v-icon size="16" color="#10b981">mdi-pencil</v-icon>
+          <span>Editing existing area - Changes will be saved to your current configuration</span>
+        </div>
 
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
           <div class="test-email-info">
@@ -480,7 +485,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { areaService } from '@/services/area'
+import { areaService, type Area } from '@/services/area'
 import { useAuth } from '@/composables/useAuth'
 
 interface AreaTemplate {
@@ -500,9 +505,24 @@ const route = useRoute()
 const { currentUser } = useAuth()
 
 const template = ref<AreaTemplate | null>(null)
+const existingArea = ref<Area | null>(null)
+const isEditingExisting = ref(false)
 const form = reactive({
-  triggerConfig: {} as any,
-  actionConfig: {} as any,
+  triggerConfig: {
+    eventDate: '',
+    eventTime: '',
+    eventTitle: '',
+    calendarId: 'primary',
+    repository: '',
+    branch: 'main'
+  } as any,
+  actionConfig: {
+    toEmail: '',
+    subject: '',
+    body: '',
+    webhookUrl: '',
+    message: ''
+  } as any,
 })
 
 const isLoading = ref(false)
@@ -514,12 +534,11 @@ const triggerError = ref<string | null>(null)
 const discordTestError = ref<string | null>(null)
 
 watch(() => template.value, (newTemplate) => {
-  if (newTemplate) {
-    console.log('Initializing form for template:', newTemplate)
+  if (newTemplate && !isEditingExisting.value) {
+    console.log('Initializing form for new template:', newTemplate)
     console.log('Trigger service:', newTemplate.triggerService)
     console.log('Action service:', newTemplate.actionService)
 
-    // Initialize config based on the services used
     if (newTemplate.triggerService === 'Google Calendar') {
       form.triggerConfig = {
         eventDate: '',
@@ -556,14 +575,40 @@ watch(() => template.value, (newTemplate) => {
       discordTestError.value = null
     }
 
-    console.log('Form initialized:', form)
+    console.log('Form initialized for new template:', form)
+  }
+}, { immediate: true })
+
+watch(() => existingArea.value, (newArea) => {
+  if (newArea && isEditingExisting.value) {
+    console.log('Loading existing area configuration:', newArea)
+
+    if (newArea.triggerConfig) {
+      const triggerConfig = { ...form.triggerConfig, ...newArea.triggerConfig }
+
+      if (triggerConfig.eventTime && typeof triggerConfig.eventTime === 'string' && triggerConfig.eventTime.includes('T')) {
+        const dateTime = new Date(triggerConfig.eventTime)
+        triggerConfig.eventDate = dateTime.toISOString().split('T')[0] // Extract date part (YYYY-MM-DD)
+        triggerConfig.eventTime = dateTime.toTimeString().split(' ')[0].substring(0, 5) // Extract time part (HH:MM)
+        console.log('Parsed datetime:', { original: newArea.triggerConfig.eventTime, date: triggerConfig.eventDate, time: triggerConfig.eventTime })
+      }
+
+      form.triggerConfig = triggerConfig
+      console.log('Trigger config loaded:', form.triggerConfig)
+    }
+
+    if (newArea.actionConfig) {
+      form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
+      console.log('Action config loaded:', form.actionConfig)
+    }
+
+    console.log('Final form state:', { triggerConfig: form.triggerConfig, actionConfig: form.actionConfig })
   }
 }, { immediate: true })
 
 const isFormValid = computed(() => {
   if (!template.value) return false
 
-  // For Google Calendar + Gmail areas, require specific fields
   if (template.value.triggerService === 'Google Calendar' && template.value.actionService === 'Gmail') {
     return form.triggerConfig.eventDate &&
            form.triggerConfig.eventTime &&
@@ -571,7 +616,6 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
-  // For GitHub triggers, require repository and at least one event type
   if (template.value.triggerService === 'GitHub') {
     return form.triggerConfig.repository &&
            form.triggerConfig.events &&
@@ -584,7 +628,6 @@ const isFormValid = computed(() => {
     return !!webhookUrl && !!message
   }
 
-  // For other area types, just require basic info (admin can create without detailed config)
   return true
 })
 
@@ -619,9 +662,47 @@ const getCombinedDateTime = () => {
   return 'Not set'
 }
 
-onMounted(() => {
+onMounted(async () => {
+  console.log('=== CONFIGURE AREA PAGE DEBUG ===')
   console.log('Route query:', route.query)
-  if (route.query.template) {
+  console.log('Route params:', route.params)
+  console.log('Current route:', route.path)
+  console.log('Full URL:', window.location.href)
+
+  if (route.query.areaId) {
+    try {
+      console.log('Loading existing area with ID:', route.query.areaId)
+      console.log('Calling areaService.getAreaById...')
+
+      const token = localStorage.getItem('authToken')
+      console.log('Auth token exists:', !!token)
+      console.log('Auth token preview:', token ? token.substring(0, 20) + '...' : 'null')
+
+      existingArea.value = await areaService.getAreaById(route.query.areaId as string)
+      console.log('Area loaded successfully:', existingArea.value)
+      isEditingExisting.value = true
+
+      template.value = {
+        id: existingArea.value.id,
+        title: existingArea.value.name,
+        subtitle: `${existingArea.value.triggerService} → ${existingArea.value.actionService}`,
+        description: existingArea.value.description,
+        icon: '',
+        gradientClass: '',
+        triggerService: existingArea.value.triggerService,
+        actionService: existingArea.value.actionService,
+        isActive: existingArea.value.isActive
+      }
+
+      console.log('Template created:', template.value)
+    } catch (error) {
+      console.error('=== ERROR LOADING EXISTING AREA ===')
+      console.error('Error details:', error)
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('NOT redirecting - staying on page to debug')
+    }
+  } else if (route.query.template) {
     try {
       template.value = JSON.parse(route.query.template as string)
       console.log('Template loaded:', template.value)
@@ -632,7 +713,7 @@ onMounted(() => {
       router.push('/')
     }
   } else {
-    console.log('No template found in route, redirecting to home')
+    console.log('No template or areaId found in route, redirecting to home')
     router.push('/')
   }
 })
@@ -941,16 +1022,13 @@ const createArea = async () => {
   try {
     let triggerConfig = { ...form.triggerConfig }
 
-    // Only process Google Calendar specific config if it's a Google Calendar trigger
     if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = eventDateTime.toISOString()
       console.log('Combined event time:', triggerConfig.eventTime)
     }
 
-    // Process GitHub specific config if it's a GitHub trigger
     if (template.value.triggerService === 'GitHub') {
-      // Ensure events is an array
       if (typeof triggerConfig.events === 'string') {
         triggerConfig.events = [triggerConfig.events]
       }
@@ -968,12 +1046,35 @@ const createArea = async () => {
       actionConfig: form.actionConfig
     }
 
-    console.log('Creating area with data:', areaData)
-    await areaService.createArea(areaData)
-    router.push('/')
+    if (isEditingExisting.value && existingArea.value) {
+      console.log('Updating existing area with data:', areaData)
+      try {
+        const updatedArea = await areaService.updateArea(existingArea.value.id, areaData)
+        console.log('Area updated successfully:', updatedArea)
+
+        alert(`✅ Area "${updatedArea.name}" updated successfully!`)
+
+        router.push('/')
+        return
+      } catch (updateError) {
+        console.error('Update failed:', updateError)
+        error.value = `Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`
+
+        alert(`❌ Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`)
+        return
+      }
+    } else {
+      console.log('Creating new area with data:', areaData)
+      const createdArea = await areaService.createArea(areaData)
+      console.log('New area created successfully:', createdArea)
+
+      alert(`✅ Area "${createdArea.name}" created successfully!`)
+
+      router.push('/')
+    }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to create area'
-    console.error('Error creating area:', err)
+    error.value = err instanceof Error ? err.message : `Failed to ${isEditingExisting.value ? 'update' : 'create'} area`
+    console.error(`Error ${isEditingExisting.value ? 'updating' : 'creating'} area:`, err)
   } finally {
     isLoading.value = false
   }
@@ -1299,6 +1400,22 @@ const getActionIcon = (service: string) => {
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
+}
+
+.edit-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 1rem;
+  width: 100%;
   justify-content: center;
 }
 
