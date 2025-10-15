@@ -38,6 +38,24 @@ export interface Area {
   actionConfig?: any
 }
 
+export interface DiscordLog {
+  id: number
+  areaId: string
+  filePath?: string | null
+  sheetName?: string | null
+  changeType?: string | null
+  rowNumber?: number | null
+  message: string
+  rowData?: Record<string, any> | null
+  createdAt: string
+}
+
+export interface GoogleSheetsTestResponse {
+  message: string
+  rowCount: number
+  previewRows: string[][]
+}
+
 export interface AreaTemplate {
   id: string
   title: string
@@ -280,6 +298,97 @@ class AreaService {
       throw error
     }
   }
+
+  async getDiscordLogs(id: string, limit = 50): Promise<DiscordLog[]> {
+    try {
+      const token = localStorage.getItem('authToken')
+
+      const response = await fetch(`${this.baseURL}/${id}/discord-logs?limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Discord logs: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const logs = data.data || []
+      return logs.map((log: any) => transformDiscordLog(log))
+    } catch (error) {
+      console.error('Error fetching Discord logs:', error)
+      throw error
+    }
+  }
+
+  async testGoogleSheets(config: { spreadsheetId: string; range: string }): Promise<GoogleSheetsTestResponse> {
+    try {
+      const token = localStorage.getItem('authToken')
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${API_BASE_URL}/test/google-sheets`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(config),
+      })
+
+      if (!response.ok) {
+        const bodyText = await response.text()
+        let message = `Failed to test Google Sheets: ${response.statusText}`
+
+        if (bodyText) {
+          try {
+            const parsed = JSON.parse(bodyText)
+            message = parsed.error || parsed.message || message
+          } catch {
+            message = bodyText
+          }
+        }
+
+        throw new Error(message)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error testing Google Sheets trigger:', error)
+      throw error
+    }
+  }
 }
 
 export const areaService = new AreaService()
+
+const transformDiscordLog = (log: any): DiscordLog => {
+  const rawRowData = log.row_data || log.rowData || null
+  let rowData: Record<string, any> | null = rawRowData
+
+  if (rawRowData && typeof rawRowData === 'string') {
+    try {
+      rowData = JSON.parse(rawRowData)
+    } catch (error) {
+      console.warn('Failed to parse row data JSON', error)
+      rowData = null
+    }
+  }
+
+  return {
+    id: log.id,
+    areaId: log.area_id || log.areaId,
+    filePath: log.file_path || log.filePath || null,
+    sheetName: log.sheet_name || log.sheetName || null,
+    changeType: log.change_type || log.changeType || null,
+    rowNumber: log.row_number !== undefined ? log.row_number : log.rowNumber,
+    message: log.message,
+    rowData: rowData,
+    createdAt: log.created_at || log.createdAt,
+  }
+}
