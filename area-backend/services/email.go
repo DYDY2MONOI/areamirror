@@ -133,7 +133,9 @@ func (es *EmailService) SendGitHubNotification(to, subjectTemplate, bodyTemplate
 func (es *EmailService) sendEmail(req EmailRequest) error {
 	var oauth2Token models.OAuth2Token
 	if err := database.DB.Where("service = ?", "gmail").First(&oauth2Token).Error; err != nil {
-		return fmt.Errorf("no Gmail OAuth2 token found: %v", err)
+		if err := database.DB.Where("service = ?", "google").First(&oauth2Token).Error; err != nil {
+			return fmt.Errorf("no Gmail/Google OAuth2 token found: %v", err)
+		}
 	}
 
 	if oauth2Token.NeedsRefresh() {
@@ -297,7 +299,9 @@ func (es *EmailService) createEmailMessage(to, subject, body string) string {
 func (es *EmailService) TestConnection() error {
 	var oauth2Token models.OAuth2Token
 	if err := database.DB.Where("service = ?", "gmail").First(&oauth2Token).Error; err != nil {
-		return fmt.Errorf("no Gmail OAuth2 token found: %v", err)
+		if err := database.DB.Where("service = ?", "google").First(&oauth2Token).Error; err != nil {
+			return fmt.Errorf("no Gmail/Google OAuth2 token found: %v", err)
+		}
 	}
 
 	if oauth2Token.NeedsRefresh() {
