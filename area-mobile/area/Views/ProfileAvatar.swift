@@ -40,10 +40,10 @@ struct ProfileAvatar: View {
         .onAppear {
             loadProfileImage()
         }
-        .onChange(of: user?.profileImage) { _ in
+        .onChange(of: user?.profileImage) { _, _ in
             loadProfileImage()
         }
-        .onChange(of: authService.currentUser?.profileImage) { _ in
+        .onChange(of: authService.currentUser?.profileImage) { _, _ in
             loadProfileImage()
         }
     }

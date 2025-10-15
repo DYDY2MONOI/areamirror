@@ -153,12 +153,11 @@ struct NowPlayingBar: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sizeThatFitsLayout) {
     VStack {
         AppletCard(applet: Applet.sampleApplets[0])
         AppletCard(applet: Applet.sampleApplets[1])
         AppletCard(applet: Applet.sampleApplets[3])
     }
     .background(Color.black)
-    .previewLayout(.sizeThatFits)
 }

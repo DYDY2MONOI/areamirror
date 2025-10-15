@@ -834,13 +834,13 @@ func LinkGoogleAccount(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret)
+	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
 	}
 
-	googleUser, err := getGoogleUser(accessToken)
+	googleUser, err := getGoogleUser(tokenResp.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Google user"})
 		return
@@ -864,6 +864,46 @@ func LinkGoogleAccount(c *gin.Context) {
 	if err := database.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Google account"})
 		return
+	}
+
+	var oauth2Token models.OAuth2Token
+	err = database.DB.Where("user_id = ? AND service = ?", userID, "google").First(&oauth2Token).Error
+
+	expiry := time.Now()
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	} else {
+		expiry = time.Now().Add(time.Hour)
+	}
+
+	if err != nil {
+		oauth2Token = models.OAuth2Token{
+			UserID:       userID.(uint),
+			Service:      "google",
+			AccessToken:  tokenResp.AccessToken,
+			RefreshToken: tokenResp.RefreshToken,
+			TokenType:    tokenResp.TokenType,
+			ExpiresAt:    &expiry,
+			Scope:        tokenResp.Scope,
+		}
+
+		if err := database.DB.Create(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Google OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.ExpiresAt = &expiry
+		oauth2Token.Scope = tokenResp.Scope
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Google OAuth2 token"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -903,7 +943,7 @@ func UnlinkGoogleAccount(c *gin.Context) {
 	})
 }
 
-func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (string, error) {
+func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (*GoogleTokenResponse, error) {
 	url := "https://oauth2.googleapis.com/token"
 
 	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
@@ -921,12 +961,12 @@ func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (string, er
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -935,21 +975,21 @@ func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (string, er
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var tokenResp GoogleTokenResponse
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return tokenResp.AccessToken, nil
+	return &tokenResp, nil
 }
 
 func getGoogleUser(accessToken string) (*GoogleUserResponse, error) {
@@ -1358,7 +1398,6 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 	return &facebookUser, nil
 }
 
-// Mobile OAuth2 Login - returns tokens in response body for mobile apps
 func MobileOAuth2Login(c *gin.Context) {
 	var req OAuth2LoginRequest
 
@@ -1390,12 +1429,11 @@ func MobileOAuth2Login(c *gin.Context) {
 		return
 	}
 
-	// Mobile response with tokens in body (not cookies)
 	c.JSON(http.StatusOK, OAuth2TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    900, // 15 minutes
+		ExpiresIn:    900,
 		User: gin.H{
 			"id":            user.ID,
 			"email":         user.Email,
@@ -1501,13 +1539,13 @@ func GoogleDirectLogin(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret)
+	tokenResp, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
 	}
 
-	googleUser, err := getGoogleUser(accessToken)
+	googleUser, err := getGoogleUser(tokenResp.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Google user"})
 		return
@@ -1542,6 +1580,46 @@ func GoogleDirectLogin(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 		return
+	}
+
+	var oauth2Token models.OAuth2Token
+	err = database.DB.Where("user_id = ? AND service = ?", user.ID, "google").First(&oauth2Token).Error
+
+	expiry := time.Now()
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	} else {
+		expiry = time.Now().Add(time.Hour)
+	}
+
+	if err != nil {
+		oauth2Token = models.OAuth2Token{
+			UserID:       user.ID,
+			Service:      "google",
+			AccessToken:  tokenResp.AccessToken,
+			RefreshToken: tokenResp.RefreshToken,
+			TokenType:    tokenResp.TokenType,
+			ExpiresAt:    &expiry,
+			Scope:        tokenResp.Scope,
+		}
+
+		if err := database.DB.Create(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Google OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.ExpiresAt = &expiry
+		oauth2Token.Scope = tokenResp.Scope
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Google OAuth2 token"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, OAuth2TokenResponse{
