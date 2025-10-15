@@ -1735,6 +1735,7 @@ watch(showCreateModal, (isOpen) => {
   backdrop-filter: blur(12px);
   border-radius: 28px;
   padding: 8px 6px;
+  z-index: 1001;
 }
 .nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .nav-btn { color: white !important; text-transform: none; }
