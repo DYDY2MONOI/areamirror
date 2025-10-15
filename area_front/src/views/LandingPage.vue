@@ -15,7 +15,14 @@
       <Globe class="globe-container" />
     </div>
 
-    <v-navigation-drawer class="sidebar-desktop text-white" color="#0d0d0d" elevation="0" permanent rail>
+    <v-navigation-drawer
+      v-if="isDesktop"
+      class="sidebar-desktop text-white"
+      color="#0d0d0d"
+      elevation="0"
+      permanent
+      rail
+    >
       <div class="sidebar-user-section" v-if="isAuthenticated">
         <v-avatar size="32" class="sidebar-avatar">
           <img
@@ -32,32 +39,11 @@
       </div>
 
       <v-list class="text-white" density="comfortable" nav lines="false">
-        <v-tooltip text="Home" location="end">
-          <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-home" class="text-white" rounded></v-list-item>
-          </template>
-        </v-tooltip>
-        <v-tooltip text="Search" location="end">
-          <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
-          </template>
-        </v-tooltip>
         <SidebarButton
           v-if="isAuthenticated"
           tooltip="Create"
           @open="() => requireAuth(() => showCreateModal = true)"
         />
-        <v-tooltip text="Library" location="end">
-          <template #activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              prepend-icon="mdi-book-open-variant"
-              class="text-white"
-              rounded
-              @click="requireAuth(() => {})"
-            ></v-list-item>
-          </template>
-        </v-tooltip>
         <v-tooltip text="Profile" location="end">
           <template #activator="{ props }">
             <v-list-item
@@ -99,7 +85,7 @@
     </v-navigation-drawer>
 
     <div class="content">
-    <div class="search-section">
+    <div class="search-section" id="search-section">
       <div class="search-container">
         <div class="search-header">
           <h1 class="search-title">Find Your Perfect Automation</h1>
@@ -168,12 +154,7 @@
             </button>
           </div>
         </div>
-        <div class="filter-tabs">
-          <button class="filter-tab active">All</button>
-          <button class="filter-tab" @click="scrollToMyAreas">My AREAs</button>
-          <button class="filter-tab">Popular</button>
-          <button class="filter-tab">Templates</button>
-        </div>
+
         <div class="action-buttons">
           <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-magnify</v-icon>
@@ -250,6 +231,17 @@
           @close="showCreateModal = false"
           @save="handleAreaCreated"
         />
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-inner">
+        <v-btn class="nav-btn" variant="text" @click="() => requireAuth(() => showCreateModal = true)">
+          <v-icon size="22">mdi-plus-circle</v-icon>
+        </v-btn>
+        <v-btn class="nav-btn" variant="text" @click="openProfileOrLogin">
+          <v-icon size="22">mdi-account-circle</v-icon>
+        </v-btn>
       </div>
     </div>
 
@@ -475,6 +467,7 @@ const showLogoutDialog = ref(false)
 const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
 const searchQuery = ref('')
+const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth >= 1280 : true)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
 const { areas, popularAreas, recommendedAreas, fetchPopularAreas, fetchRecommendedAreas, fetchUserAreas, deleteArea } = useAreas()
@@ -540,6 +533,10 @@ const getServiceIcon = (serviceName: string | undefined) => {
 
 
 onMounted(() => {
+  const onResize = () => {
+    isDesktop.value = window.innerWidth >= 1280
+  }
+  window.addEventListener('resize', onResize)
   refreshProfile()
     .then(() => fetchPopularAreas())
     .then(() => fetchRecommendedAreas())
@@ -548,6 +545,9 @@ onMounted(() => {
         return fetchUserAreas(currentUser.value.id)
       }
     })
+  window.addEventListener('beforeunload', () => {
+    window.removeEventListener('resize', onResize)
+  })
 })
 
 onMounted(async () => {
@@ -576,6 +576,16 @@ const requireAuth = (action: () => void) => {
     return
   }
   action()
+}
+
+
+
+const openProfileOrLogin = () => {
+  if (isAuthenticated.value) {
+    router.push('/profile')
+  } else {
+    router.push('/login')
+  }
 }
 
 
@@ -809,6 +819,26 @@ watch(showCreateModal, (isOpen) => {
 .globe-container {
   opacity: 0.4;
   filter: blur(0.5px);
+}
+
+@media (max-width: 1280px) {
+  .globe-background {
+    right: -150px;
+    width: 480px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .globe-background {
+    right: -120px;
+    width: 360px;
+  }
+}
+
+@media (max-width: 768px) {
+  .globe-background {
+    display: none;
+  }
 }
 
 @keyframes float {
@@ -1556,38 +1586,7 @@ watch(showCreateModal, (isOpen) => {
   transform: translateY(-1px);
 }
 
-.filter-tabs {
-  display: flex;
-  gap: var(--spacing-sm);
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xs);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border-primary);
-}
 
-.filter-tab {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.875rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.filter-tab.active {
-  background: var(--gradient-accent);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-glow);
-}
-
-.filter-tab:hover:not(.active) {
-  background: var(--color-hover-bg);
-  color: var(--color-text-primary);
-}
 
 .action-buttons {
   display: flex;
@@ -1736,6 +1735,7 @@ watch(showCreateModal, (isOpen) => {
   backdrop-filter: blur(12px);
   border-radius: 28px;
   padding: 8px 6px;
+  z-index: 1001;
 }
 .nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .nav-btn { color: white !important; text-transform: none; }
@@ -1828,15 +1828,7 @@ watch(showCreateModal, (isOpen) => {
     font-size: 0.8125rem;
   }
 
-  .filter-tabs {
-    flex-wrap: wrap;
-    gap: 0.25rem;
-  }
 
-  .filter-tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-  }
 
   .section-header {
     flex-direction: column;
@@ -2807,10 +2799,17 @@ body.modal-open {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 2rem;
   margin-top: 2rem;
   justify-items: center;
+}
+
+@media (max-width: 1024px) {
+  .v-container > .d-flex {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
 }
 
 .area-glare-card {
