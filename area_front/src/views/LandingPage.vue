@@ -39,32 +39,11 @@
       </div>
 
       <v-list class="text-white" density="comfortable" nav lines="false">
-        <v-tooltip text="Home" location="end">
-          <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-home" class="text-white" rounded></v-list-item>
-          </template>
-        </v-tooltip>
-        <v-tooltip text="Search" location="end">
-          <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-magnify" class="text-white" rounded></v-list-item>
-          </template>
-        </v-tooltip>
         <SidebarButton
           v-if="isAuthenticated"
           tooltip="Create"
           @open="() => requireAuth(() => showCreateModal = true)"
         />
-        <v-tooltip text="Library" location="end">
-          <template #activator="{ props }">
-            <v-list-item
-              v-bind="props"
-              prepend-icon="mdi-book-open-variant"
-              class="text-white"
-              rounded
-              @click="requireAuth(() => {})"
-            ></v-list-item>
-          </template>
-        </v-tooltip>
         <v-tooltip text="Profile" location="end">
           <template #activator="{ props }">
             <v-list-item
@@ -175,12 +154,7 @@
             </button>
           </div>
         </div>
-        <div class="filter-tabs">
-          <button class="filter-tab active">All</button>
-          <button class="filter-tab" @click="scrollToMyAreas">My AREAs</button>
-          <button class="filter-tab">Popular</button>
-          <button class="filter-tab">Templates</button>
-        </div>
+
         <div class="action-buttons">
           <button class="action-btn-icon" @click="requireAuth(() => {})">
             <v-icon size="20">mdi-magnify</v-icon>
@@ -262,17 +236,8 @@
 
     <div class="bottom-nav">
       <div class="nav-inner">
-        <v-btn class="nav-btn" variant="text" @click="goHome">
-          <v-icon size="22">mdi-home</v-icon>
-        </v-btn>
-        <v-btn class="nav-btn" variant="text" @click="scrollToSearch">
-          <v-icon size="22">mdi-magnify</v-icon>
-        </v-btn>
         <v-btn class="nav-btn" variant="text" @click="() => requireAuth(() => showCreateModal = true)">
           <v-icon size="22">mdi-plus-circle</v-icon>
-        </v-btn>
-        <v-btn class="nav-btn" variant="text" @click="requireAuth(() => {})">
-          <v-icon size="22">mdi-book-open-variant</v-icon>
         </v-btn>
         <v-btn class="nav-btn" variant="text" @click="openProfileOrLogin">
           <v-icon size="22">mdi-account-circle</v-icon>
@@ -613,16 +578,7 @@ const requireAuth = (action: () => void) => {
   action()
 }
 
-const goHome = () => {
-  router.push('/')
-}
 
-const scrollToSearch = () => {
-  const el = document.getElementById('search-section')
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
 
 const openProfileOrLogin = () => {
   if (isAuthenticated.value) {
@@ -1630,38 +1586,7 @@ watch(showCreateModal, (isOpen) => {
   transform: translateY(-1px);
 }
 
-.filter-tabs {
-  display: flex;
-  gap: var(--spacing-sm);
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xs);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border-primary);
-}
 
-.filter-tab {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.875rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.filter-tab.active {
-  background: var(--gradient-accent);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-glow);
-}
-
-.filter-tab:hover:not(.active) {
-  background: var(--color-hover-bg);
-  color: var(--color-text-primary);
-}
 
 .action-buttons {
   display: flex;
@@ -1902,15 +1827,7 @@ watch(showCreateModal, (isOpen) => {
     font-size: 0.8125rem;
   }
 
-  .filter-tabs {
-    flex-wrap: wrap;
-    gap: 0.25rem;
-  }
 
-  .filter-tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-  }
 
   .section-header {
     flex-direction: column;
