@@ -14,6 +14,7 @@ import (
 type SchedulerService struct {
 	emailService   *EmailService
 	discordService *DiscordService
+	slackService   *SlackService
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -27,9 +28,15 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Discord service not available: %v", err)
 	}
 
+	slackService, err := NewSlackService()
+	if err != nil {
+		log.Printf("Warning: Slack service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:   emailService,
 		discordService: discordService,
+		slackService:   slackService,
 	}, nil
 }
 
@@ -97,6 +104,8 @@ func (s *SchedulerService) executeArea(area models.Area) error {
 		return s.executeGmailAction(area, actionConfig)
 	case "Discord":
 		return s.executeDiscordAction(area, actionConfig)
+	case "Slack":
+		return s.executeSlackAction(area, actionConfig)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -206,6 +215,97 @@ func (s *SchedulerService) executeDiscordAction(area models.Area, actionConfig m
 
 	log.Printf("Successfully executed area: %s", area.Name)
 	return nil
+}
+
+func (s *SchedulerService) executeSlackAction(area models.Area, actionConfig map[string]interface{}) error {
+	if s.slackService == nil {
+		return fmt.Errorf("Slack service not available")
+	}
+
+	webhookURL, _ := actionConfig["webhookUrl"].(string)
+	if webhookURL == "" {
+		if alt, ok := actionConfig["webhookURL"].(string); ok {
+			webhookURL = alt
+		}
+	}
+	if webhookURL == "" {
+		return fmt.Errorf("webhookUrl not found in action config")
+	}
+
+	message, _ := actionConfig["message"].(string)
+	if message == "" {
+		message = fmt.Sprintf("📬 Notification from area: %s", area.Name)
+	}
+
+	var triggerConfig map[string]interface{}
+	if err := json.Unmarshal(area.TriggerConfig, &triggerConfig); err == nil {
+		templateVars := map[string]string{
+			"eventTitle": getStringValue(triggerConfig, "eventTitle", "Scheduled Event"),
+			"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
+			"areaName":   area.Name,
+		}
+
+		for key, value := range templateVars {
+			message = strings.ReplaceAll(message, "{{"+key+"}}", value)
+		}
+	}
+
+	messageType, _ := actionConfig["messageType"].(string)
+	if messageType == "" {
+		messageType = "simple"
+	}
+
+	var err error
+
+	switch messageType {
+	case "rich":
+		attachment := CreateGitHubNotificationAttachment(
+			area.Name,
+			message,
+			"AREA Scheduler",
+			"",
+		)
+		err = s.slackService.SendRichMessage(webhookURL, "📅 Notification programmée", []Attachment{attachment})
+
+	case "custom":
+		username, _ := actionConfig["username"].(string)
+		iconEmoji, _ := actionConfig["iconEmoji"].(string)
+
+		customMsg := SlackWebhookMessage{
+			Text:      message,
+			Username:  username,
+			IconEmoji: iconEmoji,
+		}
+		err = s.slackService.SendCustomMessage(webhookURL, customMsg)
+
+	default:
+		err = s.slackService.SendWebhookMessage(webhookURL, message)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to send slack message: %v", err)
+	}
+
+	log.Printf("Slack message sent successfully for AREA: %s", area.Name)
+
+	area.LastRunAt = &time.Time{}
+	*area.LastRunAt = time.Now()
+	area.RunCount++
+	area.LastRunStatus = "success"
+
+	if err := database.DB.Save(&area).Error; err != nil {
+		log.Printf("Failed to update area status: %v", err)
+	}
+
+	log.Printf("Successfully executed area: %s", area.Name)
+	return nil
+}
+
+func getStringValue(m map[string]interface{}, key string, defaultValue string) string {
+	if val, ok := m[key].(string); ok && val != "" {
+		return val
+	}
+	return defaultValue
 }
 
 func (s *SchedulerService) StartScheduler(ctx context.Context) {
