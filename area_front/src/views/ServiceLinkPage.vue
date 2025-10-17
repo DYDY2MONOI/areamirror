@@ -147,6 +147,7 @@
             <div class="service-info">
               <h3>{{ service.name }}</h3>
               <p>{{ service.description }}</p>
+              <p v-if="service.id === 'github' && currentUser?.github_username" class="linked-as">Linked as @{{ currentUser.github_username }}</p>
             </div>
           </div>
 
@@ -158,7 +159,8 @@
                   <polyline points="22,4 12,14.01 9,11.01"/>
                 </svg>
               </div>
-              <span class="status-text">Connected</span>
+              <span class="status-text" v-if="service.id === 'github' && currentUser?.github_username">Linked with @{{ currentUser.github_username }}</span>
+              <span class="status-text" v-else>Connected</span>
               <button
                 @click="unlinkService(service.id)"
                 class="unlink-btn"
@@ -280,7 +282,7 @@ const isServiceLinked = (serviceId: string): boolean => {
 
   switch (serviceId) {
     case 'github':
-      return !!currentUser.value.github_username
+      return !!currentUser.value.github_username || !!currentUser.value.github_id
     case 'google':
       return !!currentUser.value.google_id
     case 'discord':
@@ -312,7 +314,7 @@ const linkService = async (serviceId: string) => {
       }
 
       const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
-      const githubAuthUrl = `${service.authUrl}?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}`
+      const githubAuthUrl = `${service.authUrl}?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}`
 
       window.location.href = githubAuthUrl
     } else if (serviceId === 'google') {
@@ -724,6 +726,12 @@ onMounted(() => {
   font-size: 0.875rem;
   line-height: 1.5;
   margin: 0;
+}
+
+.linked-as {
+  margin-top: 0.25rem;
+  color: #10b981;
+  font-weight: 600;
 }
 
 .service-status {

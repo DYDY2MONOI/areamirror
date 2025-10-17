@@ -50,7 +50,7 @@ const router = createRouter({
       path: '/auth/github/callback',
       name: 'github-callback',
       component: GitHubCallbackPage,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: false }
     },
     {
       path: '/auth/google/callback',

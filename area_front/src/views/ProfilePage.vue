@@ -63,6 +63,10 @@
                   <v-icon size="16">mdi-check-circle</v-icon>
                   Verified
                 </span>
+                <span v-if="currentUser?.github_username" class="badge github">
+                  <v-icon size="16">mdi-github</v-icon>
+                  Linked as @{{ currentUser.github_username }}
+                </span>
               </div>
             </div>
           </div>
@@ -167,6 +171,7 @@
                   <div class="account-info">
                     <h4>{{ service.name }}</h4>
                     <p>{{ service.description }}</p>
+                    <p v-if="service.id === 'github' && currentUser?.github_username" class="linked-as">Linked as @{{ currentUser.github_username }}</p>
                   </div>
                 </div>
 
@@ -178,7 +183,8 @@
                         <polyline points="22,4 12,14.01 9,11.01"/>
                       </svg>
                     </div>
-                    <span class="status-text">Connected</span>
+                    <span class="status-text" v-if="service.id === 'github' && currentUser?.github_username">Linked with @{{ currentUser.github_username }}</span>
+                    <span class="status-text" v-else>Connected</span>
                     <button
                       @click="unlinkService(service.id)"
                       class="unlink-btn"
@@ -360,7 +366,7 @@ const isServiceLinked = (serviceId: string): boolean => {
 
   switch (serviceId) {
     case 'github':
-      return !!currentUser.value.github_username
+      return !!currentUser.value.github_username || !!currentUser.value.github_id
     case 'google':
       return !!currentUser.value.google_id
     case 'facebook':
@@ -394,7 +400,7 @@ const linkService = async (serviceId: string) => {
       }
 
       const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
-      const githubAuthUrl = `${service.authUrl}?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}`
+      const githubAuthUrl = `${service.authUrl}?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}`
 
       window.location.href = githubAuthUrl
     } else if (serviceId === 'google') {
@@ -922,6 +928,12 @@ onMounted(async () => {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
+.badge.github {
+  background: rgba(36, 41, 46, 0.25);
+  color: #fff;
+  border: 1px solid rgba(36, 41, 46, 0.4);
+}
+
 .card-header {
   margin-bottom: 2rem;
 }
@@ -1244,6 +1256,12 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
   line-height: 1.4;
+}
+
+.linked-as {
+  margin-top: 0.25rem;
+  color: #10b981;
+  font-weight: 600;
 }
 
 .account-status {

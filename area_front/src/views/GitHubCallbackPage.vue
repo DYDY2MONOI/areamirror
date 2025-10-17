@@ -14,28 +14,36 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { linkGitHubAccount } = useAuth()
+const { linkGitHubAccount, refreshProfile } = useAuth()
+const token = localStorage.getItem('authToken')
 
 onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
   const error = urlParams.get('error')
 
+  if (!token) {
+    router.push('/login?next=' + encodeURIComponent(window.location.pathname + window.location.search))
+    return
+  }
+
   if (error) {
-    router.push('/github-link?error=' + encodeURIComponent(error))
+    router.push('/profile?error=' + encodeURIComponent(error))
     return
   }
 
   if (code) {
     try {
+      await refreshProfile()
       await linkGitHubAccount(code)
-      router.push('/github-link?success=true')
+      router.push('/profile?github_linked=true')
     } catch (error) {
       console.error('GitHub linking error:', error)
-      router.push('/github-link?error=' + encodeURIComponent('Failed to link GitHub account'))
+      const message = error instanceof Error ? error.message : 'Failed to link GitHub account'
+      router.push('/profile?error=' + encodeURIComponent(message))
     }
   } else {
-    router.push('/github-link?error=' + encodeURIComponent('No authorization code received'))
+    router.push('/profile?error=' + encodeURIComponent('No authorization code received'))
   }
 })
 </script>

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -681,6 +682,12 @@ func LinkGitHubAccount(c *gin.Context) {
 		return
 	}
 
+	if githubUser.Email == "" {
+		if email, emailErr := getGitHubPrimaryEmail(accessToken); emailErr == nil && email != "" {
+			githubUser.Email = email
+		}
+	}
+
 	var user models.User
 	if err := database.DB.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
@@ -741,45 +748,45 @@ func UnlinkGitHubAccount(c *gin.Context) {
 }
 
 func exchangeCodeForToken(code, clientID, clientSecret string) (string, error) {
-	url := "https://github.com/login/oauth/access_token"
+    tokenURL := "https://github.com/login/oauth/access_token"
 
-	data := map[string]string{
-		"client_id":     clientID,
-		"client_secret": clientSecret,
-		"code":          code,
-	}
+    // GitHub expects application/x-www-form-urlencoded for token exchange
+    form := url.Values{}
+    form.Set("client_id", clientID)
+    form.Set("client_secret", clientSecret)
+    form.Set("code", code)
 
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
+    // If a redirect URI is configured, include it to match the initial authorization request
+    if redirectURI := os.Getenv("GITHUB_REDIRECT_URI"); redirectURI != "" {
+        form.Set("redirect_uri", redirectURI)
+    }
 
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(jsonData)))
-	if err != nil {
-		return "", err
-	}
+    req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
+    if err != nil {
+        return "", err
+    }
 
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json")
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return "", err
+    }
 
-	var tokenResp GitHubTokenResponse
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return "", err
-	}
+    var tokenResp GitHubTokenResponse
+    if err := json.Unmarshal(body, &tokenResp); err != nil {
+        return "", err
+    }
 
-	return tokenResp.AccessToken, nil
+    return tokenResp.AccessToken, nil
 }
 
 func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
@@ -792,6 +799,7 @@ func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
+    req.Header.Set("User-Agent", "AREA-App")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -811,6 +819,62 @@ func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
 	}
 
 	return &githubUser, nil
+}
+
+// GitHub can omit email from /user if it's private; fetch primary email when needed
+func getGitHubPrimaryEmail(accessToken string) (string, error) {
+    url := "https://api.github.com/user/emails"
+
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return "", err
+    }
+
+    req.Header.Set("Authorization", "Bearer "+accessToken)
+    req.Header.Set("Accept", "application/vnd.github.v3+json")
+    req.Header.Set("User-Agent", "AREA-App")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return "", err
+    }
+
+    type emailEntry struct {
+        Email     string `json:"email"`
+        Primary   bool   `json:"primary"`
+        Verified  bool   `json:"verified"`
+        Visibility string `json:"visibility"`
+    }
+
+    var emails []emailEntry
+    if err := json.Unmarshal(body, &emails); err != nil {
+        return "", err
+    }
+
+    for _, e := range emails {
+        if e.Primary && e.Verified && e.Email != "" {
+            return e.Email, nil
+        }
+    }
+
+    for _, e := range emails {
+        if e.Verified && e.Email != "" {
+            return e.Email, nil
+        }
+    }
+
+    if len(emails) > 0 {
+        return emails[0].Email, nil
+    }
+
+    return "", nil
 }
 
 func LinkGoogleAccount(c *gin.Context) {
@@ -1433,6 +1497,12 @@ func GitHubDirectLogin(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get GitHub user"})
 		return
+	}
+
+	if githubUser.Email == "" {
+		if email, emailErr := getGitHubPrimaryEmail(accessToken); emailErr == nil && email != "" {
+			githubUser.Email = email
+		}
 	}
 
 	githubIDStr := fmt.Sprintf("%d", githubUser.ID)
