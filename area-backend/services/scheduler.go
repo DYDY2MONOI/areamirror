@@ -76,22 +76,18 @@ func NewSchedulerService() (*SchedulerService, error) {
 }
 
 func (s *SchedulerService) CheckScheduledAreas() error {
-	// Check Google Calendar triggers
 	if err := s.checkCalendarTriggers(); err != nil {
 		log.Printf("Error checking calendar triggers: %v", err)
 	}
 
-	// Check Weather triggers
 	if err := s.checkWeatherTriggers(); err != nil {
 		log.Printf("Error checking weather triggers: %v", err)
 	}
 
-	// Check Google Sheets triggers
 	if err := s.checkGoogleSheetsTriggers(); err != nil {
 		log.Printf("Error checking Google Sheets triggers: %v", err)
 	}
 
-	// Check Timer triggers
 	if err := s.checkTimerTriggers(); err != nil {
 		log.Printf("Error checking timer triggers: %v", err)
 	}
@@ -159,6 +155,8 @@ func (s *SchedulerService) checkTimerTriggers() error {
 		return fmt.Errorf("failed to fetch timer areas: %v", err)
 	}
 
+	log.Printf("Checking Timer triggers: found %d active Timer areas", len(areas))
+
 	now := time.Now()
 
 	for _, area := range areas {
@@ -169,7 +167,6 @@ func (s *SchedulerService) checkTimerTriggers() error {
 		}
 
 		if s.shouldTriggerTimerArea(area, triggerConfig, now) {
-			// Build metadata with timer info
 			metadata := map[string]interface{}{
 				"triggerTime": now.Format("2006-01-02 15:04:05"),
 				"timerName":   area.Name,
@@ -296,7 +293,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		return false
 	}
 
-	// Check if we should skip due to recent execution
 	if area.LastRunAt != nil {
 		timeSinceLastRun := time.Since(*area.LastRunAt)
 		if timeSinceLastRun < 10*time.Minute {
@@ -305,7 +301,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		}
 	}
 
-	// Parse weather trigger configuration
 	city, ok := triggerConfig["city"].(string)
 	if !ok || city == "" {
 		log.Printf("City not specified for weather area %s", area.Name)
@@ -327,7 +322,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		operator = "greater_than"
 	}
 
-	// Create weather trigger config
 	weatherConfig := WeatherTriggerConfig{
 		City:        city,
 		Temperature: temperature,
@@ -335,7 +329,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		Operator:    operator,
 	}
 
-	// Check weather trigger
 	result, err := s.weatherService.CheckWeatherTrigger(weatherConfig)
 	if err != nil {
 		log.Printf("Failed to check weather trigger for area %s: %v", area.Name, err)
@@ -351,8 +344,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 }
 
 func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfig map[string]interface{}, now time.Time) bool {
-	// Parse interval from trigger config
-	// Supports: "1m", "5m", "15m", "30m", "1h", "24h", etc.
 	intervalStr, ok := triggerConfig["interval"].(string)
 	if !ok || intervalStr == "" {
 		log.Printf("Timer area %s missing interval config", area.Name)
@@ -365,7 +356,6 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 		return false
 	}
 
-	// Check if enough time has passed since last run
 	if area.LastRunAt != nil {
 		timeSinceLastRun := now.Sub(*area.LastRunAt)
 		if timeSinceLastRun < interval {
@@ -373,7 +363,6 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 		}
 	}
 
-	// If never run before or interval has passed, trigger it
 	log.Printf("Timer trigger activated for area %s (interval: %s)", area.Name, intervalStr)
 	return true
 }
