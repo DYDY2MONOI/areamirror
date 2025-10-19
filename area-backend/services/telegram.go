@@ -25,7 +25,6 @@ type TelegramResponse struct {
 	Description string `json:"description,omitempty"`
 }
 
-// NewTelegramService creates a new Telegram service instance
 func NewTelegramService() (*TelegramService, error) {
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if botToken == "" {
@@ -38,7 +37,6 @@ func NewTelegramService() (*TelegramService, error) {
 	}, nil
 }
 
-// SendMessage sends a message to a Telegram chat
 func (s *TelegramService) SendMessage(chatID, text string) error {
 	if chatID == "" {
 		return fmt.Errorf("chatID is required")
