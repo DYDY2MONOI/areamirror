@@ -7,14 +7,9 @@
             <h1 class="card-title">Create New Area</h1>
             <p class="card-subtitle">Connect your favorite services with intelligent automation</p>
           </div>
-          <div class="header-actions">
-            <button class="info-button" @click="showGuide = true" title="Show Guide">
-              <v-icon size="20" color="white">mdi-information</v-icon>
-            </button>
-            <button class="close-button" @click="$emit('close')">
-              <v-icon size="24" color="white">mdi-close</v-icon>
-            </button>
-          </div>
+          <button class="close-button" @click="$emit('close')">
+            <v-icon size="24" color="white">mdi-close</v-icon>
+          </button>
         </div>
       </div>
       <div class="card-content">
@@ -792,9 +787,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Guide Modal -->
-    <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
 
@@ -805,7 +797,6 @@ import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
 import { API_BASE_URL } from '../../config/api'
-import AreaGuideModal from '../AreaGuideModal.vue'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -875,7 +866,6 @@ const isLoadingRepositories = ref(false)
 const isTestingGoogleSheets = ref(false)
 const sheetsTestError = ref<string | null>(null)
 const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
-const showGuide = ref(false)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -1403,53 +1393,6 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.info-button {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 8px;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.info-button:hover {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: rgba(59, 130, 246, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.info-button::after {
-  content: 'Help';
-  position: absolute;
-  bottom: -28px;
-  right: 0;
-  background: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.info-button:hover::after {
-  opacity: 1;
 }
 
 .close-button {
