@@ -7,9 +7,14 @@
             <h1 class="card-title">Create New Area</h1>
             <p class="card-subtitle">Connect your favorite services with intelligent automation</p>
           </div>
-          <button class="close-button" @click="$emit('close')">
-            <v-icon size="24" color="white">mdi-close</v-icon>
-          </button>
+          <div class="header-actions">
+            <button class="info-button" @click="showGuide = true" title="Show Guide">
+              <v-icon size="20" color="white">mdi-information</v-icon>
+            </button>
+            <button class="close-button" @click="$emit('close')">
+              <v-icon size="24" color="white">mdi-close</v-icon>
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-content">
@@ -81,7 +86,7 @@
               <div class="service-selection">
                 <div v-if="!form.triggerService" class="service-grid">
                   <div
-                    v-for="item in appItems.slice(0, 8)"
+                    v-for="item in appItems.slice(0, 15)"
                     :key="item.value"
                     class="service-card"
                     @click="selectTrigger(item.value)"
@@ -138,7 +143,7 @@
               <div class="service-selection">
                 <div v-if="!form.actionService" class="service-grid">
                   <div
-                    v-for="item in appItems.slice(0, 8)"
+                    v-for="item in appItems.slice(0, 15)"
                     :key="item.value"
                     class="service-card"
                     @click="selectAction(item.value)"
@@ -537,6 +542,48 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Timer'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Timer" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">⏰ Timer Trigger</h4>
+                <p class="config-subtitle">Configure the interval for automatic execution</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">⏱️ Time Interval</label>
+                  <select v-model="form.triggerConfig.interval" class="modern-select" required>
+                    <option value="">Select an interval...</option>
+                    <option value="30s">Every 30 seconds (testing)</option>
+                    <option value="1m">Every 1 minute</option>
+                    <option value="5m">Every 5 minutes</option>
+                    <option value="15m">Every 15 minutes</option>
+                    <option value="30m">Every 30 minutes</option>
+                    <option value="1h">Every 1 hour</option>
+                    <option value="2h">Every 2 hours</option>
+                    <option value="6h">Every 6 hours</option>
+                    <option value="12h">Every 12 hours</option>
+                    <option value="24h">Every 24 hours (daily)</option>
+                    <option value="168h">Every 7 days (weekly)</option>
+                  </select>
+                  <small class="input-hint">Choose how often this area should trigger automatically</small>
+                </div>
+
+                <div v-if="form.triggerConfig.interval" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>Your area will run automatically every {{ form.triggerConfig.interval }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -583,6 +630,67 @@
                     required
                   ></textarea>
                   <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.actionService === 'Telegram'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📱 Telegram Action</h4>
+                <p class="config-subtitle">Configure the Telegram message to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">💬 Chat ID</label>
+                  <input
+                    v-model="form.actionConfig.chatId"
+                    type="text"
+                    class="modern-input"
+                    placeholder="8481009224"
+                    required
+                  />
+                  <small class="input-hint">
+                    Your Telegram chat ID. 
+                    <a href="https://t.me/userinfobot" target="_blank" class="helper-link">
+                      Get it from @userinfobot
+                    </a>
+                    (send /start to the bot)
+                  </small>
+                  <div class="help-box">
+                    <v-icon size="16" color="#22c55e">mdi-help-circle</v-icon>
+                    <div class="help-content">
+                      <strong>How to find your Chat ID:</strong>
+                      <ol>
+                        <li>Open Telegram and search for <strong>@userinfobot</strong></li>
+                        <li>Click on it and send <code>/start</code></li>
+                        <li>The bot will reply with your ID (ex: 987654321)</li>
+                        <li>Copy and paste it here</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📝 Message</label>
+                  <textarea
+                    v-model="form.actionConfig.message"
+                    class="modern-textarea"
+                    placeholder="🤖 Notification from {{areaName}}&#10;⏰ Triggered at {{triggerTime}}"
+                    rows="5"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables: &#123;&#123;areaName&#125;&#125;, &#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;, etc.
+                    Telegram supports Markdown formatting (*bold*, _italic_)
+                  </small>
                 </div>
               </div>
             </div>
@@ -684,6 +792,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Guide Modal -->
+    <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
 
@@ -694,6 +805,7 @@ import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
 import { API_BASE_URL } from '../../config/api'
+import AreaGuideModal from '../AreaGuideModal.vue'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -727,6 +839,8 @@ const priorityServices = [
   'Discord',
   'Google Sheets',
   'GitHub',
+  'Timer',
+  'Telegram',
   'Spotify',
   'Twitter'
 ]
@@ -761,6 +875,7 @@ const isLoadingRepositories = ref(false)
 const isTestingGoogleSheets = ref(false)
 const sheetsTestError = ref<string | null>(null)
 const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
+const showGuide = ref(false)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -847,6 +962,17 @@ const isFormValid = computed(() => {
            form.triggerConfig.range
   }
 
+  if (form.triggerService === 'Timer') {
+    return hasBasicInfo &&
+           form.triggerConfig.interval
+  }
+
+  if (form.actionService === 'Telegram') {
+    return hasBasicInfo &&
+           form.actionConfig.chatId &&
+           form.actionConfig.message
+  }
+
   return hasBasicInfo
 })
 
@@ -909,6 +1035,10 @@ const selectTrigger = (serviceId: string) => {
       range: 'Sheet1!A1:D',
       hasHeader: true
     }
+  } else if (serviceId === 'Timer') {
+    form.triggerConfig = {
+      interval: '5m'
+    }
   } else {
     form.triggerConfig = {}
   }
@@ -943,6 +1073,17 @@ const selectAction = (serviceId: string) => {
 
     form.actionConfig = {
       webhookUrl: '',
+      message: defaultMessage
+    }
+  } else if (serviceId === 'Telegram') {
+    const defaultMessage = form.triggerService === 'Timer'
+      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      : form.triggerService === 'Google Sheets'
+      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
+
+    form.actionConfig = {
+      chatId: '',
       message: defaultMessage
     }
   } else {
@@ -1264,6 +1405,53 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   gap: 1rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.info-button {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.info-button:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.info-button::after {
+  content: 'Help';
+  position: absolute;
+  bottom: -28px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.info-button:hover::after {
+  opacity: 1;
+}
+
 .close-button {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--color-border-primary);
@@ -1456,7 +1644,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .modern-select {
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
+  padding: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+}
+
+.modern-select:focus {
+  border-color: var(--color-accent-primary);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .selected-service {
@@ -2287,6 +2489,74 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-select .v-field__outline) {
   color: var(--color-border-primary) !important;
+}
+
+/* Info box for Timer and other configs */
+.info-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+/* Help box for Telegram Chat ID instructions */
+.help-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.help-content {
+  flex: 1;
+}
+
+.help-content strong {
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.help-content ol {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.help-content li {
+  margin-bottom: 0.25rem;
+}
+
+.help-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #22c55e;
+  font-size: 0.85rem;
+}
+
+.helper-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.helper-link:hover {
+  color: #60a5fa;
 }
 
 /* GitHub-specific styles */
