@@ -475,7 +475,6 @@ func (s *SchedulerService) executeTelegramAction(area *models.Area, actionConfig
 
 	chatID := strings.TrimSpace(getString(actionConfig["chatId"]))
 	if chatID == "" {
-		// Try alternative key names
 		chatID = strings.TrimSpace(getString(actionConfig["chatID"]))
 	}
 	if chatID == "" {
@@ -589,7 +588,6 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		return vars
 	}
 
-	// Google Sheets metadata
 	if changeType, ok := metadata["changeType"].(string); ok {
 		vars["changeType"] = changeType
 	}
@@ -612,10 +610,9 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		}
 	}
 
-	// Timer metadata
 	if triggerTime, ok := metadata["triggerTime"].(string); ok {
 		vars["triggerTime"] = triggerTime
-		vars["eventTime"] = triggerTime // Also update eventTime for consistency
+		vars["eventTime"] = triggerTime
 	}
 	if timerName, ok := metadata["timerName"].(string); ok {
 		vars["timerName"] = timerName
