@@ -51,6 +51,7 @@ services:
       FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
       FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
       GOOGLE_SHEETS_API_KEY: AIzaSyAG2M7Hv6TGS92z7-0Y-huE8a8J0iEdVhY
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     ports:
       - "8080:8080"
     depends_on:

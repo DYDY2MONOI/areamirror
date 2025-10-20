@@ -18,10 +18,11 @@ import (
 )
 
 type SchedulerService struct {
-	emailService   *EmailService
-	discordService *DiscordService
-	weatherService *WeatherService
-	sheetsService  *GoogleSheetsService
+	emailService    *EmailService
+	discordService  *DiscordService
+	weatherService  *WeatherService
+	sheetsService   *GoogleSheetsService
+	telegramService *TelegramService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -60,28 +61,35 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Google Sheets service not available: %v", err)
 	}
 
+	telegramService, err := NewTelegramService()
+	if err != nil {
+		log.Printf("Warning: Telegram service not available: %v", err)
+	}
+
 	return &SchedulerService{
-		emailService:   emailService,
-		discordService: discordService,
-		weatherService: weatherService,
-		sheetsService:  sheetsService,
+		emailService:    emailService,
+		discordService:  discordService,
+		weatherService:  weatherService,
+		sheetsService:   sheetsService,
+		telegramService: telegramService,
 	}, nil
 }
 
 func (s *SchedulerService) CheckScheduledAreas() error {
-	// Check Google Calendar triggers
 	if err := s.checkCalendarTriggers(); err != nil {
 		log.Printf("Error checking calendar triggers: %v", err)
 	}
 
-	// Check Weather triggers
 	if err := s.checkWeatherTriggers(); err != nil {
 		log.Printf("Error checking weather triggers: %v", err)
 	}
 
-	// Check Google Sheets triggers
 	if err := s.checkGoogleSheetsTriggers(); err != nil {
 		log.Printf("Error checking Google Sheets triggers: %v", err)
+	}
+
+	if err := s.checkTimerTriggers(); err != nil {
+		log.Printf("Error checking timer triggers: %v", err)
 	}
 
 	return nil
@@ -132,6 +140,43 @@ func (s *SchedulerService) checkWeatherTriggers() error {
 		if s.shouldTriggerWeatherArea(area, triggerConfig) {
 			if err := s.executeArea(area, nil); err != nil {
 				log.Printf("Failed to execute area %s: %v", area.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkTimerTriggers() error {
+	var areas []models.Area
+
+	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Timer", true).Find(&areas).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch timer areas: %v", err)
+	}
+
+	log.Printf("Checking Timer triggers: found %d active Timer areas", len(areas))
+
+	now := time.Now()
+
+	for _, area := range areas {
+		var triggerConfig map[string]interface{}
+		if err := json.Unmarshal(area.TriggerConfig, &triggerConfig); err != nil {
+			log.Printf("Failed to parse trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if s.shouldTriggerTimerArea(area, triggerConfig, now) {
+			metadata := map[string]interface{}{
+				"triggerTime": now.Format("2006-01-02 15:04:05"),
+				"timerName":   area.Name,
+			}
+			if intervalStr, ok := triggerConfig["interval"].(string); ok {
+				metadata["interval"] = intervalStr
+			}
+
+			if err := s.executeArea(area, metadata); err != nil {
+				log.Printf("Failed to execute timer area %s: %v", area.Name, err)
 			}
 		}
 	}
@@ -248,7 +293,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		return false
 	}
 
-	// Check if we should skip due to recent execution
 	if area.LastRunAt != nil {
 		timeSinceLastRun := time.Since(*area.LastRunAt)
 		if timeSinceLastRun < 10*time.Minute {
@@ -257,7 +301,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		}
 	}
 
-	// Parse weather trigger configuration
 	city, ok := triggerConfig["city"].(string)
 	if !ok || city == "" {
 		log.Printf("City not specified for weather area %s", area.Name)
@@ -279,7 +322,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		operator = "greater_than"
 	}
 
-	// Create weather trigger config
 	weatherConfig := WeatherTriggerConfig{
 		City:        city,
 		Temperature: temperature,
@@ -287,7 +329,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		Operator:    operator,
 	}
 
-	// Check weather trigger
 	result, err := s.weatherService.CheckWeatherTrigger(weatherConfig)
 	if err != nil {
 		log.Printf("Failed to check weather trigger for area %s: %v", area.Name, err)
@@ -300,6 +341,30 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 	}
 
 	return false
+}
+
+func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfig map[string]interface{}, now time.Time) bool {
+	intervalStr, ok := triggerConfig["interval"].(string)
+	if !ok || intervalStr == "" {
+		log.Printf("Timer area %s missing interval config", area.Name)
+		return false
+	}
+
+	interval, err := time.ParseDuration(intervalStr)
+	if err != nil {
+		log.Printf("Failed to parse interval '%s' for timer area %s: %v", intervalStr, area.Name, err)
+		return false
+	}
+
+	if area.LastRunAt != nil {
+		timeSinceLastRun := now.Sub(*area.LastRunAt)
+		if timeSinceLastRun < interval {
+			return false
+		}
+	}
+
+	log.Printf("Timer trigger activated for area %s (interval: %s)", area.Name, intervalStr)
+	return true
 }
 
 func (s *SchedulerService) executeArea(area models.Area, metadata map[string]interface{}) error {
@@ -315,6 +380,8 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 		return s.executeGmailAction(&area, actionConfig, metadata)
 	case "Discord":
 		return s.executeDiscordAction(&area, actionConfig, metadata)
+	case "Telegram":
+		return s.executeTelegramAction(&area, actionConfig, metadata)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -401,6 +468,41 @@ func (s *SchedulerService) executeDiscordAction(area *models.Area, actionConfig 
 	return nil
 }
 
+func (s *SchedulerService) executeTelegramAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
+	if s.telegramService == nil {
+		return fmt.Errorf("Telegram service not available")
+	}
+
+	chatID := strings.TrimSpace(getString(actionConfig["chatId"]))
+	if chatID == "" {
+		chatID = strings.TrimSpace(getString(actionConfig["chatID"]))
+	}
+	if chatID == "" {
+		chatID = strings.TrimSpace(getString(actionConfig["chat_id"]))
+	}
+	if chatID == "" {
+		return fmt.Errorf("chatId not found in action config")
+	}
+
+	message := getString(actionConfig["message"])
+	if strings.TrimSpace(message) == "" {
+		message = fmt.Sprintf("Notification from area %s", area.Name)
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+	message = applyTemplateVariables(message, templateVars)
+
+	if err := s.telegramService.SendMessage(chatID, message); err != nil {
+		s.recordAreaFailure(area, fmt.Errorf("failed to send telegram message: %w", err))
+		return fmt.Errorf("failed to send telegram message: %v", err)
+	}
+
+	s.recordAreaSuccess(area)
+	log.Printf("Telegram message sent successfully for AREA: %s", area.Name)
+	log.Printf("Successfully executed area: %s", area.Name)
+	return nil
+}
+
 func (s *SchedulerService) recordAreaSuccess(area *models.Area) {
 	now := time.Now()
 	area.LastRunAt = &time.Time{}
@@ -477,6 +579,9 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"rowValues":      "",
 		"rowJson":        "",
 		"spreadsheetUrl": "",
+		"triggerTime":    "",
+		"timerName":      "",
+		"interval":       "",
 	}
 
 	if metadata == nil {
@@ -503,6 +608,17 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		if rowJSON, err := json.Marshal(rowData); err == nil {
 			vars["rowJson"] = string(rowJSON)
 		}
+	}
+
+	if triggerTime, ok := metadata["triggerTime"].(string); ok {
+		vars["triggerTime"] = triggerTime
+		vars["eventTime"] = triggerTime
+	}
+	if timerName, ok := metadata["timerName"].(string); ok {
+		vars["timerName"] = timerName
+	}
+	if interval, ok := metadata["interval"].(string); ok {
+		vars["interval"] = interval
 	}
 
 	return vars
