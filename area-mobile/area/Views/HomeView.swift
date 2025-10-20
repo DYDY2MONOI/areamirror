@@ -4,7 +4,6 @@
 //
 //  Created by Dydy2Brazil on 16/09/2025.
 //
-
 import SwiftUI
 
 struct HomeView: View {
@@ -12,6 +11,7 @@ struct HomeView: View {
     @State private var showTestView = false
     @State private var showNewArea = false
     @State private var selectedTemplate: AreaTemplate?
+    @State private var selectedArea: Area?          // NEW: enable editing existing areas
     @State private var selectedTab = 0
     let onLogout: () -> Void
 
@@ -135,6 +135,9 @@ struct HomeView: View {
         .fullScreenCover(item: $selectedTemplate) { template in
             EditAreaView(template: template)
         }
+        .fullScreenCover(item: $selectedArea) { area in    // NEW: present editor for existing areas
+            EditAreaView(area: area)
+        }
         .onAppear {
             Task {
                 await areaService.fetchAllAreas()
@@ -150,7 +153,7 @@ struct HomeView: View {
             icon: getServiceIcon(area.triggerService),
             gradient: getServiceGradient(area.triggerService, area.actionService),
             type: .create,
-            action: { print("Area tapped: \(area.name)") }
+            action: { selectedArea = area }   // NEW: open edit instead of printing
         )
     }
 
@@ -226,7 +229,7 @@ struct TabButton: View {
             Text(title)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, 16)
+            .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
