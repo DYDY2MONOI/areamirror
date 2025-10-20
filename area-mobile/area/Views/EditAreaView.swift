@@ -39,38 +39,19 @@ struct EditAreaView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.black.ignoresSafeArea()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        Group {
-                            Text(existingArea == nil ? "Create AREA" : "Edit AREA")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("\(template.triggerService) → \(template.actionService)")
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.horizontal, 20)
+                AppGradients.background.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        headerCard
                         
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Name").foregroundColor(.white)
-                            TextField("Area name", text: $name)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                            Text("Description").foregroundColor(.white)
-                            TextField("Description", text: $description)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                        }
-                        .padding(.horizontal, 20)
+                        formCard
                         
                         if template.triggerService == "Google Calendar" {
-                            calendarTriggerConfig
+                            calendarTriggerCard
                         }
                         
                         if template.actionService == "Gmail" {
-                            gmailActionConfig
+                            gmailActionCard
                         }
                         
                         if let errorMessage = errorMessage {
@@ -80,8 +61,10 @@ struct EditAreaView: View {
                         }
                         
                         Button(action: saveArea) {
-                            HStack {
+                            HStack(spacing: 10) {
                                 if isSaving { ProgressView().tint(.white) }
+                                Image(systemName: existingArea == nil ? "tray.and.arrow.down.fill" : "arrow.triangle.2.circlepath.circle.fill")
+                                    .foregroundColor(.white)
                                 Text(existingArea == nil ? "Save AREA" : "Update AREA")
                             }
                             .font(.system(size: 18, weight: .semibold))
@@ -89,7 +72,7 @@ struct EditAreaView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: 14)
                                     .fill(canSave ? AppGradients.button : LinearGradient(colors: [Color.gray.opacity(0.3)], startPoint: .leading, endPoint: .trailing))
                             )
                         }
@@ -97,45 +80,64 @@ struct EditAreaView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 40)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 16)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") { presentationMode.wrappedValue.dismiss() }
-                        .foregroundColor(.white)
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarBackButtonHidden(true)
         }
         .onAppear(perform: initializeForm)
     }
     
-    private var calendarTriggerConfig: some View {
+    private var calendarTriggerCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Calendar Trigger").font(.system(size: 18, weight: .semibold)).foregroundColor(.white)
-            Text("Event date").foregroundColor(.white)
-            TextField("YYYY-MM-DD", text: $eventDate).textFieldStyle(CustomTextFieldStyle())
-            Text("Event time").foregroundColor(.white)
-            TextField("HH:MM", text: $eventTime).textFieldStyle(CustomTextFieldStyle())
-            Text("Event title").foregroundColor(.white)
-            TextField("Event title", text: $eventTitle).textFieldStyle(CustomTextFieldStyle())
-            Text("Calendar ID").foregroundColor(.white)
-            TextField("primary", text: $calendarId).textFieldStyle(CustomTextFieldStyle())
+            HStack(spacing: 8) {
+                Image(systemName: "calendar")
+                    .foregroundColor(.white)
+                Text("Calendar Trigger")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            
+            labeledField(label: "Event date", placeholder: "YYYY-MM-DD", text: $eventDate)
+            labeledField(label: "Event time", placeholder: "HH:MM", text: $eventTime)
+            labeledField(label: "Event title", placeholder: "Event title", text: $eventTitle)
+            labeledField(label: "Calendar ID", placeholder: "primary", text: $calendarId)
         }
+        .cardStyle()
         .padding(.horizontal, 20)
     }
     
-    private var gmailActionConfig: some View {
+    private var gmailActionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Gmail Action").font(.system(size: 18, weight: .semibold)).foregroundColor(.white)
-            Text("To email").foregroundColor(.white)
-            TextField("your-email@gmail.com", text: $toEmail).textFieldStyle(CustomTextFieldStyle())
-            Text("Subject").foregroundColor(.white)
-            TextField("Reminder: {{eventTitle}}", text: $subject).textFieldStyle(CustomTextFieldStyle())
-            Text("Body").foregroundColor(.white)
-            TextField("Body", text: $emailBody, axis: .vertical).textFieldStyle(CustomTextFieldStyle()).lineLimit(3...6)
+            HStack(spacing: 8) {
+                Image(systemName: "envelope.fill")
+                    .foregroundColor(.white)
+                Text("Gmail Action")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            
+            labeledField(label: "To email", placeholder: "your-email@gmail.com", text: $toEmail)
+            labeledField(label: "Subject", placeholder: "Reminder: {{eventTitle}}", text: $subject)
+            labeledField(label: "Body", placeholder: "Body", text: $emailBody, axis: .vertical)
         }
+        .cardStyle()
         .padding(.horizontal, 20)
     }
     
@@ -220,6 +222,154 @@ struct EditAreaView: View {
         case "Discord": return "SendDiscordMessage"
         default: return "Action"
         }
+    }
+}
+
+// MARK: - Styled Sections
+extension EditAreaView {
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(existingArea == nil ? "Create AREA" : "Edit AREA")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
+            
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(LinearGradient(
+                        gradient: Gradient(colors: [serviceColor(template.triggerService), serviceColor(template.actionService)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 140)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                
+                VStack {
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(name.isEmpty ? template.title : name)
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.6), radius: 6, x: 0, y: 2)
+                            Text(template.subtitle.isEmpty ? "Calendar automation" : template.subtitle)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.9))
+                                .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 2)
+                        }
+                        Spacer()
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.12))
+                                .frame(width: 48, height: 48)
+                            Image(systemName: serviceIcon(template.actionService))
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.6), radius: 6, x: 0, y: 2)
+                        }
+                    }
+                    .padding(16)
+                    Spacer()
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var formCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundColor(.white)
+                Text("Details")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            labeledField(label: "Name", placeholder: "Area name", text: $name)
+            labeledField(label: "Description", placeholder: "Description", text: $description)
+        }
+        .cardStyle()
+        .padding(.horizontal, 20)
+    }
+    
+    @ViewBuilder
+    private func labeledField(label: String, placeholder: String, text: Binding<String>, axis: Axis.Set = []) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .foregroundColor(.white)
+                .font(.system(size: 14, weight: .medium))
+            
+            if axis == .vertical {
+                TextField(placeholder, text: text, axis: .vertical)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .lineLimit(3...6)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+            } else {
+                TextField(placeholder, text: text)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+            }
+        }
+    }
+}
+
+// MARK: - Modifiers & Helpers
+fileprivate struct CardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(AppColors.darkBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+fileprivate extension View {
+    func cardStyle() -> some View { self.modifier(CardModifier()) }
+}
+
+fileprivate func serviceIcon(_ service: String) -> String {
+    switch service.lowercased() {
+    case "github": return "hammer.fill"
+    case "gmail": return "envelope.fill"
+    case "discord": return "message.fill"
+    case "slack": return "message.circle.fill"
+    case "weather": return "cloud.sun.fill"
+    case "instagram": return "camera.fill"
+    case "twitter": return "bird.fill"
+    case "youtube": return "play.rectangle.fill"
+    case "spotify": return "music.note"
+    case "telegram": return "paperplane.fill"
+    case "dropbox": return "folder.fill"
+    case "notion": return "doc.text.fill"
+    default: return "gearshape.fill"
+    }
+}
+
+fileprivate func serviceColor(_ service: String) -> Color {
+    switch service.lowercased() {
+    case "github": return Color(red: 0.2, green: 0.2, blue: 0.2)
+    case "gmail": return Color(red: 0.92, green: 0.26, blue: 0.21)
+    case "discord": return Color(red: 0.35, green: 0.4, blue: 0.95)
+    case "slack": return Color(red: 0.36, green: 0.8, blue: 0.36)
+    case "weather": return Color(red: 0.0, green: 0.7, blue: 1.0)
+    case "instagram": return Color(red: 0.8, green: 0.2, blue: 0.6)
+    case "twitter": return Color(red: 0.1, green: 0.6, blue: 0.9)
+    case "youtube": return Color(red: 1.0, green: 0.0, blue: 0.0)
+    case "spotify": return Color(red: 0.2, green: 0.8, blue: 0.2)
+    case "telegram": return Color(red: 0.0, green: 0.7, blue: 0.9)
+    case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
+    case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
+    default: return AppColors.primaryBlue
     }
 }
 
