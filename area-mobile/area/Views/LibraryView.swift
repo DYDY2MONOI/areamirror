@@ -11,6 +11,7 @@ struct LibraryView: View {
     @StateObject private var authService = AuthService.shared
     @StateObject private var areaService = AreaService.shared
     @State private var selectedFilter = "All"
+    @State private var selectedArea: Area?
     
     let filters = ["All", "Active", "Inactive", "Recent", "Favorites"]
     
@@ -123,7 +124,11 @@ struct LibraryView: View {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
                                     ForEach(areaService.userAreas) { area in
-                                        AreaCard(area: convertAreaToAreaItem(area))
+                                        AreaCard(area: area, onEdit: {
+                                            selectedArea = area
+                                        }, onDelete: {
+                                            // TODO: Implement delete area logic
+                                        })
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -133,6 +138,13 @@ struct LibraryView: View {
                         Spacer()
                     }
                 }
+            }
+            .sheet(item: $selectedArea, onDismiss: {
+                Task {
+                    await areaService.fetchUserAreas()
+                }
+            }) { area in
+                EditAreaView(area: area)
             }
         }
         .navigationTitle("Library")
@@ -146,7 +158,7 @@ struct LibraryView: View {
     
     private func convertAreaToAreaItem(_ area: Area) -> AreaItem {
         return AreaItem(
-            id: Int(area.id) ?? 0,
+            id: area.id,
             name: area.name,
             description: area.description,
             isActive: area.isActive,
@@ -161,7 +173,7 @@ struct LibraryView: View {
 }
 
 struct AreaItem: Identifiable {
-    let id: Int
+    let id: String
     let name: String
     let description: String
     let isActive: Bool
@@ -170,7 +182,9 @@ struct AreaItem: Identifiable {
 }
 
 struct AreaCard: View {
-    let area: AreaItem
+    let area: Area
+    var onEdit: () -> Void
+    var onDelete: () -> Void
     @State private var isToggled = false
     
     var body: some View {
@@ -199,11 +213,11 @@ struct AreaCard: View {
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("When: \(area.action)")
+                    Text("When: \(area.triggerService)")
                         .font(.caption)
                         .foregroundColor(.gray)
                     
-                    Text("Then: \(area.reaction)")
+                    Text("Then: \(area.actionService)")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -211,15 +225,13 @@ struct AreaCard: View {
                 Spacer()
                 
                 HStack(spacing: 12) {
-                    Button(action: {
-                    }) {
+                    Button(action: onEdit) {
                         Image(systemName: "pencil")
                             .font(.title3)
                             .foregroundColor(AppColors.primaryBlue)
                     }
                     
-                    Button(action: {
-                    }) {
+                    Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.title3)
                             .foregroundColor(.red)

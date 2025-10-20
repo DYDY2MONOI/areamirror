@@ -34,6 +34,18 @@ struct EditAreaView: View {
     init(template: AreaTemplate, existingArea: Area? = nil) {
         self.template = template
         self.existingArea = existingArea
+        
+        _name = State(initialValue: existingArea?.name ?? template.title)
+        _description = State(initialValue: existingArea?.description ?? template.description)
+        
+        if template.actionService == "Gmail" {
+            _subject = State(initialValue: "Reminder: {{eventTitle}}")
+            _emailBody = State(initialValue: "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}")
+        }
+    }
+    
+    init(area: Area) {
+        self.init(template: .from(area: area), existingArea: area)
     }
     
     var body: some View {
@@ -101,7 +113,6 @@ struct EditAreaView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationBarBackButtonHidden(true)
         }
-        .onAppear(perform: initializeForm)
     }
     
     private var calendarTriggerCard: some View {
@@ -145,21 +156,6 @@ struct EditAreaView: View {
         !name.isEmpty && (template.actionService != "Gmail" || (!toEmail.isEmpty && !subject.isEmpty))
     }
     
-    private func initializeForm() {
-        if let existing = existingArea {
-            name = existing.name
-            description = existing.description
-        } else {
-            name = template.title
-            description = template.description
-        }
-        
-        if template.actionService == "Gmail" {
-            if subject.isEmpty { subject = "Reminder: {{eventTitle}}" }
-            if emailBody.isEmpty { emailBody = "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}" }
-        }
-    }
-    
     private func saveArea() {
         isSaving = true
         errorMessage = nil
@@ -194,12 +190,30 @@ struct EditAreaView: View {
                     actionService: template.actionService,
                     actionType: resolveActionType(template.actionService),
                     triggerConfig: triggerConfig,
-                    actionConfig: actionConfig
+                    actionConfig: actionConfig,
+                    isActive: true
                 )
                 
                 if let area = existingArea {
+                    var payload = AreaService.CreateOrUpdateAreaRequest()
+                    if name != area.name { payload.name = name }
+                    if description != area.description { payload.description = description }
+                    // TODO: a more robust diffing for trigger/action configs
+                    if !triggerConfig.isEmpty { payload.triggerConfig = triggerConfig }
+                    if !actionConfig.isEmpty { payload.actionConfig = actionConfig }
                     _ = try await areaService.updateArea(areaId: area.id, payload: payload)
                 } else {
+                    let payload = AreaService.CreateOrUpdateAreaRequest(
+                        name: name,
+                        description: description,
+                        triggerService: template.triggerService,
+                        triggerType: template.triggerService == "Google Calendar" ? "Event" : "Webhook",
+                        actionService: template.actionService,
+                        actionType: resolveActionType(template.actionService),
+                        triggerConfig: triggerConfig,
+                        actionConfig: actionConfig,
+                        isActive: true
+                    )
                     _ = try await areaService.createArea(payload: payload)
                 }
                 
