@@ -179,6 +179,8 @@ func (s *SchedulerService) checkGoogleDriveTriggers() error {
 		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
 			log.Printf("Failed to persist Drive trigger state for area %s: %v", area.Name, err)
 		}
+	}
+
 	if err := s.checkTimerTriggers(); err != nil {
 		log.Printf("Error checking timer triggers: %v", err)
 	}
