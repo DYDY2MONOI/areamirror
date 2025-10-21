@@ -77,9 +77,6 @@ func (g *GoogleDriveService) ListRecentFilesInFolder(userID uint, folderID strin
 	}
 
 	q := fmt.Sprintf("'%s' in parents and trashed = false", folderID)
-	if !updatedAfter.IsZero() {
-		q = fmt.Sprintf("%s and modifiedTime > '%s'", q, updatedAfter.UTC().Format(time.RFC3339))
-	}
 
 	log.Printf("Drive API query for user %d: %s", userID, q)
 

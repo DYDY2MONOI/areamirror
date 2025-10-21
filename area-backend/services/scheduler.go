@@ -135,12 +135,7 @@ func (s *SchedulerService) checkGoogleDriveTriggers() error {
 			cfg.KnownFileIDs = make(map[string]bool)
 		}
 
-		updatedAfter := time.Time{}
-		if cfg.LastChecked != nil {
-			updatedAfter = *cfg.LastChecked
-		}
-
-		files, err := s.driveService.ListRecentFilesInFolder(area.UserID, cfg.FolderID, updatedAfter, 50)
+		files, err := s.driveService.ListRecentFilesInFolder(area.UserID, cfg.FolderID, time.Time{}, 50)
 		if err != nil {
 			log.Printf("Failed to list drive files for area %s: %v", area.Name, err)
 			continue
