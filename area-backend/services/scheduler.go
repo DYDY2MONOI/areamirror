@@ -67,12 +67,17 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Telegram service not available: %v", err)
 	}
 
+	driveService, err := NewGoogleDriveService()
+	if err != nil {
+		log.Printf("Warning: Google Drive service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
 		weatherService:  weatherService,
 		sheetsService:   sheetsService,
-    driveService:   driveService,
+		driveService:    driveService,
 		telegramService: telegramService,
 	}, nil
 }
@@ -93,6 +98,10 @@ func (s *SchedulerService) CheckScheduledAreas() error {
     if err := s.checkGoogleDriveTriggers(); err != nil {
         log.Printf("Error checking Google Drive triggers: %v", err)
     }
+
+	if err := s.checkTimerTriggers(); err != nil {
+		log.Printf("Error checking timer triggers: %v", err)
+	}
 
 	return nil
 }
