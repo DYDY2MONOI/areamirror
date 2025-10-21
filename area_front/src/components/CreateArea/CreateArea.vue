@@ -954,7 +954,9 @@ const selectTrigger = (serviceId: string) => {
     }
   } else if (serviceId === 'Google Drive') {
     form.triggerConfig = {
-      folderId: ''
+      folderId: '',
+      knownFileIds: {},
+      lastChecked: null
     }
   } else {
     form.triggerConfig = {}
