@@ -13,8 +13,8 @@ class AreaService: ObservableObject {
     static let shared = AreaService()
     
     @Published var userAreas: [Area] = []
-    @Published var popularAreas: [AreaTemplate] = []
-    @Published var recommendedAreas: [AreaTemplate] = []
+    @Published var popularAreas: [Area] = []
+    @Published var recommendedAreas: [Area] = []
     @Published var isLoading = false
     @Published var userAreasLoaded = false
     @Published var errorMessage: String?
@@ -42,16 +42,26 @@ class AreaService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
+            print("📡 GET /user/me/areas")
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
+                print("📡 /user/me/areas status: \(httpResponse.statusCode)")
                 if httpResponse.statusCode == 200 {
-                    let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
-                    print("✅ Fetched \(areaResponse.data.count) user areas")
-                    self.userAreas = areaResponse.data
-                    self.userAreasLoaded = true
-                    self.isLoading = false
+                    do {
+                        let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
+                        print("✅ Fetched \(areaResponse.data.count) user areas")
+                        self.userAreas = areaResponse.data
+                        self.userAreasLoaded = true
+                        self.isLoading = false
+                    } catch {
+                        let body = String(data: data, encoding: .utf8) ?? "<no-body>"
+                        print("❌ Decoding user areas failed: \(Self.describeDecodingError(error)) | Body: \(body)")
+                        throw error
+                    }
                 } else {
+                    let body = String(data: data, encoding: .utf8) ?? "<no-body>"
+                    print("❌ Failed to fetch user areas: \(body)")
                     self.errorMessage = "Failed to fetch user areas"
                     self.userAreasLoaded = true
                     self.isLoading = false
@@ -84,8 +94,11 @@ class AreaService: ObservableObject {
             
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
-                    let areaResponse = try JSONDecoder().decode(AreaTemplateResponse.self, from: data)
+                    let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
                     print("✅ Fetched \(areaResponse.data.count) popular areas")
+                    for (index, area) in areaResponse.data.enumerated() {
+                        print("📋 Popular area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
+                    }
                     self.popularAreas = areaResponse.data
                     self.isLoading = false
                 } else {
@@ -118,8 +131,11 @@ class AreaService: ObservableObject {
             
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
-                    let areaResponse = try JSONDecoder().decode(AreaTemplateResponse.self, from: data)
+                    let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
                     print("✅ Fetched \(areaResponse.data.count) recommended areas")
+                    for (index, area) in areaResponse.data.enumerated() {
+                        print("📋 Recommended area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
+                    }
                     self.recommendedAreas = areaResponse.data
                     self.isLoading = false
                 } else {
@@ -134,11 +150,15 @@ class AreaService: ObservableObject {
     }
     
     func fetchAllAreas() async {
+        print("🔄 Starting fetchAllAreas - loading user areas first")
+        await fetchUserAreas()
+        print("✅ User areas loaded, now fetching popular/recommended")
+        
         await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.fetchUserAreas() }
             group.addTask { await self.fetchPopularAreas() }
             group.addTask { await self.fetchRecommendedAreas() }
         }
+        print("✅ All areas loaded")
     }
 
     struct CreateOrUpdateAreaRequest: Codable {
@@ -164,7 +184,7 @@ class AreaService: ObservableObject {
         }
     }
 
-    struct SingleAreaResponse: Codable {
+    struct SingleAreaResponse: Decodable {
         let data: Area
     }
 
@@ -349,15 +369,11 @@ class AreaService: ObservableObject {
     }
 }
 
-struct AreaResponse: Codable {
+struct AreaResponse: Decodable {
     let data: [Area]
 }
 
-struct AreaTemplateResponse: Codable {
-    let data: [AreaTemplate]
-}
-
-struct Area: Identifiable, Codable {
+struct Area: Identifiable, Decodable {
     let id: String
     var name: String
     var description: String
@@ -388,7 +404,7 @@ struct Area: Identifiable, Codable {
     var lastError: String?
     var dedupKeyTemplate: String?
     let user: AreaUser?
-    
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, status, conditions, user
         case isActive = "is_active"
@@ -415,6 +431,137 @@ struct Area: Identifiable, Codable {
         case runCount = "run_count"
         case lastError = "last_error"
         case dedupKeyTemplate = "dedup_key_template"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = (try? container.decode(String.self, forKey: .name)) ?? ""
+        self.description = (try? container.decode(String.self, forKey: .description)) ?? ""
+        self.triggerService = (try? container.decode(String.self, forKey: .triggerService)) ?? ""
+        self.actionService = (try? container.decode(String.self, forKey: .actionService)) ?? ""
+        self.isActive = (try? container.decode(Bool.self, forKey: .isActive)) ?? true
+        self.isPublic = (try? container.decode(Bool.self, forKey: .isPublic)) ?? false
+        self.createdAt = (try? container.decode(String.self, forKey: .createdAt)) ?? ""
+        self.updatedAt = (try? container.decode(String.self, forKey: .updatedAt)) ?? ""
+        self.userID = (try? container.decode(Int.self, forKey: .userID)) ?? 0
+        self.triggerIconURL = try? container.decode(String.self, forKey: .triggerIconURL)
+        self.actionIconURL = try? container.decode(String.self, forKey: .actionIconURL)
+        self.status = try? container.decode(String.self, forKey: .status)
+        self.triggerType = try? container.decode(String.self, forKey: .triggerType)
+        self.actionType = try? container.decode(String.self, forKey: .actionType)
+
+        self.triggerConfig = Area.decodeFlexibleObjectDict(container: container, key: .triggerConfig)
+        self.actionConfig = Area.decodeFlexibleObjectDict(container: container, key: .actionConfig)
+        self.conditions = Area.decodeFlexibleArray(container: container, key: .conditions)
+
+        self.scheduleCron = try? container.decode(String.self, forKey: .scheduleCron)
+        self.rateLimitPerMin = try? container.decode(Int.self, forKey: .rateLimitPerMin)
+        self.dedupWindowSec = try? container.decode(Int.self, forKey: .dedupWindowSec)
+        self.retryMax = try? container.decode(Int.self, forKey: .retryMax)
+        self.retryBackoffMs = try? container.decode(Int.self, forKey: .retryBackoffMs)
+        self.lastRunStatus = try? container.decode(String.self, forKey: .lastRunStatus)
+        self.lastRunAt = try? container.decode(String.self, forKey: .lastRunAt)
+        self.nextRunAt = try? container.decode(String.self, forKey: .nextRunAt)
+        self.runCount = try? container.decode(Int.self, forKey: .runCount)
+        self.lastError = try? container.decode(String.self, forKey: .lastError)
+        self.dedupKeyTemplate = try? container.decode(String.self, forKey: .dedupKeyTemplate)
+        self.user = try? container.decode(AreaUser.self, forKey: .user)
+    }
+
+    init(
+        id: String,
+        name: String,
+        description: String,
+        triggerService: String,
+        actionService: String,
+        isActive: Bool,
+        isPublic: Bool,
+        createdAt: String,
+        updatedAt: String,
+        userID: Int,
+        triggerIconURL: String? = nil,
+        actionIconURL: String? = nil,
+        status: String? = nil,
+        triggerType: String? = nil,
+        actionType: String? = nil,
+        triggerConfig: [String: AnyCodable]? = nil,
+        actionConfig: [String: AnyCodable]? = nil,
+        conditions: [AnyCodable]? = nil,
+        scheduleCron: String? = nil,
+        rateLimitPerMin: Int? = nil,
+        dedupWindowSec: Int? = nil,
+        retryMax: Int? = nil,
+        retryBackoffMs: Int? = nil,
+        lastRunStatus: String? = nil,
+        lastRunAt: String? = nil,
+        nextRunAt: String? = nil,
+        runCount: Int? = nil,
+        lastError: String? = nil,
+        dedupKeyTemplate: String? = nil,
+        user: AreaUser? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.triggerService = triggerService
+        self.actionService = actionService
+        self.isActive = isActive
+        self.isPublic = isPublic
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.userID = userID
+        self.triggerIconURL = triggerIconURL
+        self.actionIconURL = actionIconURL
+        self.status = status
+        self.triggerType = triggerType
+        self.actionType = actionType
+        self.triggerConfig = triggerConfig
+        self.actionConfig = actionConfig
+        self.conditions = conditions
+        self.scheduleCron = scheduleCron
+        self.rateLimitPerMin = rateLimitPerMin
+        self.dedupWindowSec = dedupWindowSec
+        self.retryMax = retryMax
+        self.retryBackoffMs = retryBackoffMs
+        self.lastRunStatus = lastRunStatus
+        self.lastRunAt = lastRunAt
+        self.nextRunAt = nextRunAt
+        self.runCount = runCount
+        self.lastError = lastError
+        self.dedupKeyTemplate = dedupKeyTemplate
+        self.user = user
+    }
+
+    private static func decodeFlexibleObjectDict(container: KeyedDecodingContainer<CodingKeys>, key: CodingKeys) -> [String: AnyCodable]? {
+        if let dict = try? container.decode([String: AnyCodable].self, forKey: key) {
+            return dict
+        }
+        if let jsonString = try? container.decode(String.self, forKey: key) {
+            if let data = Data(base64Encoded: jsonString) ?? jsonString.data(using: .utf8) {
+                if let raw = try? JSONSerialization.jsonObject(with: data, options: []), let map = raw as? [String: Any] {
+                    var result: [String: AnyCodable] = [:]
+                    for (k, v) in map { result[k] = AnyCodable(v) }
+                    return result
+                }
+            }
+        }
+        return nil
+    }
+
+    private static func decodeFlexibleArray(container: KeyedDecodingContainer<CodingKeys>, key: CodingKeys) -> [AnyCodable]? {
+        if let arr = try? container.decode([AnyCodable].self, forKey: key) {
+            return arr
+        }
+        if let jsonString = try? container.decode(String.self, forKey: key) {
+            if let data = Data(base64Encoded: jsonString) ?? jsonString.data(using: .utf8) {
+                if let raw = try? JSONSerialization.jsonObject(with: data, options: []), let arr = raw as? [Any] {
+                    return arr.map { AnyCodable($0) }
+                }
+            }
+        }
+        return nil
     }
 }
 
@@ -468,45 +615,6 @@ struct AreaUser: Codable {
         case facebookID = "facebook_id"
         case facebookEmail = "facebook_email"
         case isActive = "is_active"
-    }
-}
-
-struct AreaTemplate: Identifiable, Codable {
-    let id: String
-    let title: String
-    let subtitle: String
-    let description: String
-    let icon: String
-    let gradientClass: String
-    let triggerService: String
-    let actionService: String
-    let triggerIconURL: String?
-    let actionIconURL: String?
-    let isActive: Bool
-    
-    enum CodingKeys: String, CodingKey {
-        case id, title, subtitle, description, icon, isActive
-        case gradientClass = "gradientClass"
-        case triggerService = "triggerService"
-        case actionService = "actionService"
-        case triggerIconURL = "triggerIconUrl"
-        case actionIconURL = "actionIconUrl"
-    }
-    
-    static func from(area: Area) -> AreaTemplate {
-        AreaTemplate(
-            id: area.id,
-            title: area.name,
-            subtitle: "Update this AREA",
-            description: area.description,
-            icon: "gear",
-            gradientClass: "gray",
-            triggerService: area.triggerService,
-            actionService: area.actionService,
-            triggerIconURL: area.triggerIconURL,
-            actionIconURL: area.actionIconURL,
-            isActive: area.isActive
-        )
     }
 }
 

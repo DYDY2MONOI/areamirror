@@ -261,51 +261,13 @@ func ToggleArea(c *gin.Context) {
 func GetPopularAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func GetRecommendedAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Offset(4).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func getSubtitleForArea(area models.Area) string {

@@ -10,8 +10,15 @@ struct HomeView: View {
     @StateObject private var areaService = AreaService.shared
     @State private var showTestView = false
     @State private var showNewArea = false
-    @State private var selectedTemplate: AreaTemplate?
-    @State private var selectedArea: Area?
+    @State private var selectedArea: Area? {
+        didSet {
+            if let area = selectedArea {
+                print("🔄 selectedArea set to: \(area.name) (ID: \(area.id))")
+            } else {
+                print("🔄 selectedArea cleared")
+            }
+        }
+    }
     @State private var selectedTab = 0
     let onLogout: () -> Void
 
@@ -69,22 +76,42 @@ struct HomeView: View {
                                     if !areaService.popularAreas.isEmpty {
                                         AppletSection(
                                             title: "Popular AREAs",
-                                            applets: areaService.popularAreas.map { convertAreaTemplateToApplet($0) }
+                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
                                         )
                                     }
 
                                     if !areaService.recommendedAreas.isEmpty {
                                         AppletSection(
                                             title: "Recommended for you",
-                                            applets: areaService.recommendedAreas.map { convertAreaTemplateToApplet($0) }
+                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
                                         )
                                     }
+                                } else {
+                                    //ssage while waiting for user areas
+                                    VStack {
+                                        ProgressView("Loading your areas...")
+                                            .foregroundColor(.white)
+                                        Text("Please wait while we check your existing areas")
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .font(.caption)
+                                    }
+                                    .padding()
                                 }
 
                                 if selectedTab == 1 && !areaService.userAreas.isEmpty {
                                     AppletSection(
                                         title: "My AREAs",
-                                        applets: areaService.userAreas.map { convertAreaToApplet($0) }
+                                        applets: areaService.userAreas.map { area in
+                                            Applet(
+                                                title: area.name,
+                                                subtitle: "\(area.triggerService) → \(area.actionService)",
+                                                description: area.description,
+                                                icon: getServiceIcon(area.triggerService),
+                                                gradient: getServiceGradient(area.triggerService, area.actionService),
+                                                type: .create,
+                                                action: { selectedArea = area }
+                                            )
+                                        }
                                     )
                                 }
                             }
@@ -134,9 +161,6 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showNewArea) {
             NewAreaView()
         }
-        .fullScreenCover(item: $selectedTemplate) { template in
-            EditAreaView(template: template)
-        }
         .fullScreenCover(item: $selectedArea) { area in
             EditAreaView(area: area)
         }
@@ -147,6 +171,7 @@ struct HomeView: View {
         }
     }
 
+
     private func convertAreaToApplet(_ area: Area) -> Applet {
         return Applet(
             title: area.name,
@@ -156,39 +181,6 @@ struct HomeView: View {
             gradient: getServiceGradient(area.triggerService, area.actionService),
             type: .create,
             action: { selectedArea = area }
-        )
-    }
-
-    private func convertAreaTemplateToApplet(_ template: AreaTemplate) -> Applet {
-        return Applet(
-            title: template.title,
-            subtitle: template.subtitle,
-            description: template.description,
-            icon: getServiceIcon(template.triggerService),
-            gradient: getServiceGradient(template.triggerService, template.actionService),
-            type: .create,
-            action: {
-                print("🔍 Checking for existing area for template: \(template.title)")
-                print("🔍 User areas loaded: \(areaService.userAreasLoaded)")
-                print("🔍 User areas count: \(areaService.userAreas.count)")
-                print("🔍 Template trigger: \(template.triggerService), action: \(template.actionService)")
-                
-                for (index, area) in areaService.userAreas.enumerated() {
-                    print("🔍 User area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
-                }
-                
-                if let existingArea = areaService.userAreas.first(where: { 
-                    $0.triggerService == template.triggerService && 
-                    $0.actionService == template.actionService 
-                }) {
-                    print("🔄 Found existing area for template: \(template.title) -> Opening for edit")
-                    print("🔄 Selected area ID: \(existingArea.id)")
-                    selectedArea = existingArea
-                } else {w area
-                    print("➕ No existing area found for template: \(template.title) -> Opening for create")
-                    selectedTemplate = template
-                }
-            }
         )
     }
 
