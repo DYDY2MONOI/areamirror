@@ -89,3 +89,37 @@ func (o *OneDriveService) GetAuthorizationURL(state string) string {
 
 	return microsoftAuthURL + "?" + params.Encode()
 }
+
+func (o *OneDriveService) ExchangeCodeForToken(code string) (*OneDriveTokenResponse, error) {
+	data := url.Values{}
+	data.Set("client_id", o.clientID)
+	data.Set("client_secret", o.clientSecret)
+	data.Set("code", code)
+	data.Set("redirect_uri", o.redirectURI)
+	data.Set("grant_type", "authorization_code")
+
+	req, err := http.NewRequest("POST", microsoftTokenURL, bytes.NewBufferString(data.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange code: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("token exchange failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResp OneDriveTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return nil, fmt.Errorf("failed to decode token response: %w", err)
+	}
+
+	return &tokenResp, nil
+}
