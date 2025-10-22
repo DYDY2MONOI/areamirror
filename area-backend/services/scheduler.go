@@ -388,6 +388,11 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 	}
 }
 
+// ExecuteAreaPublic is a public wrapper for executeArea
+func (s *SchedulerService) ExecuteAreaPublic(area models.Area, metadata map[string]interface{}) error {
+	return s.executeArea(area, metadata)
+}
+
 func (s *SchedulerService) executeGmailAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
 	if s.emailService == nil {
 		return fmt.Errorf("Email service not available")
@@ -582,6 +587,11 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"triggerTime":    "",
 		"timerName":      "",
 		"interval":       "",
+		"messageText":    "",
+		"chatId":         "",
+		"username":       "",
+		"firstName":      "",
+		"messageId":      "",
 	}
 
 	if metadata == nil {
@@ -619,6 +629,23 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 	}
 	if interval, ok := metadata["interval"].(string); ok {
 		vars["interval"] = interval
+	}
+
+	// Telegram metadata
+	if messageText, ok := metadata["messageText"].(string); ok {
+		vars["messageText"] = messageText
+	}
+	if chatID, ok := metadata["chatId"].(string); ok {
+		vars["chatId"] = chatID
+	}
+	if username, ok := metadata["username"].(string); ok {
+		vars["username"] = username
+	}
+	if firstName, ok := metadata["firstName"].(string); ok {
+		vars["firstName"] = firstName
+	}
+	if messageID, ok := extractInt(metadata["messageId"]); ok {
+		vars["messageId"] = strconv.Itoa(messageID)
 	}
 
 	return vars
