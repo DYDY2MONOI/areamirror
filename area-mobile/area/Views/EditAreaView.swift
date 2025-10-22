@@ -176,6 +176,7 @@ struct EditAreaView: View {
                 DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
                     .labelsHidden()
                     .datePickerStyle(.compact)
+                    .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
                     .onChange(of: eventDateTime) { _ in
                         let (dateStr, timeStr) = Self.formatCalendarStrings(from: eventDateTime)
                         eventDate = dateStr
@@ -219,10 +220,10 @@ struct EditAreaView: View {
             do {
                 var triggerConfig: [String: AnyCodable] = [:]
                 if area.triggerService == "Google Calendar" {
-                    let combinedTime = (!eventDate.isEmpty && !eventTime.isEmpty) ? "\(eventDate)T\(eventTime):00Z" : eventTime
+                    // eventTime already formatted as RFC3339 from DatePicker helper
                     triggerConfig = [
                         "eventDate": AnyCodable(eventDate),
-                        "eventTime": AnyCodable(combinedTime),
+                        "eventTime": AnyCodable(eventTime),
                         "eventTitle": AnyCodable(eventTitle),
                         "calendarId": AnyCodable(calendarId)
                     ]
