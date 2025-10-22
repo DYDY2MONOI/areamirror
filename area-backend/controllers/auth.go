@@ -344,6 +344,8 @@ func GetMe(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"onedrive_id":     user.OneDriveID,
+			"onedrive_email":  user.OneDriveEmail,
 		},
 	})
 }
@@ -384,6 +386,8 @@ func GetProfile(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"onedrive_id":     user.OneDriveID,
+			"onedrive_email":  user.OneDriveEmail,
 		},
 	})
 }
@@ -466,6 +470,8 @@ func UpdateProfile(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"onedrive_id":     user.OneDriveID,
+			"onedrive_email":  user.OneDriveEmail,
 		},
 	})
 }
@@ -644,6 +650,8 @@ func UploadProfileImage(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"onedrive_id":     user.OneDriveID,
+			"onedrive_email":  user.OneDriveEmail,
 		},
 	})
 }
