@@ -58,7 +58,6 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking weather triggers: %v", err)
 	}
 
-	// Check OneDrive triggers
 	if err := s.checkOneDriveTriggers(); err != nil {
 		log.Printf("Error checking OneDrive triggers: %v", err)
 	}
@@ -127,13 +126,11 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 	}
 
 	for _, area := range areas {
-		// Skip if user not found or no OneDrive token
 		if area.User.ID == 0 || area.User.OneDriveToken == nil || *area.User.OneDriveToken == "" {
 			log.Printf("Skipping area %s: no user or token", area.Name)
 			continue
 		}
 
-		// Check if enough time has passed since last run (avoid spam)
 		if area.LastRunAt != nil {
 			timeSinceLastRun := time.Since(*area.LastRunAt)
 			if timeSinceLastRun < 1*time.Minute {
@@ -141,33 +138,26 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 			}
 		}
 
-		// Determine trigger type from TriggerType field
-		// For OneDrive, TriggerType will be "NewFile" or "ModifiedFile"
 		triggerType := area.TriggerType
 		if triggerType == "" || triggerType == "Webhook" {
-			// Default for backward compatibility
 			triggerType = "NewFile"
 		}
 
-		// List files from OneDrive
 		filesResp, err := s.onedriveService.ListFiles(*area.User.OneDriveToken, "")
 		if err != nil {
 			log.Printf("Failed to list OneDrive files for area %s: %v", area.Name, err)
 			continue
 		}
 
-		// Check for files based on trigger type
 		for _, file := range filesResp.Value {
 			shouldTrigger := false
 
 			if triggerType == "NewFile" || triggerType == "new_file" {
-				// New file: check CreatedDateTime
 				if time.Since(file.CreatedDateTime) < 1*time.Minute {
 					log.Printf("New file detected in OneDrive: %s (created: %v)", file.Name, file.CreatedDateTime)
 					shouldTrigger = true
 				}
 			} else if triggerType == "ModifiedFile" || triggerType == "modified_file" {
-				// Modified file: check ModifiedDateTime AND make sure it's not just created
 				if time.Since(file.ModifiedDateTime) < 1*time.Minute && time.Since(file.CreatedDateTime) > 1*time.Minute {
 					log.Printf("Modified file detected in OneDrive: %s (modified: %v)", file.Name, file.ModifiedDateTime)
 					shouldTrigger = true
@@ -175,7 +165,6 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 			}
 
 			if shouldTrigger {
-				// Execute the action with file context
 				if err := s.executeAreaWithContext(area, map[string]string{
 					"fileName": file.Name,
 					"fileId":   file.ID,
@@ -183,7 +172,7 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 				}); err != nil {
 					log.Printf("Failed to execute area %s: %v", area.Name, err)
 				}
-				break // Only trigger once per check
+				break
 			}
 		}
 	}
@@ -221,7 +210,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		return false
 	}
 
-	// Check if we should skip due to recent execution
 	if area.LastRunAt != nil {
 		timeSinceLastRun := time.Since(*area.LastRunAt)
 		if timeSinceLastRun < 10*time.Minute {
@@ -230,7 +218,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		}
 	}
 
-	// Parse weather trigger configuration
 	city, ok := triggerConfig["city"].(string)
 	if !ok || city == "" {
 		log.Printf("City not specified for weather area %s", area.Name)
