@@ -150,3 +150,34 @@ func OneDriveDownloadFile(c *gin.Context) {
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileID))
 	c.Data(http.StatusOK, "application/octet-stream", content)
 }
+
+func OneDriveDeleteFile(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	fileID := c.Param("fileId")
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File ID required"})
+		return
+	}
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	err = onedriveService.DeleteFile(accessToken, fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "File deleted successfully",
+	})
+}
