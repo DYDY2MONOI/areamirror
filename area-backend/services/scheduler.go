@@ -441,6 +441,47 @@ func (s *SchedulerService) executeOneDriveAction(area models.Area, actionConfig 
 	}
 }
 
+func (s *SchedulerService) executeOneDriveUpload(area models.Area, actionConfig map[string]interface{}, accessToken string) error {
+	fileName, ok := actionConfig["fileName"].(string)
+	if !ok || fileName == "" {
+		fileName = fmt.Sprintf("area_%s_%s.txt", area.Name, time.Now().Format("20060102_150405"))
+	}
+
+	content, ok := actionConfig["content"].(string)
+	if !ok || content == "" {
+		content = fmt.Sprintf("File created by AREA: %s at %s", area.Name, time.Now().Format("2006-01-02 15:04:05"))
+	}
+
+	templateVars := map[string]string{
+		"eventTitle": "Scheduled Event",
+		"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
+		"areaName":   area.Name,
+	}
+
+	for key, value := range templateVars {
+		fileName = strings.ReplaceAll(fileName, "{{"+key+"}}", value)
+		content = strings.ReplaceAll(content, "{{"+key+"}}", value)
+	}
+
+	_, err := s.onedriveService.UploadFile(accessToken, fileName, []byte(content))
+	if err != nil {
+		return fmt.Errorf("failed to upload file to OneDrive: %v", err)
+	}
+
+	log.Printf("File uploaded to OneDrive successfully for AREA: %s", area.Name)
+
+	area.LastRunAt = &time.Time{}
+	*area.LastRunAt = time.Now()
+	area.RunCount++
+	area.LastRunStatus = "success"
+
+	if err := database.DB.Save(&area).Error; err != nil {
+		log.Printf("Failed to update area status: %v", err)
+	}
+
+	return nil
+}
+
 func (s *SchedulerService) StartScheduler(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
