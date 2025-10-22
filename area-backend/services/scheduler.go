@@ -482,6 +482,41 @@ func (s *SchedulerService) executeOneDriveUpload(area models.Area, actionConfig 
 	return nil
 }
 
+func (s *SchedulerService) executeOneDriveCreateFolder(area models.Area, actionConfig map[string]interface{}, accessToken string) error {
+	folderName, ok := actionConfig["folderName"].(string)
+	if !ok || folderName == "" {
+		folderName = fmt.Sprintf("AREA_%s", time.Now().Format("20060102_150405"))
+	}
+
+	templateVars := map[string]string{
+		"eventTitle": "Scheduled Event",
+		"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
+		"areaName":   area.Name,
+	}
+
+	for key, value := range templateVars {
+		folderName = strings.ReplaceAll(folderName, "{{"+key+"}}", value)
+	}
+
+	_, err := s.onedriveService.CreateFolder(accessToken, folderName)
+	if err != nil {
+		return fmt.Errorf("failed to create folder on OneDrive: %v", err)
+	}
+
+	log.Printf("Folder created on OneDrive successfully for AREA: %s", area.Name)
+
+	area.LastRunAt = &time.Time{}
+	*area.LastRunAt = time.Now()
+	area.RunCount++
+	area.LastRunStatus = "success"
+
+	if err := database.DB.Save(&area).Error; err != nil {
+		log.Printf("Failed to update area status: %v", err)
+	}
+
+	return nil
+}
+
 func (s *SchedulerService) StartScheduler(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
