@@ -25,6 +25,24 @@ type TelegramResponse struct {
 	Description string `json:"description,omitempty"`
 }
 
+type TelegramUpdate struct {
+	UpdateID int `json:"update_id"`
+	Message  struct {
+		MessageID int `json:"message_id"`
+		From      struct {
+			ID        int64  `json:"id"`
+			FirstName string `json:"first_name"`
+			Username  string `json:"username"`
+		} `json:"from"`
+		Chat struct {
+			ID   int64  `json:"id"`
+			Type string `json:"type"`
+		} `json:"chat"`
+		Date int    `json:"date"`
+		Text string `json:"text"`
+	} `json:"message"`
+}
+
 func NewTelegramService() (*TelegramService, error) {
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if botToken == "" {
