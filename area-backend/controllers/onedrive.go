@@ -30,3 +30,21 @@ func OneDriveAuthStart(c *gin.Context) {
 		"state":   state,
 	})
 }
+
+func OneDriveCallback(c *gin.Context) {
+	code := c.Query("code")
+	state := c.Query("state")
+	_ = state
+
+	if code == "" {
+		errorMsg := c.Query("error")
+		errorDesc := c.Query("error_description")
+		redirectURL := fmt.Sprintf("http://localhost:3000/auth/onedrive/callback?error=%s&error_description=%s",
+			errorMsg, errorDesc)
+		c.Redirect(http.StatusFound, redirectURL)
+		return
+	}
+
+	redirectURL := fmt.Sprintf("http://localhost:3000/auth/onedrive/callback?code=%s", code)
+	c.Redirect(http.StatusFound, redirectURL)
+}
