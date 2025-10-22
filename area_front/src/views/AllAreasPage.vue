@@ -631,8 +631,9 @@ onMounted(() => {
 
 .areas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, 400px);
   gap: 1.5rem;
+  justify-content: center;
 }
 
 .area-card {

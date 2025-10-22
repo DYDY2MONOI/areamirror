@@ -117,6 +117,7 @@ func main() {
 
 	githubWebhookController := controllers.NewGitHubWebhookController()
 	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
 

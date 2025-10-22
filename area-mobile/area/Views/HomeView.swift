@@ -4,14 +4,21 @@
 //
 //  Created by Dydy2Brazil on 16/09/2025.
 //
-
 import SwiftUI
 
 struct HomeView: View {
     @StateObject private var areaService = AreaService.shared
     @State private var showTestView = false
     @State private var showNewArea = false
-    @State private var selectedTemplate: AreaTemplate?
+    @State private var selectedArea: Area? {
+        didSet {
+            if let area = selectedArea {
+                print("🔄 selectedArea set to: \(area.name) (ID: \(area.id))")
+            } else {
+                print("🔄 selectedArea cleared")
+            }
+        }
+    }
     @State private var selectedTab = 0
     let onLogout: () -> Void
 
@@ -65,24 +72,46 @@ struct HomeView: View {
                                     .foregroundColor(.white)
                                     .padding()
                             } else {
-                                if !areaService.popularAreas.isEmpty {
-                                    AppletSection(
-                                        title: "Popular AREAs",
-                                        applets: areaService.popularAreas.map { convertAreaTemplateToApplet($0) }
-                                    )
-                                }
+                                if areaService.userAreasLoaded {
+                                    if !areaService.popularAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Popular AREAs",
+                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
+                                        )
+                                    }
 
-                                if !areaService.recommendedAreas.isEmpty {
-                                    AppletSection(
-                                        title: "Recommended for you",
-                                        applets: areaService.recommendedAreas.map { convertAreaTemplateToApplet($0) }
-                                    )
+                                    if !areaService.recommendedAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Recommended for you",
+                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
+                                        )
+                                    }
+                                } else {
+                                    //ssage while waiting for user areas
+                                    VStack {
+                                        ProgressView("Loading your areas...")
+                                            .foregroundColor(.white)
+                                        Text("Please wait while we check your existing areas")
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .font(.caption)
+                                    }
+                                    .padding()
                                 }
 
                                 if selectedTab == 1 && !areaService.userAreas.isEmpty {
                                     AppletSection(
                                         title: "My AREAs",
-                                        applets: areaService.userAreas.map { convertAreaToApplet($0) }
+                                        applets: areaService.userAreas.map { area in
+                                            Applet(
+                                                title: area.name,
+                                                subtitle: "\(area.triggerService) → \(area.actionService)",
+                                                description: area.description,
+                                                icon: getServiceIcon(area.triggerService),
+                                                gradient: getServiceGradient(area.triggerService, area.actionService),
+                                                type: .create,
+                                                action: { selectedArea = area }
+                                            )
+                                        }
                                     )
                                 }
                             }
@@ -132,8 +161,8 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showNewArea) {
             NewAreaView()
         }
-        .fullScreenCover(item: $selectedTemplate) { template in
-            EditAreaView(template: template)
+        .fullScreenCover(item: $selectedArea) { area in
+            EditAreaView(area: area)
         }
         .onAppear {
             Task {
@@ -141,6 +170,7 @@ struct HomeView: View {
             }
         }
     }
+
 
     private func convertAreaToApplet(_ area: Area) -> Applet {
         return Applet(
@@ -150,21 +180,7 @@ struct HomeView: View {
             icon: getServiceIcon(area.triggerService),
             gradient: getServiceGradient(area.triggerService, area.actionService),
             type: .create,
-            action: { print("Area tapped: \(area.name)") }
-        )
-    }
-
-    private func convertAreaTemplateToApplet(_ template: AreaTemplate) -> Applet {
-        return Applet(
-            title: template.title,
-            subtitle: template.subtitle,
-            description: template.description,
-            icon: getServiceIcon(template.triggerService),
-            gradient: getServiceGradient(template.triggerService, template.actionService),
-            type: .create,
-            action: {
-                selectedTemplate = template
-            }
+            action: { selectedArea = area }
         )
     }
 
@@ -226,7 +242,7 @@ struct TabButton: View {
             Text(title)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, 16)
+            .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
