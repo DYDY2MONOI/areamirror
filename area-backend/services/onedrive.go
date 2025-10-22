@@ -249,3 +249,27 @@ func (o *OneDriveService) DownloadFile(accessToken, fileID string) ([]byte, erro
 
 	return content, nil
 }
+
+func (o *OneDriveService) DeleteFile(accessToken, fileID string) error {
+	apiURL := fmt.Sprintf("%s/me/drive/items/%s", graphAPIBaseURL, fileID)
+
+	req, err := http.NewRequest("DELETE", apiURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create delete request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to delete file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
