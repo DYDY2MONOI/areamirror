@@ -32,6 +32,10 @@ type User struct {
 	GoogleEmail        *string    `json:"google_email"`
 	FacebookID         *string    `json:"facebook_id" gorm:"uniqueIndex"`
 	FacebookEmail      *string    `json:"facebook_email"`
+	OneDriveID         *string    `json:"onedrive_id" gorm:"column:one_drive_id;uniqueIndex"`
+	OneDriveEmail      *string    `json:"onedrive_email" gorm:"column:one_drive_email"`
+	OneDriveToken      *string    `json:"-" gorm:"column:one_drive_token;type:text"`
+	OneDriveRefresh    *string    `json:"-" gorm:"column:one_drive_refresh;type:text"`
 	Role               string     `json:"role" gorm:"default:'member'"`
 	IsActive           bool       `json:"is_active" gorm:"default:true"`
 
