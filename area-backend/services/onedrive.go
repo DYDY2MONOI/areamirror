@@ -314,3 +314,32 @@ func (o *OneDriveService) CreateFolder(accessToken, folderName string) (*OneDriv
 
 	return &folder, nil
 }
+
+func (o *OneDriveService) GetUserInfo(accessToken string) (map[string]interface{}, error) {
+	apiURL := graphAPIBaseURL + "/me"
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user info request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("get user info failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var userInfo map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode user info: %w", err)
+	}
+
+	return userInfo, nil
+}
