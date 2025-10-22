@@ -176,7 +176,6 @@ struct EditAreaView: View {
                 DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
                     .labelsHidden()
                     .datePickerStyle(.compact)
-                    .environment(\.timeZone, TimeZone(secondsFromGMT: 0)!)
                     .onChange(of: eventDateTime) { _ in
                         let (dateStr, timeStr) = Self.formatCalendarStrings(from: eventDateTime)
                         eventDate = dateStr
@@ -220,7 +219,6 @@ struct EditAreaView: View {
             do {
                 var triggerConfig: [String: AnyCodable] = [:]
                 if area.triggerService == "Google Calendar" {
-                    // eventTime already formatted as RFC3339 from DatePicker helper
                     triggerConfig = [
                         "eventDate": AnyCodable(eventDate),
                         "eventTime": AnyCodable(eventTime),
@@ -285,29 +283,55 @@ struct EditAreaView: View {
 extension EditAreaView {
     private static func parseCalendarDateTime(dateString: String, timeString: String) -> Date? {
         if !timeString.isEmpty {
-            let iso1 = ISO8601DateFormatter()
-            if let d = iso1.date(from: timeString) { return d }
-
-            if !dateString.isEmpty {
-                let cleanedTime = timeString.count == 5 ? "\(timeString):00" : timeString
-                let combined = "\(dateString)T\(cleanedTime)Z"
-                if let d2 = iso1.date(from: combined) { return d2 }
+            let iso = ISO8601DateFormatter()
+            if let d = iso.date(from: timeString) {
+                return d
             }
         }
+
         if !dateString.isEmpty {
-            let df = DateFormatter()
-            df.locale = Locale(identifier: "en_US_POSIX")
-            df.timeZone = TimeZone(secondsFromGMT: 0)
-            df.dateFormat = "yyyy-MM-dd"
-            return df.date(from: dateString)
+            let timeRegex = try! NSRegularExpression(pattern: "T(\\d{2}:\\d{2})", options: [])
+            var hhmm: String?
+            if let match = timeRegex.firstMatch(in: timeString, options: [], range: NSRange(location: 0, length: (timeString as NSString).length)) {
+                let r = match.range(at: 1)
+                if r.location != NSNotFound, let rr = Range(r, in: timeString) {
+                    hhmm = String(timeString[rr])
+                }
+            }
+            if hhmm == nil {
+                let simple = try! NSRegularExpression(pattern: "^\\d{2}:\\d{2}$", options: [])
+                if simple.firstMatch(in: timeString, options: [], range: NSRange(location: 0, length: (timeString as NSString).length)) != nil {
+                    hhmm = timeString
+                }
+            }
+
+            let parts = dateString.split(separator: "-")
+            guard parts.count == 3, let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]) else {
+                return nil
+            }
+            var comps = DateComponents()
+            comps.year = year
+            comps.month = month
+            comps.day = day
+            if let hhmm = hhmm {
+                let t = hhmm.split(separator: ":")
+                if t.count >= 2, let h = Int(t[0]), let m = Int(t[1]) {
+                    comps.hour = h
+                    comps.minute = m
+                }
+            }
+            comps.second = 0
+            comps.timeZone = TimeZone.current
+            return Calendar.current.date(from: comps)
         }
+
         return nil
     }
 
     private static func formatCalendarStrings(from date: Date) -> (String, String) {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
-        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.timeZone = TimeZone.current
         df.dateFormat = "yyyy-MM-dd"
         let dateStr = df.string(from: date)
 
