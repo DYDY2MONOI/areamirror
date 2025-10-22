@@ -216,3 +216,28 @@ func OneDriveCreateFolder(c *gin.Context) {
 		"data":    folder,
 	})
 }
+
+func OneDriveUserInfo(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	userInfo, err := onedriveService.GetUserInfo(accessToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    userInfo,
+	})
+}
