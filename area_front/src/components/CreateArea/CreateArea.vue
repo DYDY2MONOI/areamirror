@@ -7,9 +7,14 @@
             <h1 class="card-title">Create New Area</h1>
             <p class="card-subtitle">Connect your favorite services with intelligent automation</p>
           </div>
-          <button class="close-button" @click="$emit('close')">
-            <v-icon size="24" color="white">mdi-close</v-icon>
-          </button>
+          <div class="header-actions">
+            <button class="info-button" @click="showGuide = true" title="Show Guide">
+              <v-icon size="20" color="white">mdi-information</v-icon>
+            </button>
+            <button class="close-button" @click="$emit('close')">
+              <v-icon size="24" color="white">mdi-close</v-icon>
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-content">
@@ -617,6 +622,90 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Telegram'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">💬 Telegram Trigger</h4>
+                <p class="config-subtitle">Configure which Telegram messages should trigger this area</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">📱 Chat ID</label>
+                  <input
+                    v-model="form.triggerConfig.chatId"
+                    class="modern-input"
+                    placeholder="123456789"
+                    required
+                  />
+                  <small class="input-hint">Your Telegram chat ID. Send a message to your bot and visit the Telegram API to get it.</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">🎯 Trigger Type</label>
+                  <select v-model="form.triggerConfig.triggerType" class="modern-select" required>
+                    <option value="">Select trigger type...</option>
+                    <option value="message_received">Any Message Received</option>
+                    <option value="keyword_match">Keyword Match</option>
+                    <option value="command_received">Command Received</option>
+                  </select>
+                  <small class="input-hint">Choose when this area should trigger</small>
+                </div>
+
+                <div v-if="form.triggerConfig.triggerType === 'keyword_match'" class="input-container">
+                  <label class="input-label">🔑 Keyword</label>
+                  <input
+                    v-model="form.triggerConfig.keyword"
+                    class="modern-input"
+                    placeholder="urgent"
+                    required
+                  />
+                  <small class="input-hint">Messages containing this keyword will trigger the area</small>
+                </div>
+
+                <div v-if="form.triggerConfig.triggerType === 'command_received'" class="input-container">
+                  <label class="input-label">⚡ Command</label>
+                  <input
+                    v-model="form.triggerConfig.command"
+                    class="modern-input"
+                    placeholder="/start"
+                    required
+                  />
+                  <small class="input-hint">This specific command will trigger the area (e.g., /start, /help)</small>
+                </div>
+
+                <div v-if="form.triggerConfig.chatId" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>
+                      <span v-if="form.triggerConfig.triggerType === 'message_received'">
+                        Any message sent to this chat will trigger the area
+                      </span>
+                      <span v-else-if="form.triggerConfig.triggerType === 'keyword_match'">
+                        Only messages containing "{{ form.triggerConfig.keyword }}" will trigger
+                      </span>
+                      <span v-else-if="form.triggerConfig.triggerType === 'command_received'">
+                        Only the command "{{ form.triggerConfig.command }}" will trigger
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-container">
+                  <div class="info-box warning">
+                    <v-icon size="18" color="#f59e0b">mdi-alert</v-icon>
+                    <span>Make sure you have set up the Telegram webhook pointing to your backend!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -663,6 +752,58 @@
                     required
                   ></textarea>
                   <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.actionService === 'Discord'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('discord.png')" alt="Discord" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">💬 Discord Action</h4>
+                <p class="config-subtitle">Configure the Discord message to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">🔗 Discord Webhook URL</label>
+                  <input
+                    v-model="form.actionConfig.webhookUrl"
+                    class="modern-input"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    required
+                  />
+                  <small class="input-hint">Your Discord webhook URL (Server Settings → Integrations → Webhooks)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">💬 Message</label>
+                  <textarea
+                    v-model="form.actionConfig.message"
+                    class="modern-textarea"
+                    placeholder="Message to send to Discord"
+                    rows="4"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables:
+                    <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                  </small>
+                </div>
+
+                <div v-if="form.actionConfig.message" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>This message will be posted to your Discord channel via webhook</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -825,6 +966,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Guide Modal -->
+    <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
 
@@ -835,6 +979,7 @@ import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
 import { API_BASE_URL } from '../../config/api'
+import AreaGuideModal from '../AreaGuideModal.vue'
 
 type AppDef = { name: string; icon: string }
 const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
@@ -905,6 +1050,7 @@ const isLoadingRepositories = ref(false)
 const isTestingGoogleSheets = ref(false)
 const sheetsTestError = ref<string | null>(null)
 const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
+const showGuide = ref(false)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -942,6 +1088,13 @@ watch(() => props.template, (newTemplate) => {
         sheetName: '',
         range: 'Sheet1!A1:D',
         hasHeader: true
+      }
+    } else if (newTemplate.triggerService === 'Telegram') {
+      form.triggerConfig = {
+        chatId: '',
+        triggerType: 'message_received',
+        keyword: '',
+        command: ''
       }
     }
 
@@ -998,6 +1151,26 @@ const isFormValid = computed(() => {
   if (form.triggerService === 'Timer') {
     return hasBasicInfo &&
            form.triggerConfig.interval
+  }
+
+  if (form.triggerService === 'Telegram') {
+    const hasBasicTelegramConfig = hasBasicInfo &&
+           form.triggerConfig.chatId &&
+           form.triggerConfig.triggerType
+    
+    if (form.triggerConfig.triggerType === 'keyword_match') {
+      return hasBasicTelegramConfig && form.triggerConfig.keyword
+    }
+    if (form.triggerConfig.triggerType === 'command_received') {
+      return hasBasicTelegramConfig && form.triggerConfig.command
+    }
+    return hasBasicTelegramConfig
+  }
+
+  if (form.actionService === 'Discord') {
+    return hasBasicInfo &&
+           form.actionConfig.webhookUrl &&
+           form.actionConfig.message
   }
 
   if (form.actionService === 'Telegram') {
@@ -1078,6 +1251,13 @@ const selectTrigger = (serviceId: string) => {
     form.triggerConfig = {
       interval: '5m'
     }
+  } else if (serviceId === 'Telegram') {
+    form.triggerConfig = {
+      chatId: '',
+      triggerType: 'message_received',
+      keyword: '',
+      command: ''
+    }
   } else {
     form.triggerConfig = {}
   }
@@ -1106,8 +1286,12 @@ const selectAction = (serviceId: string) => {
       }
     }
   } else if (serviceId === 'Discord') {
-    const defaultMessage = form.triggerService === 'Google Sheets'
+    const defaultMessage = form.triggerService === 'Telegram'
+      ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Timer'
+      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
 
     form.actionConfig = {
@@ -1119,6 +1303,8 @@ const selectAction = (serviceId: string) => {
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Telegram'
+      ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
       : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
@@ -1153,9 +1339,30 @@ const getMissingFields = () => {
     if (!form.triggerConfig.range) missing.push('Range')
   }
 
+  if (form.triggerService === 'Telegram') {
+    if (!form.triggerConfig.chatId) missing.push('Chat ID')
+    if (!form.triggerConfig.triggerType) missing.push('Trigger Type')
+    if (form.triggerConfig.triggerType === 'keyword_match' && !form.triggerConfig.keyword) {
+      missing.push('Keyword')
+    }
+    if (form.triggerConfig.triggerType === 'command_received' && !form.triggerConfig.command) {
+      missing.push('Command')
+    }
+  }
+
   if (form.actionService === 'Gmail') {
     if (!form.actionConfig.toEmail) missing.push('Email Address')
     if (!form.actionConfig.subject) missing.push('Email Subject')
+  }
+
+  if (form.actionService === 'Discord') {
+    if (!form.actionConfig.webhookUrl) missing.push('Discord Webhook URL')
+    if (!form.actionConfig.message) missing.push('Discord Message')
+  }
+
+  if (form.actionService === 'Telegram') {
+    if (!form.actionConfig.chatId) missing.push('Telegram Chat ID')
+    if (!form.actionConfig.message) missing.push('Telegram Message')
   }
 
   return missing.join(', ')
@@ -1378,19 +1585,25 @@ const createArea = async () => {
       }
 
       await areaService.createArea(areaData)
-    } else if (form.triggerService === 'Google Drive') {
+    } else if (form.triggerService === 'Telegram') {
+      const triggerConfig: any = {
+        chatId: form.triggerConfig.chatId
+      }
+      
+      if (form.triggerConfig.triggerType === 'keyword_match') {
+        triggerConfig.keyword = form.triggerConfig.keyword
+      } else if (form.triggerConfig.triggerType === 'command_received') {
+        triggerConfig.command = form.triggerConfig.command
+      }
+
       const areaData = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: 'NewFileInFolder',
+        triggerType: form.triggerConfig.triggerType || 'message_received',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-        triggerConfig: {
-          folderId: form.triggerConfig.folderId,
-          knownFileIds: {},
-          lastChecked: null
-        },
+        triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
       }
 
@@ -1459,6 +1672,31 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.info-button {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-button:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .close-button {
@@ -2103,7 +2341,6 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   }
 }
 
-/* Service Selection Styles */
 .service-selection {
   width: 100%;
 }
@@ -2514,7 +2751,11 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   margin-top: 1rem;
 }
 
-/* Help box for Telegram Chat ID instructions */
+.info-box.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
 .help-box {
   margin-top: 1rem;
   padding: 1rem;
@@ -2568,7 +2809,6 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: #60a5fa;
 }
 
-/* GitHub-specific styles */
 .checkbox-group {
   display: flex;
   flex-direction: column;
