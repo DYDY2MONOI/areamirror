@@ -2799,10 +2799,10 @@ body.modal-open {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, 400px);
   gap: 2rem;
   margin-top: 2rem;
-  justify-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 1024px) {
@@ -2813,7 +2813,7 @@ body.modal-open {
 }
 
 .area-glare-card {
-  width: 320px;
+  width: 400px;
   height: 420px;
   cursor: pointer;
   transition: transform 0.2s ease;
