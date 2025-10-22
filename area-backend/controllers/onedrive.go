@@ -241,3 +241,76 @@ func OneDriveUserInfo(c *gin.Context) {
 		"data":    userInfo,
 	})
 }
+
+func LinkOneDriveAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req struct {
+		Code string `json:"code" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	tokenResp, err := onedriveService.ExchangeCodeForToken(req.Code)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
+
+	userInfo, err := onedriveService.GetUserInfo(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get OneDrive user info"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	onedriveID := userInfo["id"].(string)
+	onedriveEmail := ""
+	if mail, ok := userInfo["mail"].(string); ok {
+		onedriveEmail = mail
+	} else if upn, ok := userInfo["userPrincipalName"].(string); ok {
+		onedriveEmail = upn
+	}
+
+	var existingUser models.User
+	if err := database.DB.Where("one_drive_id = ?", onedriveID).First(&existingUser).Error; err == nil {
+		if existingUser.ID != user.ID {
+			c.JSON(http.StatusConflict, gin.H{"error": "This OneDrive account is already linked to another user"})
+			return
+		}
+	}
+
+	user.OneDriveID = &onedriveID
+	user.OneDriveEmail = &onedriveEmail
+	user.OneDriveToken = &tokenResp.AccessToken
+	user.OneDriveRefresh = &tokenResp.RefreshToken
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link OneDrive account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "OneDrive account linked successfully",
+		"onedrive_id":    onedriveID,
+		"onedrive_email": onedriveEmail,
+	})
+}
