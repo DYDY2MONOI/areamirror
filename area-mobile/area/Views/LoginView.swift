@@ -78,7 +78,7 @@ struct LoginView: View {
         } message: {
             Text(authService.errorMessage ?? "An error occurred")
         }
-        .onChange(of: authService.isAuthenticated) { isAuthenticated in
+        .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 onLoginSuccess()
             }
@@ -97,7 +97,7 @@ struct LoginView: View {
         
         authService.login(email: email, password: password)
         
-        if let error = authService.errorMessage {
+        if authService.errorMessage != nil {
             showAlert = true
         }
     }

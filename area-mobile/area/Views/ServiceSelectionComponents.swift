@@ -151,7 +151,7 @@ struct ServiceSelectionView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sizeThatFitsLayout) {
     VStack {
         ServiceSelectionView(
             title: "Select Action Service",
@@ -160,5 +160,4 @@ struct ServiceSelectionView: View {
         )
     }
     .background(Color.black)
-    .previewLayout(.sizeThatFits)
 }

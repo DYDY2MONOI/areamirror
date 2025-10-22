@@ -421,13 +421,13 @@ struct EditProfileView: View {
         .onAppear {
             loadCurrentProfile()
         }
-        .onChange(of: authService.errorMessage) { errorMessage in
-            if let error = errorMessage {
+        .onChange(of: authService.errorMessage) { _, newValue in
+            if newValue != nil {
                 showAlert = true
             }
         }
-        .onChange(of: authService.isLoading) { isLoading in
-            if !isLoading && authService.errorMessage == nil {
+        .onChange(of: authService.isLoading) { _, newValue in
+            if !newValue && authService.errorMessage == nil {
                 showSuccessAlert = true
             }
         }
@@ -542,3 +542,4 @@ struct EditProfileView: View {
 #Preview {
     EditProfileView(onDismiss: {})
 }
+

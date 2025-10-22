@@ -181,6 +181,69 @@
           </div>
         </div>
 
+        <div v-if="template && template.triggerService === 'Google Sheets'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-google-spreadsheet</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">📊 Google Sheets Change Trigger</h4>
+              <p class="config-subtitle">Surveille une feuille Google Sheets et déclenche une action lors de modifications</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">🆔 Spreadsheet ID</label>
+                <input
+                  v-model="form.triggerConfig.spreadsheetId"
+                  type="text"
+                  class="form-input"
+                  placeholder="e.g., 1A2B3C4D..."
+                  required
+                />
+                <small class="form-hint">Copiez l'identifiant présent dans l'URL de votre feuille (entre /d/ et /edit)</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">📄 Nom de la feuille</label>
+                <input
+                  v-model="form.triggerConfig.sheetName"
+                  type="text"
+                  class="form-input"
+                  placeholder="Sheet1"
+                />
+                <small class="form-hint">Optionnel : utilisé uniquement pour l'affichage des logs</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">📍 Plage à surveiller</label>
+                <input
+                  v-model="form.triggerConfig.range"
+                  type="text"
+                  class="form-input"
+                  placeholder="Sheet1!A1:D"
+                  required
+                />
+                <small class="form-hint">Format A1 (ex: Feuille1!A1:D). Limitez la plage pour de meilleures performances.</small>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="form-checkbox">
+                  <input
+                    v-model="form.triggerConfig.hasHeader"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span class="checkbox-label">La première ligne contient des en-têtes</span>
+                </label>
+                <small class="form-hint">Lorsque coché, les messages Discord afficheront des paires clé-valeur.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-if="template && template.triggerService === 'GitHub'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -320,7 +383,7 @@
                   rows="4"
                   required
                 ></textarea>
-                <small class="form-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125; as placeholders</small>
               </div>
             </div>
           </div>
@@ -360,11 +423,90 @@
                   rows="4"
                   required
                 ></textarea>
-                <small class="form-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125; as placeholders</small>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        v-if="isEditingExisting && template?.actionService === 'Discord'"
+        class="logs-card"
+      >
+        <div class="logs-header">
+          <div>
+            <h4 class="logs-title">📒 Historique des messages Discord</h4>
+            <p class="logs-subtitle">Retrouvez les dernières notifications envoyées pour cette automatisation.</p>
+          </div>
+          <button class="btn btn-refresh" @click="refreshLogs" :disabled="isLoadingLogs">
+            <v-icon size="18">mdi-refresh</v-icon>
+            Rafraîchir
+          </button>
+        </div>
+
+        <div v-if="isLoadingLogs" class="logs-state">
+          <v-icon size="20" color="#6366f1">mdi-loading</v-icon>
+          <span>Chargement des logs...</span>
+        </div>
+
+        <div v-else-if="logsError" class="logs-state logs-state--error">
+          <v-icon size="20" color="#ef4444">mdi-alert-circle</v-icon>
+          <span>{{ logsError }}</span>
+        </div>
+
+        <div v-else-if="!discordLogs.length" class="logs-state">
+          <v-icon size="20" color="#9ca3af">mdi-history</v-icon>
+          <span>Aucun message envoyé pour le moment.</span>
+        </div>
+
+        <table v-else class="logs-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Ligne</th>
+              <th>Détails</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in discordLogs" :key="log.id">
+              <td>{{ formatLogTimestamp(log.createdAt) }}</td>
+              <td>{{ log.changeType ? log.changeType : 'update' }}</td>
+              <td>{{ log.rowNumber ?? '—' }}</td>
+              <td>
+                <div class="log-details">
+                  <div class="log-message">{{ log.message }}</div>
+                  <div v-if="log.sheetName || log.filePath" class="log-meta">
+                    <span v-if="log.sheetName" class="log-meta-item">
+                      <v-icon size="14">mdi-google-spreadsheet</v-icon>
+                      {{ log.sheetName }}
+                    </span>
+                    <a
+                      v-if="log.filePath"
+                      :href="log.filePath"
+                      target="_blank"
+                      rel="noopener"
+                      class="log-meta-item"
+                    >
+                      <v-icon size="14">mdi-open-in-new</v-icon>
+                      Ouvrir la feuille
+                    </a>
+                  </div>
+                  <div v-if="log.rowData && Object.keys(log.rowData).length" class="log-row-data">
+                    <span
+                      v-for="(value, key) in log.rowData"
+                      :key="`${log.id}-${key}`"
+                      class="log-row-chip"
+                    >
+                      <strong>{{ key }}:</strong> {{ value }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div v-if="error" class="error-message">
@@ -477,6 +619,46 @@
             ❌ {{ triggerError }}
           </div>
         </div>
+
+        <div class="test-trigger-section" v-if="template?.triggerService === 'Google Sheets'">
+          <div class="test-trigger-info">
+            <h4>📊 Tester la connexion Google Sheets</h4>
+            <p>Vérifiez que votre identifiant de feuille et la plage surveillée retournent bien des données.</p>
+            <div class="trigger-preview">
+              <strong>Spreadsheet ID:</strong> {{ form.triggerConfig.spreadsheetId || 'Renseignez un identifiant' }}<br>
+              <strong>Plage:</strong> {{ form.triggerConfig.range || 'Renseignez une plage' }}
+            </div>
+          </div>
+          <button
+            class="btn btn-test-trigger"
+            @click="testGoogleSheets"
+            :disabled="!canTestGoogleSheets || isTestingGoogleSheets"
+          >
+            <v-icon size="18">{{ isTestingGoogleSheets ? 'mdi-loading' : 'mdi-table-arrow-down' }}</v-icon>
+            {{ isTestingGoogleSheets ? 'Test en cours...' : 'Tester la feuille' }}
+          </button>
+          <div v-if="sheetsTestError" class="error-message">
+            ❌ {{ sheetsTestError }}
+          </div>
+          <div v-else-if="sheetsTestResult" class="sheets-test-result">
+            <div class="sheets-test-summary">
+              <v-icon size="16" color="#22c55e">mdi-check-circle</v-icon>
+              <span>{{ sheetsTestResult.rowCount }} lignes récupérées</span>
+            </div>
+            <div v-if="sheetsTestResult.previewRows.length" class="sheets-test-preview">
+              <table>
+                <tbody>
+                  <tr v-for="(row, rowIndex) in sheetsTestResult.previewRows" :key="rowIndex">
+                    <td v-for="(cell, cellIndex) in row" :key="cellIndex">
+                      {{ cell }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <small class="form-hint">Aperçu limité aux 5 premières lignes</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -485,7 +667,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { areaService, type Area } from '@/services/area'
+import { areaService, type Area, type DiscordLog, type GoogleSheetsTestResponse } from '@/services/area'
 import { useAuth } from '@/composables/useAuth'
 
 interface AreaTemplate {
@@ -532,12 +714,51 @@ const isTestingTrigger = ref(false)
 const error = ref<string | null>(null)
 const triggerError = ref<string | null>(null)
 const discordTestError = ref<string | null>(null)
+const discordLogs = ref<DiscordLog[]>([])
+const isLoadingLogs = ref(false)
+const logsError = ref<string | null>(null)
+const isTestingGoogleSheets = ref(false)
+const sheetsTestError = ref<string | null>(null)
+const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
+
+const loadDiscordLogs = async (areaId: string | undefined) => {
+  if (!areaId) return
+
+  isLoadingLogs.value = true
+  logsError.value = null
+
+  try {
+    const logs = await areaService.getDiscordLogs(areaId, 50)
+    discordLogs.value = logs
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load Discord logs'
+    logsError.value = message
+    console.error('Error loading Discord logs:', err)
+  } finally {
+    isLoadingLogs.value = false
+  }
+}
+
+const refreshLogs = () => {
+  loadDiscordLogs(existingArea.value?.id)
+}
+
+const formatLogTimestamp = (isoString: string | null | undefined) => {
+  if (!isoString) return '—'
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) {
+    return isoString
+  }
+  return date.toLocaleString()
+}
 
 watch(() => template.value, (newTemplate) => {
   if (newTemplate && !isEditingExisting.value) {
     console.log('Initializing form for new template:', newTemplate)
     console.log('Trigger service:', newTemplate.triggerService)
     console.log('Action service:', newTemplate.actionService)
+    sheetsTestResult.value = null
+    sheetsTestError.value = null
 
     if (newTemplate.triggerService === 'Google Calendar') {
       form.triggerConfig = {
@@ -552,6 +773,13 @@ watch(() => template.value, (newTemplate) => {
         branch: '',
         events: [],
         webhookSecret: ''
+      }
+    } else if (newTemplate.triggerService === 'Google Sheets') {
+      form.triggerConfig = {
+        spreadsheetId: '',
+        sheetName: '',
+        range: 'Sheet1!A1:D',
+        hasHeader: true
       }
     } else if (newTemplate.triggerService === 'Weather') {
       form.triggerConfig = {
@@ -571,9 +799,13 @@ watch(() => template.value, (newTemplate) => {
       }
       discordTestError.value = null
     } else if (newTemplate.actionService === 'Discord') {
+      const defaultMessage = newTemplate.triggerService === 'Google Sheets'
+        ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+        : 'Reminder: {{eventTitle}} starts at {{eventTime}}. Area: {{areaName}}'
+
       form.actionConfig = {
         webhookUrl: '',
-        message: 'Reminder: {{eventTitle}} starts at {{eventTime}}. Area: {{areaName}}'
+        message: defaultMessage
       }
       discordTestError.value = null
     } else {
@@ -588,6 +820,8 @@ watch(() => template.value, (newTemplate) => {
 watch(() => existingArea.value, (newArea) => {
   if (newArea && isEditingExisting.value) {
     console.log('Loading existing area configuration:', newArea)
+    sheetsTestResult.value = null
+    sheetsTestError.value = null
 
     if (newArea.triggerConfig) {
       const triggerConfig = { ...form.triggerConfig, ...newArea.triggerConfig }
@@ -599,6 +833,10 @@ watch(() => existingArea.value, (newArea) => {
         console.log('Parsed datetime:', { original: newArea.triggerConfig.eventTime, date: triggerConfig.eventDate, time: triggerConfig.eventTime })
       }
 
+      if (newArea.triggerService === 'Google Sheets' && typeof triggerConfig.hasHeader === 'undefined') {
+        triggerConfig.hasHeader = true
+      }
+
       form.triggerConfig = triggerConfig
       console.log('Trigger config loaded:', form.triggerConfig)
     }
@@ -608,34 +846,64 @@ watch(() => existingArea.value, (newArea) => {
       console.log('Action config loaded:', form.actionConfig)
     }
 
+    if (newArea.actionService === 'Discord') {
+      loadDiscordLogs(newArea.id)
+    } else {
+      discordLogs.value = []
+    }
+
     console.log('Final form state:', { triggerConfig: form.triggerConfig, actionConfig: form.actionConfig })
   }
 }, { immediate: true })
 
-const isFormValid = computed(() => {
+watch(
+  () => template.value?.triggerService === 'Google Sheets'
+    ? [form.triggerConfig?.spreadsheetId, form.triggerConfig?.range]
+    : null,
+  () => {
+    if (template.value?.triggerService === 'Google Sheets') {
+      sheetsTestResult.value = null
+      sheetsTestError.value = null
+    }
+  }
+)
+
+const triggerIsValid = computed(() => {
   if (!template.value) return false
 
-  if (template.value.triggerService === 'Google Calendar' && template.value.actionService === 'Gmail') {
-    return form.triggerConfig.eventDate &&
-           form.triggerConfig.eventTime &&
-           form.actionConfig.toEmail &&
-           form.actionConfig.subject
+  switch (template.value.triggerService) {
+    case 'Google Calendar':
+      return !!form.triggerConfig.eventDate &&
+             !!form.triggerConfig.eventTime
+    case 'GitHub':
+      return !!form.triggerConfig.repository &&
+             Array.isArray(form.triggerConfig.events) &&
+             form.triggerConfig.events.length > 0
+    case 'Google Sheets':
+      return !!form.triggerConfig.spreadsheetId &&
+             !!form.triggerConfig.range
+    default:
+      return true
   }
-
-  if (template.value.triggerService === 'GitHub') {
-    return form.triggerConfig.repository &&
-           form.triggerConfig.events &&
-           form.triggerConfig.events.length > 0
-  }
-
-  if (template.value.actionService === 'Discord') {
-    const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
-    const message = (form.actionConfig.message || '').trim()
-    return !!webhookUrl && !!message
-  }
-
-  return true
 })
+
+const actionIsValid = computed(() => {
+  if (!template.value) return false
+
+  switch (template.value.actionService) {
+    case 'Gmail':
+      return !!form.actionConfig.toEmail &&
+             !!form.actionConfig.subject
+    case 'Discord':
+      const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
+      const message = (form.actionConfig.message || '').trim()
+      return !!webhookUrl && !!message
+    default:
+      return true
+  }
+})
+
+const isFormValid = computed(() => triggerIsValid.value && actionIsValid.value)
 
 const canSendTestEmail = computed(() => {
   return form.actionConfig.toEmail &&
@@ -647,6 +915,16 @@ const canSendDiscordTest = computed(() => {
   const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
   const message = (form.actionConfig.message || '').trim()
   return !!webhookUrl && !!message
+})
+
+const canTestGoogleSheets = computed(() => {
+  if (template.value?.triggerService !== 'Google Sheets') {
+    return false
+  }
+
+  const spreadsheetId = (form.triggerConfig?.spreadsheetId || '').toString().trim()
+  const range = (form.triggerConfig?.range || '').toString().trim()
+  return !!spreadsheetId && !!range
 })
 
 const canTestTrigger = computed(() => {
@@ -755,6 +1033,21 @@ const setDatePreset = (preset: string) => {
 
 const getTodayDate = () => {
   return new Date().toISOString().split('T')[0]
+}
+
+const resolveTriggerType = (service: string) => {
+  switch (service) {
+    case 'Google Calendar':
+      return 'Event'
+    case 'Google Sheets':
+      return 'SpreadsheetChange'
+    case 'GitHub':
+      return 'Webhook'
+    case 'Weather':
+      return 'Weather'
+    default:
+      return 'Trigger'
+  }
 }
 
 const resolveActionType = (service: string) => {
@@ -1019,6 +1312,31 @@ const testGitHubTrigger = async () => {
   }
 }
 
+const testGoogleSheets = async () => {
+  if (!canTestGoogleSheets.value) {
+    return
+  }
+
+  isTestingGoogleSheets.value = true
+  sheetsTestError.value = null
+
+  try {
+    const result = await areaService.testGoogleSheets({
+      spreadsheetId: (form.triggerConfig?.spreadsheetId || '').toString().trim(),
+      range: (form.triggerConfig?.range || '').toString().trim(),
+    })
+
+    sheetsTestResult.value = result
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test Google Sheets trigger'
+    sheetsTestError.value = errorMessage
+    sheetsTestResult.value = null
+    console.error('Error testing Google Sheets trigger:', err)
+  } finally {
+    isTestingGoogleSheets.value = false
+  }
+}
+
 const createArea = async () => {
   if (!isFormValid.value || !template.value) return
 
@@ -1049,7 +1367,7 @@ const createArea = async () => {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
       triggerService: template.value.triggerService || 'Unknown',
-      triggerType: template.value.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+      triggerType: resolveTriggerType(template.value.triggerService || 'Unknown'),
       actionService: template.value.actionService || 'Unknown',
       actionType: resolveActionType(template.value.actionService || 'Unknown'),
       triggerConfig: triggerConfig,
@@ -1098,6 +1416,7 @@ const getTriggerIcon = (service: string) => {
     case "Discord": return "mdi-discord"
     case "Slack": return "mdi-slack"
     case "Weather": return "mdi-weather-partly-cloudy"
+    case "Google Sheets": return "mdi-google-spreadsheet"
     default: return "mdi-cog"
   }
 }
@@ -1614,6 +1933,42 @@ const getActionIcon = (service: string) => {
   color: var(--color-text-secondary);
 }
 
+.sheets-test-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sheets-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview td {
+  border: 1px solid var(--color-border-primary);
+  padding: 0.35rem 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .btn-test-trigger {
   background: linear-gradient(135deg, #8b5cf6, #a855f7);
   color: white;
@@ -1680,5 +2035,137 @@ const getActionIcon = (service: string) => {
   margin-left: 1.5rem;
   opacity: 0.8;
   font-style: italic;
+}
+
+.logs-card {
+  margin-top: 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.logs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.logs-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.logs-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 10px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-focus);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.logs-state {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.logs-state--error {
+  color: #ef4444;
+}
+
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.logs-table th,
+.logs-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border-primary);
+  text-align: left;
+  vertical-align: top;
+}
+
+.logs-table thead {
+  background: var(--color-bg-secondary);
+}
+
+.log-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.log-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--color-bg-secondary);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.log-meta-item:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.log-message {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.log-row-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.log-row-chip {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
 }
 </style>

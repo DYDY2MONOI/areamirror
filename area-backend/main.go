@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{}, &models.DiscordMessageLog{})
 
 	database.SeedData()
 
@@ -59,6 +59,12 @@ func main() {
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
 
+	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
+	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
+	r.GET("/gmail/oauth2/status", controllers.AuthMiddleware(), controllers.GetGmailTokenStatus)
+	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
+	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
+
 	api := r.Group("/api")
 	{
 		api.GET("/github/repositories", controllers.AuthMiddleware(), controllers.GetGitHubRepositories)
@@ -94,6 +100,7 @@ func main() {
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
 	r.GET("/areas/:id", controllers.GetArea)
+	r.GET("/areas/:id/discord-logs", controllers.AuthMiddleware(), controllers.GetAreaDiscordLogs)
 	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
 	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
@@ -119,6 +126,7 @@ func main() {
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
+	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
 	r.POST("/test/weather", controllers.TestWeatherTrigger)
 	r.GET("/weather", controllers.GetWeatherData)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)

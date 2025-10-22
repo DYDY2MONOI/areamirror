@@ -81,7 +81,7 @@
               <div class="service-selection">
                 <div v-if="!form.triggerService" class="service-grid">
                   <div
-                    v-for="item in appItems.slice(0, 8)"
+                    v-for="item in appItems.slice(0, 15)"
                     :key="item.value"
                     class="service-card"
                     @click="selectTrigger(item.value)"
@@ -138,7 +138,7 @@
               <div class="service-selection">
                 <div v-if="!form.actionService" class="service-grid">
                   <div
-                    v-for="item in appItems.slice(0, 8)"
+                    v-for="item in appItems.slice(0, 15)"
                     :key="item.value"
                     class="service-card"
                     @click="selectAction(item.value)"
@@ -448,6 +448,175 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Google Drive'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-drive.png')" alt="Google Drive" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📁 Google Drive Trigger</h4>
+                <p class="config-subtitle">Trigger when a new file appears in a folder</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">🗂️ Folder ID</label>
+                  <input
+                    v-model="form.triggerConfig.folderId"
+                    class="modern-input"
+                    placeholder="e.g., 1A2B3C4D..."
+                    required
+                  />
+                  <small class="input-hint">Copy the ID from the Drive folder URL (between /folders/ and the end)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">🔖 Email Subject (Gmail action)</label>
+                  <input
+                    v-if="form.actionService === 'Gmail'"
+                    v-model="form.actionConfig.subject"
+                    class="modern-input"
+                    placeholder="New Drive file: {{fileName}}"
+                  />
+                  <small v-if="form.actionService === 'Gmail'" class="input-hint" v-pre>You can use {{fileName}}, {{mimeType}}, {{webViewLink}}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'Google Sheets'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-sheets.png')" alt="Google Sheets" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📊 Google Sheets Trigger</h4>
+                <p class="config-subtitle">Surveillez une plage de votre feuille et déclenchez des actions sur chaque modification</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="sheets-config-grid">
+                <div class="input-container">
+                  <label class="input-label">🆔 Spreadsheet ID</label>
+                  <input
+                    v-model="form.triggerConfig.spreadsheetId"
+                    class="modern-input"
+                    placeholder="1A2B3C4D..."
+                    required
+                  />
+                  <small class="input-hint">Copiez l'identifiant présent dans l'URL de votre feuille (entre /d/ et /edit)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📄 Nom de la feuille (optionnel)</label>
+                  <input
+                    v-model="form.triggerConfig.sheetName"
+                    class="modern-input"
+                    placeholder="Feuille1"
+                  />
+                  <small class="input-hint">Utilisé uniquement pour vos logs et messages</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📍 Plage A1</label>
+                  <input
+                    v-model="form.triggerConfig.range"
+                    class="modern-input"
+                    placeholder="Feuille1!A1:D"
+                    required
+                  />
+                  <small class="input-hint">Définissez la plage à surveiller (format A1). Limitez-la pour de meilleures performances.</small>
+                </div>
+
+                <label class="sheets-checkbox">
+                  <input
+                    v-model="form.triggerConfig.hasHeader"
+                    type="checkbox"
+                  />
+                  <span>La première ligne contient des en-têtes</span>
+                </label>
+              </div>
+
+              <div class="sheets-test-actions">
+                <button
+                  type="button"
+                  class="test-google-sheets-btn"
+                  @click="testGoogleSheets"
+                  :disabled="!canTestGoogleSheets || isTestingGoogleSheets"
+                >
+                  <v-icon size="18">{{ isTestingGoogleSheets ? 'mdi-loading' : 'mdi-table-arrow-down' }}</v-icon>
+                  {{ isTestingGoogleSheets ? 'Test en cours...' : 'Tester la connexion' }}
+                </button>
+                <div v-if="sheetsTestError" class="error-message">
+                  ❌ {{ sheetsTestError }}
+                </div>
+                <div v-else-if="sheetsTestResult" class="sheets-test-result">
+                  <div class="sheets-test-summary">
+                    <v-icon size="16" color="#22c55e">mdi-check-circle</v-icon>
+                    <span>{{ sheetsTestResult.rowCount }} lignes récupérées</span>
+                  </div>
+                  <div v-if="sheetsTestResult.previewRows.length" class="sheets-test-preview">
+                    <table>
+                      <tbody>
+                        <tr v-for="(row, rowIndex) in sheetsTestResult.previewRows" :key="rowIndex">
+                          <td v-for="(cell, cellIndex) in row" :key="cellIndex">
+                            {{ cell }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <small class="input-hint">Aperçu limité aux 5 premières lignes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'Timer'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Timer" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">⏰ Timer Trigger</h4>
+                <p class="config-subtitle">Configure the interval for automatic execution</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">⏱️ Time Interval</label>
+                  <select v-model="form.triggerConfig.interval" class="modern-select" required>
+                    <option value="">Select an interval...</option>
+                    <option value="30s">Every 30 seconds (testing)</option>
+                    <option value="1m">Every 1 minute</option>
+                    <option value="5m">Every 5 minutes</option>
+                    <option value="15m">Every 15 minutes</option>
+                    <option value="30m">Every 30 minutes</option>
+                    <option value="1h">Every 1 hour</option>
+                    <option value="2h">Every 2 hours</option>
+                    <option value="6h">Every 6 hours</option>
+                    <option value="12h">Every 12 hours</option>
+                    <option value="24h">Every 24 hours (daily)</option>
+                    <option value="168h">Every 7 days (weekly)</option>
+                  </select>
+                  <small class="input-hint">Choose how often this area should trigger automatically</small>
+                </div>
+
+                <div v-if="form.triggerConfig.interval" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>Your area will run automatically every {{ form.triggerConfig.interval }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -494,6 +663,67 @@
                     required
                   ></textarea>
                   <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.actionService === 'Telegram'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📱 Telegram Action</h4>
+                <p class="config-subtitle">Configure the Telegram message to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">💬 Chat ID</label>
+                  <input
+                    v-model="form.actionConfig.chatId"
+                    type="text"
+                    class="modern-input"
+                    placeholder="8481009224"
+                    required
+                  />
+                  <small class="input-hint">
+                    Your Telegram chat ID.
+                    <a href="https://t.me/userinfobot" target="_blank" class="helper-link">
+                      Get it from @userinfobot
+                    </a>
+                    (send /start to the bot)
+                  </small>
+                  <div class="help-box">
+                    <v-icon size="16" color="#22c55e">mdi-help-circle</v-icon>
+                    <div class="help-content">
+                      <strong>How to find your Chat ID:</strong>
+                      <ol>
+                        <li>Open Telegram and search for <strong>@userinfobot</strong></li>
+                        <li>Click on it and send <code>/start</code></li>
+                        <li>The bot will reply with your ID (ex: 987654321)</li>
+                        <li>Copy and paste it here</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📝 Message</label>
+                  <textarea
+                    v-model="form.actionConfig.message"
+                    class="modern-textarea"
+                    placeholder="🤖 Notification from {{areaName}}&#10;⏰ Triggered at {{triggerTime}}"
+                    rows="5"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables: &#123;&#123;areaName&#125;&#125;, &#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;, etc.
+                    Telegram supports Markdown formatting (*bold*, _italic_)
+                  </small>
                 </div>
               </div>
             </div>
@@ -601,7 +831,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import appsJson from '../../assets/apps.json'
-import { areaService } from '../../services/area'
+import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
 import { API_BASE_URL } from '../../config/api'
@@ -631,9 +861,35 @@ const ICONS_DIR = 'app-icons'
 const getIconUrl = (file: string) =>
   new URL(`../../assets/${ICONS_DIR}/${file}`, import.meta.url).href
 
-const appItems = computed(() =>
-  apps.map(a => ({ title: a.name, value: a.name, icon: getIconUrl(a.icon) }))
-)
+const priorityServices = [
+  'Google Calendar',
+  'Gmail',
+  'Weather',
+  'Discord',
+  'Google Drive',
+  'Google Sheets',
+  'GitHub',
+  'Timer',
+  'Telegram',
+  'Spotify',
+  'Twitter'
+]
+
+const appItems = computed(() => {
+  const sortedApps = [...apps].sort((a, b) => {
+    const aPriority = priorityServices.indexOf(a.name)
+    const bPriority = priorityServices.indexOf(b.name)
+
+    if (aPriority === -1 && bPriority === -1) {
+      return a.name.localeCompare(b.name)
+    }
+    if (aPriority === -1) return 1
+    if (bPriority === -1) return -1
+    return aPriority - bPriority
+  })
+
+  return sortedApps.map(a => ({ title: a.name, value: a.name, icon: getIconUrl(a.icon) }))
+})
 
 const form = reactive({
   areaName: '',
@@ -646,6 +902,9 @@ const form = reactive({
 
 const repositories = ref<GitHubRepository[]>([])
 const isLoadingRepositories = ref(false)
+const isTestingGoogleSheets = ref(false)
+const sheetsTestError = ref<string | null>(null)
+const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -676,6 +935,13 @@ watch(() => props.template, (newTemplate) => {
         city: '',
         temperature: 30,
         condition: ''
+      }
+    } else if (newTemplate.triggerService === 'Google Sheets') {
+      form.triggerConfig = {
+        spreadsheetId: '',
+        sheetName: '',
+        range: 'Sheet1!A1:D',
+        hasHeader: true
       }
     }
 
@@ -713,10 +979,31 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
+  if (form.triggerService === 'Google Drive') {
+    return hasBasicInfo && form.triggerConfig.folderId
+  }
+
   if (form.triggerService === 'Weather') {
     return hasBasicInfo &&
            form.triggerConfig.city &&
            form.triggerConfig.temperature !== undefined
+  }
+
+  if (form.triggerService === 'Google Sheets') {
+    return hasBasicInfo &&
+           form.triggerConfig.spreadsheetId &&
+           form.triggerConfig.range
+  }
+
+  if (form.triggerService === 'Timer') {
+    return hasBasicInfo &&
+           form.triggerConfig.interval
+  }
+
+  if (form.actionService === 'Telegram') {
+    return hasBasicInfo &&
+           form.actionConfig.chatId &&
+           form.actionConfig.message
   }
 
   return hasBasicInfo
@@ -725,10 +1012,35 @@ const isFormValid = computed(() => {
 const showAllTriggerServices = ref(false)
 const showAllReactionServices = ref(false)
 
+const canTestGoogleSheets = computed(() => {
+  if (form.triggerService !== 'Google Sheets') {
+    return false
+  }
+
+  const spreadsheetId = (form.triggerConfig?.spreadsheetId || '').toString().trim()
+  const range = (form.triggerConfig?.range || '').toString().trim()
+
+  return !!spreadsheetId && !!range
+})
+
+watch(
+  () => form.triggerService === 'Google Sheets'
+    ? [form.triggerConfig?.spreadsheetId, form.triggerConfig?.range, form.triggerConfig?.sheetName, form.triggerConfig?.hasHeader]
+    : null,
+  () => {
+    if (form.triggerService === 'Google Sheets') {
+      sheetsTestResult.value = null
+      sheetsTestError.value = null
+    }
+  }
+)
+
 
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
   showAllTriggerServices.value = false
+  sheetsTestResult.value = null
+  sheetsTestError.value = null
 
   if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
@@ -748,6 +1060,23 @@ const selectTrigger = (serviceId: string) => {
       city: '',
       temperature: 30,
       condition: ''
+    }
+  } else if (serviceId === 'Google Sheets') {
+    form.triggerConfig = {
+      spreadsheetId: '',
+      sheetName: '',
+      range: 'Sheet1!A1:D',
+      hasHeader: true
+    }
+  } else if (serviceId === 'Google Drive') {
+    form.triggerConfig = {
+      folderId: '',
+      knownFileIds: {},
+      lastChecked: null
+    }
+  } else if (serviceId === 'Timer') {
+    form.triggerConfig = {
+      interval: '5m'
     }
   } else {
     form.triggerConfig = {}
@@ -776,6 +1105,28 @@ const selectAction = (serviceId: string) => {
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
     }
+  } else if (serviceId === 'Discord') {
+    const defaultMessage = form.triggerService === 'Google Sheets'
+      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : 'Automation triggered for {{areaName}}'
+
+    form.actionConfig = {
+      webhookUrl: '',
+      message: defaultMessage
+    }
+  } else if (serviceId === 'Telegram') {
+    const defaultMessage = form.triggerService === 'Timer'
+      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      : form.triggerService === 'Google Sheets'
+      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
+
+    form.actionConfig = {
+      chatId: '',
+      message: defaultMessage
+    }
+  } else {
+    form.actionConfig = {}
   }
 }
 
@@ -795,6 +1146,11 @@ const getMissingFields = () => {
   if (form.triggerService === 'GitHub') {
     if (!form.triggerConfig.repositoryId) missing.push('Repository')
     if (!form.triggerConfig.notificationTypes?.length) missing.push('Event Types')
+  }
+
+  if (form.triggerService === 'Google Sheets') {
+    if (!form.triggerConfig.spreadsheetId) missing.push('Spreadsheet ID')
+    if (!form.triggerConfig.range) missing.push('Range')
   }
 
   if (form.actionService === 'Gmail') {
@@ -952,6 +1308,32 @@ const testWeatherTrigger = async () => {
   }
 }
 
+const testGoogleSheets = async () => {
+  if (!canTestGoogleSheets.value) {
+    alert('Please fill in the Spreadsheet ID and range first')
+    return
+  }
+
+  isTestingGoogleSheets.value = true
+  sheetsTestError.value = null
+
+  try {
+    const result = await areaService.testGoogleSheets({
+      spreadsheetId: (form.triggerConfig?.spreadsheetId || '').toString().trim(),
+      range: (form.triggerConfig?.range || '').toString().trim(),
+    })
+
+    sheetsTestResult.value = result
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to test Google Sheets'
+    sheetsTestError.value = message
+    sheetsTestResult.value = null
+    console.error('Error testing Google Sheets trigger:', err)
+  } finally {
+    isTestingGoogleSheets.value = false
+  }
+}
+
 const createArea = async () => {
   if (!isFormValid.value) return
 
@@ -965,6 +1347,24 @@ const createArea = async () => {
         form.actionConfig.toEmail,
         form.triggerConfig.notificationTypes
       )
+    } else if (form.triggerService === 'Google Sheets') {
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: 'SpreadsheetChange',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: {
+          spreadsheetId: form.triggerConfig.spreadsheetId,
+          sheetName: form.triggerConfig.sheetName,
+          range: form.triggerConfig.range,
+          hasHeader: !!form.triggerConfig.hasHeader
+        },
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
     } else if (form.triggerService === 'Weather') {
       const areaData = {
         name: form.areaName,
@@ -974,6 +1374,23 @@ const createArea = async () => {
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: form.triggerConfig,
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
+    } else if (form.triggerService === 'Google Drive') {
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: 'NewFileInFolder',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: {
+          folderId: form.triggerConfig.folderId,
+          knownFileIds: {},
+          lastChecked: null
+        },
         actionConfig: form.actionConfig
       }
 
@@ -1236,7 +1653,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .modern-select {
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
+  padding: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+}
+
+.modern-select:focus {
+  border-color: var(--color-accent-primary);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .selected-service {
@@ -1492,6 +1923,111 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   margin-top: 0.5rem;
   color: var(--color-text-secondary);
   font-size: 0.75rem;
+}
+
+.sheets-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.sheets-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s ease;
+}
+
+.sheets-checkbox:hover {
+  border-color: var(--color-border-focus);
+}
+
+.sheets-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+}
+
+.sheets-checkbox span {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.sheets-test-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.test-google-sheets-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0ea5e9;
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  align-self: flex-start;
+}
+
+.test-google-sheets-btn:hover:not(:disabled) {
+  background: rgba(14, 165, 233, 0.16);
+  transform: translateY(-1px);
+}
+
+.test-google-sheets-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sheets-test-result {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sheets-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview td {
+  border: 1px solid var(--color-border-primary);
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
@@ -1962,6 +2498,74 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 :deep(.v-select .v-field__outline) {
   color: var(--color-border-primary) !important;
+}
+
+/* Info box for Timer and other configs */
+.info-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+/* Help box for Telegram Chat ID instructions */
+.help-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.help-content {
+  flex: 1;
+}
+
+.help-content strong {
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.help-content ol {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.help-content li {
+  margin-bottom: 0.25rem;
+}
+
+.help-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #22c55e;
+  font-size: 0.85rem;
+}
+
+.helper-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.helper-link:hover {
+  color: #60a5fa;
 }
 
 /* GitHub-specific styles */
