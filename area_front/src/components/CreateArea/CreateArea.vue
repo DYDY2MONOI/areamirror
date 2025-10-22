@@ -302,6 +302,65 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Google Agenda'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Google Agenda" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📅 Google Agenda Trigger</h4>
+                <p class="config-subtitle">Configure when this area should trigger based on upcoming events</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">📅 Calendar ID</label>
+                  <input
+                    v-model="form.triggerConfig.calendarId"
+                    class="modern-input"
+                    placeholder="primary"
+                    required
+                  />
+                  <small class="input-hint">Use 'primary' for your main calendar, or enter a specific calendar ID</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">⏰ Trigger Before</label>
+                  <select v-model="form.triggerConfig.timeBefore" class="modern-select" required>
+                    <option value="5m">5 minutes before</option>
+                    <option value="15m">15 minutes before</option>
+                    <option value="30m">30 minutes before</option>
+                    <option value="1h">1 hour before</option>
+                    <option value="2h">2 hours before</option>
+                    <option value="1d">1 day before</option>
+                  </select>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📝 Event Title Filter (optional)</label>
+                  <input
+                    v-model="form.triggerConfig.eventTitle"
+                    class="modern-input"
+                    placeholder="Leave empty to trigger on all events"
+                  />
+                  <small class="input-hint">Only trigger on events with this specific title</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📊 Event Status Filter (optional)</label>
+                  <select v-model="form.triggerConfig.eventStatus" class="modern-select">
+                    <option value="">All statuses</option>
+                    <option value="confirmed">Confirmed only</option>
+                    <option value="tentative">Tentative only</option>
+                    <option value="cancelled">Cancelled only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.triggerService === 'Weather'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -863,6 +922,7 @@ const getIconUrl = (file: string) =>
 
 const priorityServices = [
   'Google Calendar',
+  'Google Agenda',
   'Gmail',
   'Weather',
   'Discord',
@@ -943,6 +1003,13 @@ watch(() => props.template, (newTemplate) => {
         range: 'Sheet1!A1:D',
         hasHeader: true
       }
+    } else if (newTemplate.triggerService === 'Google Agenda') {
+      form.triggerConfig = {
+        calendarId: 'primary',
+        eventTitle: '',
+        timeBefore: '15m',
+        eventStatus: ''
+      }
     }
 
     if (newTemplate.triggerService === 'GitHub' && newTemplate.actionService === 'Gmail') {
@@ -969,6 +1036,12 @@ const isFormValid = computed(() => {
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
+  }
+
+  if (form.triggerService === 'Google Agenda') {
+    return hasBasicInfo &&
+           form.triggerConfig.calendarId &&
+           form.triggerConfig.timeBefore
   }
 
   if (form.triggerService === 'GitHub' && form.actionService === 'Gmail') {
@@ -1047,6 +1120,13 @@ const selectTrigger = (serviceId: string) => {
       eventTime: '',
       eventTitle: '',
       calendarId: 'primary'
+    }
+  } else if (serviceId === 'Google Agenda') {
+    form.triggerConfig = {
+      calendarId: 'primary',
+      eventTitle: '',
+      timeBefore: '15m',
+      eventStatus: ''
     }
   } else if (serviceId === 'GitHub') {
     form.triggerConfig = {
@@ -1390,6 +1470,24 @@ const createArea = async () => {
           folderId: form.triggerConfig.folderId,
           knownFileIds: {},
           lastChecked: null
+        },
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
+    } else if (form.triggerService === 'Google Agenda') {
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: 'Event',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: {
+          calendarId: form.triggerConfig.calendarId,
+          eventTitle: form.triggerConfig.eventTitle,
+          timeBefore: form.triggerConfig.timeBefore,
+          eventStatus: form.triggerConfig.eventStatus
         },
         actionConfig: form.actionConfig
       }
