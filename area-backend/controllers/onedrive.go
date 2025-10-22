@@ -48,3 +48,75 @@ func OneDriveCallback(c *gin.Context) {
 	redirectURL := fmt.Sprintf("http://localhost:3000/auth/onedrive/callback?code=%s", code)
 	c.Redirect(http.StatusFound, redirectURL)
 }
+
+func OneDriveListFiles(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		accessToken = c.Query("access_token")
+	}
+
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	folderID := c.Query("folder")
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	files, err := onedriveService.ListFiles(accessToken, folderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list files: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    files,
+	})
+}
+
+func OneDriveUploadFile(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File required: " + err.Error()})
+		return
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read file: " + err.Error()})
+		return
+	}
+
+	fileName := header.Filename
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	uploadResp, err := onedriveService.UploadFile(accessToken, fileName, content)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "File uploaded successfully",
+		"data":    uploadResp,
+	})
+}
