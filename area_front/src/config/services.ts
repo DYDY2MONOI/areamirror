@@ -30,7 +30,15 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     description: 'Connect your Google account to access Gmail, Calendar, and Drive',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     callbackPath: '/callback',
-    scopes: ['openid', 'email', 'profile'],
+    scopes: [
+      'openid',
+      'email',
+      'profile',
+      'https://www.googleapis.com/auth/gmail.send',
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/drive.readonly',
+      'https://www.googleapis.com/auth/drive.metadata.readonly'
+    ],
     isEnabled: true
   },
   {

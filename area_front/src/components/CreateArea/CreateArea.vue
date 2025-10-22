@@ -453,6 +453,44 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Google Drive'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-drive.png')" alt="Google Drive" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📁 Google Drive Trigger</h4>
+                <p class="config-subtitle">Trigger when a new file appears in a folder</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">🗂️ Folder ID</label>
+                  <input
+                    v-model="form.triggerConfig.folderId"
+                    class="modern-input"
+                    placeholder="e.g., 1A2B3C4D..."
+                    required
+                  />
+                  <small class="input-hint">Copy the ID from the Drive folder URL (between /folders/ and the end)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">🔖 Email Subject (Gmail action)</label>
+                  <input
+                    v-if="form.actionService === 'Gmail'"
+                    v-model="form.actionConfig.subject"
+                    class="modern-input"
+                    placeholder="New Drive file: {{fileName}}"
+                  />
+                  <small v-if="form.actionService === 'Gmail'" class="input-hint" v-pre>You can use {{fileName}}, {{mimeType}}, {{webViewLink}}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.triggerService === 'Google Sheets'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -794,7 +832,7 @@
                     required
                   />
                   <small class="input-hint">
-                    Your Telegram chat ID. 
+                    Your Telegram chat ID.
                     <a href="https://t.me/userinfobot" target="_blank" class="helper-link">
                       Get it from @userinfobot
                     </a>
@@ -973,6 +1011,7 @@ const priorityServices = [
   'Gmail',
   'Weather',
   'Discord',
+  'Google Drive',
   'Google Sheets',
   'GitHub',
   'Timer',
@@ -1093,6 +1132,10 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
+  if (form.triggerService === 'Google Drive') {
+    return hasBasicInfo && form.triggerConfig.folderId
+  }
+
   if (form.triggerService === 'Weather') {
     return hasBasicInfo &&
            form.triggerConfig.city &&
@@ -1197,6 +1240,12 @@ const selectTrigger = (serviceId: string) => {
       sheetName: '',
       range: 'Sheet1!A1:D',
       hasHeader: true
+    }
+  } else if (serviceId === 'Google Drive') {
+    form.triggerConfig = {
+      folderId: '',
+      knownFileIds: {},
+      lastChecked: null
     }
   } else if (serviceId === 'Timer') {
     form.triggerConfig = {
