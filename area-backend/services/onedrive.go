@@ -156,3 +156,37 @@ func (o *OneDriveService) RefreshAccessToken(refreshToken string) (*OneDriveToke
 
 	return &tokenResp, nil
 }
+
+func (o *OneDriveService) ListFiles(accessToken, folderID string) (*OneDriveListResponse, error) {
+	var apiURL string
+	if folderID == "" || folderID == "root" {
+		apiURL = graphAPIBaseURL + "/me/drive/root/children"
+	} else {
+		apiURL = fmt.Sprintf("%s/me/drive/items/%s/children", graphAPIBaseURL, folderID)
+	}
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create list request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("list files failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var listResp OneDriveListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("failed to decode list response: %w", err)
+	}
+
+	return &listResp, nil
+}
