@@ -32,6 +32,8 @@ type User struct {
 	GoogleEmail        *string    `json:"google_email"`
 	FacebookID         *string    `json:"facebook_id" gorm:"uniqueIndex"`
 	FacebookEmail      *string    `json:"facebook_email"`
+	AmazonID           *string    `json:"amazon_id" gorm:"uniqueIndex"`
+	AmazonEmail        *string    `json:"amazon_email"`
 	Role               string     `json:"role" gorm:"default:'member'"`
 	IsActive           bool       `json:"is_active" gorm:"default:true"`
 

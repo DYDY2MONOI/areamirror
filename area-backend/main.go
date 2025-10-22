@@ -58,6 +58,8 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
+	r.POST("/profile/amazon/link", controllers.AuthMiddleware(), controllers.LinkAmazonAccount)
+	r.DELETE("/profile/amazon/unlink", controllers.AuthMiddleware(), controllers.UnlinkAmazonAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,6 +122,24 @@ type FacebookUserResponse struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
+}
+
+type AmazonLinkRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type AmazonTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	Scope        string `json:"scope"`
+}
+
+type AmazonUserResponse struct {
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Name   string `json:"name"`
 }
 
 func init() {
@@ -344,6 +363,8 @@ func GetMe(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"amazon_id":       user.AmazonID,
+			"amazon_email":    user.AmazonEmail,
 		},
 	})
 }
@@ -384,6 +405,8 @@ func GetProfile(c *gin.Context) {
 			"google_email":    user.GoogleEmail,
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
+			"amazon_id":       user.AmazonID,
+			"amazon_email":    user.AmazonEmail,
 		},
 	})
 }
@@ -1316,6 +1339,145 @@ func UnlinkFacebookAccount(c *gin.Context) {
 	})
 }
 
+func LinkAmazonAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req AmazonLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	amazonClientID := os.Getenv("AMAZON_CLIENT_ID")
+	amazonClientSecret := os.Getenv("AMAZON_CLIENT_SECRET")
+
+	if amazonClientID == "" || amazonClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Amazon OAuth not configured"})
+		return
+	}
+
+	tokenResp, err := exchangeAmazonCodeForToken(req.Code, amazonClientID, amazonClientSecret)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
+		return
+	}
+
+	amazonUser, err := getAmazonUser(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Amazon user"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existingUser models.User
+	if err := database.DB.Where("amazon_id = ?", amazonUser.UserID).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Amazon account is already linked to another user"})
+		return
+	}
+
+	user.AmazonID = &amazonUser.UserID
+	if amazonUser.Email != "" {
+		user.AmazonEmail = &amazonUser.Email
+	} else {
+		user.AmazonEmail = nil
+	}
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Amazon account"})
+		return
+	}
+
+	var oauth2Token models.OAuth2Token
+	err = database.DB.Where("user_id = ? AND service = ?", userID, "amazon").First(&oauth2Token).Error
+
+	expiry := time.Now()
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	} else {
+		expiry = time.Now().Add(time.Hour)
+	}
+
+	if err != nil {
+		oauth2Token = models.OAuth2Token{
+			UserID:       userID.(uint),
+			Service:      "amazon",
+			AccessToken:  tokenResp.AccessToken,
+			RefreshToken: tokenResp.RefreshToken,
+			TokenType:    tokenResp.TokenType,
+			ExpiresAt:    &expiry,
+			Scope:        tokenResp.Scope,
+		}
+
+		if err := database.DB.Create(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Amazon OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.ExpiresAt = &expiry
+		oauth2Token.Scope = tokenResp.Scope
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Amazon OAuth2 token"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Amazon account linked successfully",
+		"amazon_email": user.AmazonEmail,
+	})
+}
+
+func UnlinkAmazonAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.AmazonID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Amazon account linked"})
+		return
+	}
+
+	user.AmazonID = nil
+	user.AmazonEmail = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Amazon account"})
+		return
+	}
+
+	if err := database.DB.Where("user_id = ? AND service = ?", userID, "amazon").Delete(&models.OAuth2Token{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove Amazon OAuth2 tokens"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Amazon account unlinked successfully",
+	})
+}
+
 func exchangeFacebookCodeForToken(code, clientID, clientSecret string) (string, error) {
 	url := "https://graph.facebook.com/v18.0/oauth/access_token"
 
@@ -1396,6 +1558,96 @@ func getFacebookUser(accessToken string) (*FacebookUserResponse, error) {
 	}
 
 	return &facebookUser, nil
+}
+
+func exchangeAmazonCodeForToken(code, clientID, clientSecret string) (*AmazonTokenResponse, error) {
+	tokenURL := "https://api.amazon.com/auth/o2/token"
+
+	redirectURI := os.Getenv("AMAZON_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "http://localhost:3000/auth/amazon/callback"
+	}
+
+	form := url.Values{}
+	form.Set("grant_type", "authorization_code")
+	form.Set("code", code)
+	form.Set("client_id", clientID)
+	form.Set("client_secret", clientSecret)
+	form.Set("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("amazon token exchange failed: %s", string(body))
+	}
+
+	var tokenResp AmazonTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, err
+	}
+
+	if tokenResp.AccessToken == "" {
+		return nil, fmt.Errorf("received empty access token from Amazon")
+	}
+
+	return &tokenResp, nil
+}
+
+func getAmazonUser(accessToken string) (*AmazonUserResponse, error) {
+	profileURL := "https://api.amazon.com/user/profile"
+
+	req, err := http.NewRequest("GET", profileURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("amazon user profile request failed: %s", string(body))
+	}
+
+	var amazonUser AmazonUserResponse
+	if err := json.Unmarshal(body, &amazonUser); err != nil {
+		return nil, err
+	}
+
+	if amazonUser.UserID == "" {
+		return nil, fmt.Errorf("invalid Amazon user profile response")
+	}
+
+	return &amazonUser, nil
 }
 
 func MobileOAuth2Login(c *gin.Context) {
