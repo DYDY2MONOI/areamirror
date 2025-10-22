@@ -314,3 +314,29 @@ func LinkOneDriveAccount(c *gin.Context) {
 		"onedrive_email": onedriveEmail,
 	})
 }
+
+func UnlinkOneDriveAccount(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	user.OneDriveID = nil
+	user.OneDriveEmail = nil
+	user.OneDriveToken = nil
+	user.OneDriveRefresh = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink OneDrive account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "OneDrive account unlinked successfully"})
+}
