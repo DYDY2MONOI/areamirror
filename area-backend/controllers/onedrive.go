@@ -181,3 +181,38 @@ func OneDriveDeleteFile(c *gin.Context) {
 		"message": "File deleted successfully",
 	})
 }
+
+func OneDriveCreateFolder(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	var req struct {
+		FolderName string `json:"folderName" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	folder, err := onedriveService.CreateFolder(accessToken, req.FolderName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Folder created successfully",
+		"data":    folder,
+	})
+}
