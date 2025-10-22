@@ -4,7 +4,6 @@
 //
 //  Created by Dydy2Brazil on 16/09/2025.
 //
-
 import SwiftUI
 
 struct HomeView: View {
@@ -251,7 +250,7 @@ struct TabButton: View {
             Text(title)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, 16)
+            .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
