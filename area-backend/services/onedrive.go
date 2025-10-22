@@ -220,3 +220,32 @@ func (o *OneDriveService) UploadFile(accessToken, fileName string, content []byt
 
 	return &uploadResp, nil
 }
+
+func (o *OneDriveService) DownloadFile(accessToken, fileID string) ([]byte, error) {
+	apiURL := fmt.Sprintf("%s/me/drive/items/%s/content", graphAPIBaseURL, fileID)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create download request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("download failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file content: %w", err)
+	}
+
+	return content, nil
+}
