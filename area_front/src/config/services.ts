@@ -63,6 +63,17 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     callbackPath: '/auth/spotify/callback',
     scopes: ['user-read-email', 'user-read-private'],
     isEnabled: false // Not implemented yet
+  },
+  {
+    id: 'onedrive',
+    name: 'OneDrive',
+    icon: 'onedrive',
+    color: '#0078D4',
+    description: 'Connect your OneDrive account to manage files and folders',
+    authUrl: 'http://localhost:8080/onedrive/auth/start',
+    callbackPath: '/auth/onedrive/callback',
+    scopes: ['Files.ReadWrite', 'Files.ReadWrite.All', 'offline_access'],
+    isEnabled: true
   }
 ]
 
