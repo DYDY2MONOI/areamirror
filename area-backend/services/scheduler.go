@@ -18,10 +18,11 @@ import (
 )
 
 type SchedulerService struct {
-	emailService    *EmailService
-	discordService  *DiscordService
-	weatherService  *WeatherService
-	sheetsService   *GoogleSheetsService
+	emailService   *EmailService
+	discordService *DiscordService
+	weatherService *WeatherService
+	sheetsService  *GoogleSheetsService
+  driveService   *GoogleDriveService
 	telegramService *TelegramService
 }
 
@@ -66,11 +67,17 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Telegram service not available: %v", err)
 	}
 
+	driveService, err := NewGoogleDriveService()
+	if err != nil {
+		log.Printf("Warning: Google Drive service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
 		weatherService:  weatherService,
 		sheetsService:   sheetsService,
+		driveService:    driveService,
 		telegramService: telegramService,
 	}, nil
 }
@@ -86,6 +93,101 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 
 	if err := s.checkGoogleSheetsTriggers(); err != nil {
 		log.Printf("Error checking Google Sheets triggers: %v", err)
+	}
+
+    if err := s.checkGoogleDriveTriggers(); err != nil {
+        log.Printf("Error checking Google Drive triggers: %v", err)
+    }
+
+	if err := s.checkTimerTriggers(); err != nil {
+		log.Printf("Error checking timer triggers: %v", err)
+	}
+
+	return nil
+}
+
+type googleDriveTriggerConfig struct {
+    FolderID     string            `json:"folderId"`
+    KnownFileIDs map[string]bool   `json:"knownFileIds"`
+    LastChecked  *time.Time        `json:"lastChecked"`
+}
+
+func (s *SchedulerService) checkGoogleDriveTriggers() error {
+	if s.driveService == nil {
+		log.Printf("Drive service is nil, skipping Drive triggers")
+		return nil
+	}
+
+	var areas []models.Area
+	if err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Drive", true).Find(&areas).Error; err != nil {
+		return fmt.Errorf("failed to fetch google drive areas: %v", err)
+	}
+
+	log.Printf("Found %d Google Drive areas to check", len(areas))
+
+	for _, area := range areas {
+		log.Printf("Checking Drive area: %s", area.Name)
+		var cfg googleDriveTriggerConfig
+		if len(area.TriggerConfig) > 0 {
+			if err := json.Unmarshal(area.TriggerConfig, &cfg); err != nil {
+				log.Printf("Failed to parse Google Drive trigger config for area %s: %v", area.Name, err)
+				continue
+			}
+		}
+
+		if strings.TrimSpace(cfg.FolderID) == "" {
+			log.Printf("Google Drive trigger for area %s missing folderId", area.Name)
+			continue
+		}
+
+		log.Printf("Checking folder %s for area %s", cfg.FolderID, area.Name)
+
+		if cfg.KnownFileIDs == nil {
+			cfg.KnownFileIDs = make(map[string]bool)
+		}
+
+		files, err := s.driveService.ListRecentFilesInFolder(area.UserID, cfg.FolderID, time.Time{}, 50)
+		if err != nil {
+			log.Printf("Failed to list drive files for area %s: %v", area.Name, err)
+			continue
+		}
+
+		log.Printf("Found %d files in folder %s for area %s", len(files), cfg.FolderID, area.Name)
+
+		for _, f := range files {
+			if f == nil || f.Id == "" {
+				continue
+			}
+			if cfg.KnownFileIDs[f.Id] {
+				continue
+			}
+
+			log.Printf("New file detected: %s (%s) in area %s", f.Name, f.Id, area.Name)
+
+			metadata := map[string]interface{}{
+				"fileId":       f.Id,
+				"fileName":     f.Name,
+				"mimeType":     f.MimeType,
+				"webViewLink":  f.WebViewLink,
+				"createdTime":  f.CreatedTime,
+				"modifiedTime": f.ModifiedTime,
+				"size":         f.Size,
+				"folderId":     cfg.FolderID,
+			}
+
+			if err := s.executeArea(area, metadata); err != nil {
+				log.Printf("Failed to execute area %s for new Drive file: %v", area.Name, err)
+				continue
+			}
+			cfg.KnownFileIDs[f.Id] = true
+		}
+
+		now := time.Now().UTC()
+		cfg.LastChecked = &now
+		cfgBytes, _ := json.Marshal(cfg)
+		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
+			log.Printf("Failed to persist Drive trigger state for area %s: %v", area.Name, err)
+		}
 	}
 
 	if err := s.checkTimerTriggers(); err != nil {
