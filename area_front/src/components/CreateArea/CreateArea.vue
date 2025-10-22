@@ -1155,6 +1155,7 @@ watch(() => props.template, (newTemplate) => {
         eventTitle: '',
         timeBefore: '15m',
         eventStatus: ''
+      }
     } else if (newTemplate.triggerService === 'Telegram') {
       form.triggerConfig = {
         chatId: '',
@@ -1229,7 +1230,7 @@ const isFormValid = computed(() => {
     const hasBasicTelegramConfig = hasBasicInfo &&
            form.triggerConfig.chatId &&
            form.triggerConfig.triggerType
-    
+
     if (form.triggerConfig.triggerType === 'keyword_match') {
       return hasBasicTelegramConfig && form.triggerConfig.keyword
     }
@@ -1668,7 +1669,7 @@ const createArea = async () => {
       const triggerConfig: any = {
         chatId: form.triggerConfig.chatId
       }
-      
+
       if (form.triggerConfig.triggerType === 'keyword_match') {
         triggerConfig.keyword = form.triggerConfig.keyword
       } else if (form.triggerConfig.triggerType === 'command_received') {
