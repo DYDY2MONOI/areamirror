@@ -123,3 +123,36 @@ func (o *OneDriveService) ExchangeCodeForToken(code string) (*OneDriveTokenRespo
 
 	return &tokenResp, nil
 }
+
+func (o *OneDriveService) RefreshAccessToken(refreshToken string) (*OneDriveTokenResponse, error) {
+	data := url.Values{}
+	data.Set("client_id", o.clientID)
+	data.Set("client_secret", o.clientSecret)
+	data.Set("refresh_token", refreshToken)
+	data.Set("grant_type", "refresh_token")
+
+	req, err := http.NewRequest("POST", microsoftTokenURL, bytes.NewBufferString(data.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create refresh request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("token refresh failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResp OneDriveTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return nil, fmt.Errorf("failed to decode refresh response: %w", err)
+	}
+
+	return &tokenResp, nil
+}
