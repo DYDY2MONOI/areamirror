@@ -273,3 +273,44 @@ func (o *OneDriveService) DeleteFile(accessToken, fileID string) error {
 
 	return nil
 }
+
+func (o *OneDriveService) CreateFolder(accessToken, folderName string) (*OneDriveFile, error) {
+	apiURL := graphAPIBaseURL + "/me/drive/root/children"
+
+	payload := map[string]interface{}{
+		"name":                              folderName,
+		"folder":                            map[string]interface{}{},
+		"@microsoft.graph.conflictBehavior": "rename",
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal folder payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonPayload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create folder request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create folder: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("create folder failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var folder OneDriveFile
+	if err := json.NewDecoder(resp.Body).Decode(&folder); err != nil {
+		return nil, fmt.Errorf("failed to decode folder response: %w", err)
+	}
+
+	return &folder, nil
+}
