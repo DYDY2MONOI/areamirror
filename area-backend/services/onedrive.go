@@ -190,3 +190,33 @@ func (o *OneDriveService) ListFiles(accessToken, folderID string) (*OneDriveList
 
 	return &listResp, nil
 }
+
+func (o *OneDriveService) UploadFile(accessToken, fileName string, content []byte) (*OneDriveUploadResponse, error) {
+	apiURL := fmt.Sprintf("%s/me/drive/root:/%s:/content", graphAPIBaseURL, url.PathEscape(fileName))
+
+	req, err := http.NewRequest("PUT", apiURL, bytes.NewReader(content))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create upload request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/octet-stream")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var uploadResp OneDriveUploadResponse
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
+		return nil, fmt.Errorf("failed to decode upload response: %w", err)
+	}
+
+	return &uploadResp, nil
+}
