@@ -12,9 +12,10 @@ import (
 )
 
 type SchedulerService struct {
-	emailService   *EmailService
-	discordService *DiscordService
-	weatherService *WeatherService
+	emailService    *EmailService
+	discordService  *DiscordService
+	weatherService  *WeatherService
+	onedriveService *OneDriveService
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -33,10 +34,16 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Weather service not available: %v", err)
 	}
 
+	onedriveService, err := NewOneDriveService()
+	if err != nil {
+		log.Printf("Warning: OneDrive service not available: %v", err)
+	}
+
 	return &SchedulerService{
-		emailService:   emailService,
-		discordService: discordService,
-		weatherService: weatherService,
+		emailService:    emailService,
+		discordService:  discordService,
+		weatherService:  weatherService,
+		onedriveService: onedriveService,
 	}, nil
 }
 
@@ -49,6 +56,11 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 	// Check Weather triggers
 	if err := s.checkWeatherTriggers(); err != nil {
 		log.Printf("Error checking weather triggers: %v", err)
+	}
+
+	// Check OneDrive triggers
+	if err := s.checkOneDriveTriggers(); err != nil {
+		log.Printf("Error checking OneDrive triggers: %v", err)
 	}
 
 	return nil
@@ -99,6 +111,79 @@ func (s *SchedulerService) checkWeatherTriggers() error {
 		if s.shouldTriggerWeatherArea(area, triggerConfig) {
 			if err := s.executeArea(area); err != nil {
 				log.Printf("Failed to execute area %s: %v", area.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkOneDriveTriggers() error {
+	var areas []models.Area
+
+	err := database.DB.Preload("User").Where("trigger_service = ? AND is_active = ?", "OneDrive", true).Find(&areas).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch OneDrive areas: %v", err)
+	}
+
+	for _, area := range areas {
+		// Skip if user not found or no OneDrive token
+		if area.User.ID == 0 || area.User.OneDriveToken == nil || *area.User.OneDriveToken == "" {
+			log.Printf("Skipping area %s: no user or token", area.Name)
+			continue
+		}
+
+		// Check if enough time has passed since last run (avoid spam)
+		if area.LastRunAt != nil {
+			timeSinceLastRun := time.Since(*area.LastRunAt)
+			if timeSinceLastRun < 1*time.Minute {
+				continue
+			}
+		}
+
+		// Determine trigger type from TriggerType field
+		// For OneDrive, TriggerType will be "NewFile" or "ModifiedFile"
+		triggerType := area.TriggerType
+		if triggerType == "" || triggerType == "Webhook" {
+			// Default for backward compatibility
+			triggerType = "NewFile"
+		}
+
+		// List files from OneDrive
+		filesResp, err := s.onedriveService.ListFiles(*area.User.OneDriveToken, "")
+		if err != nil {
+			log.Printf("Failed to list OneDrive files for area %s: %v", area.Name, err)
+			continue
+		}
+
+		// Check for files based on trigger type
+		for _, file := range filesResp.Value {
+			shouldTrigger := false
+
+			if triggerType == "NewFile" || triggerType == "new_file" {
+				// New file: check CreatedDateTime
+				if time.Since(file.CreatedDateTime) < 1*time.Minute {
+					log.Printf("New file detected in OneDrive: %s (created: %v)", file.Name, file.CreatedDateTime)
+					shouldTrigger = true
+				}
+			} else if triggerType == "ModifiedFile" || triggerType == "modified_file" {
+				// Modified file: check ModifiedDateTime AND make sure it's not just created
+				if time.Since(file.ModifiedDateTime) < 1*time.Minute && time.Since(file.CreatedDateTime) > 1*time.Minute {
+					log.Printf("Modified file detected in OneDrive: %s (modified: %v)", file.Name, file.ModifiedDateTime)
+					shouldTrigger = true
+				}
+			}
+
+			if shouldTrigger {
+				// Execute the action with file context
+				if err := s.executeAreaWithContext(area, map[string]string{
+					"fileName": file.Name,
+					"fileId":   file.ID,
+					"fileUrl":  file.WebURL,
+				}); err != nil {
+					log.Printf("Failed to execute area %s: %v", area.Name, err)
+				}
+				break // Only trigger once per check
 			}
 		}
 	}
@@ -191,6 +276,10 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 }
 
 func (s *SchedulerService) executeArea(area models.Area) error {
+	return s.executeAreaWithContext(area, nil)
+}
+
+func (s *SchedulerService) executeAreaWithContext(area models.Area, context map[string]string) error {
 	log.Printf("Executing area: %s", area.Name)
 
 	var actionConfig map[string]interface{}
@@ -198,11 +287,25 @@ func (s *SchedulerService) executeArea(area models.Area) error {
 		return fmt.Errorf("failed to parse action config: %v", err)
 	}
 
+	// Replace template variables in action config
+	if context != nil {
+		for key, value := range actionConfig {
+			if strValue, ok := value.(string); ok {
+				for varName, varValue := range context {
+					strValue = strings.ReplaceAll(strValue, "{{"+varName+"}}", varValue)
+				}
+				actionConfig[key] = strValue
+			}
+		}
+	}
+
 	switch area.ActionService {
 	case "Gmail":
 		return s.executeGmailAction(area, actionConfig)
 	case "Discord":
 		return s.executeDiscordAction(area, actionConfig)
+	case "OneDrive":
+		return s.executeOneDriveAction(area, actionConfig)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -312,6 +415,30 @@ func (s *SchedulerService) executeDiscordAction(area models.Area, actionConfig m
 
 	log.Printf("Successfully executed area: %s", area.Name)
 	return nil
+}
+
+func (s *SchedulerService) executeOneDriveAction(area models.Area, actionConfig map[string]interface{}) error {
+	if s.onedriveService == nil {
+		return fmt.Errorf("OneDrive service not available")
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, area.UserID).Error; err != nil {
+		return fmt.Errorf("user not found: %v", err)
+	}
+
+	if user.OneDriveToken == nil || *user.OneDriveToken == "" {
+		return fmt.Errorf("OneDrive not linked for this user")
+	}
+
+	switch area.ActionType {
+	case "UploadFile", "upload":
+		return s.executeOneDriveUpload(area, actionConfig, *user.OneDriveToken)
+	case "CreateFolder", "createFolder":
+		return s.executeOneDriveCreateFolder(area, actionConfig, *user.OneDriveToken)
+	default:
+		return fmt.Errorf("unsupported OneDrive action type: %s", area.ActionType)
+	}
 }
 
 func (s *SchedulerService) StartScheduler(ctx context.Context) {
