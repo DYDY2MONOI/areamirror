@@ -236,7 +236,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount } = useAuth()
+const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkOneDriveAccount, unlinkOneDriveAccount } = useAuth()
 
 const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
@@ -283,6 +283,10 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.github_username
     case 'google':
       return !!currentUser.value.google_id
+    case 'facebook':
+      return !!currentUser.value.facebook_id
+    case 'onedrive':
+      return !!currentUser.value.onedrive_id
     case 'discord':
       return !!currentUser.value.discord_id
     case 'spotify':
@@ -327,6 +331,16 @@ const linkService = async (serviceId: string) => {
       const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
 
       window.location.href = googleAuthUrl
+    } else if (serviceId === 'onedrive') {
+      // OneDrive utilise directement l'URL du backend qui gère l'OAuth
+      const response = await fetch(service.authUrl!)
+      const data = await response.json()
+
+      if (data.authUrl) {
+        window.location.href = data.authUrl
+      } else {
+        errorMessages.value[serviceId] = 'Failed to get OneDrive authorization URL'
+      }
     } else {
       errorMessages.value[serviceId] = `${service.name} integration is not yet implemented.`
     }
@@ -350,6 +364,12 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'google') {
       await unlinkGoogleAccount()
       successMessages.value[serviceId] = 'Google account unlinked successfully'
+    } else if (serviceId === 'facebook') {
+      await unlinkFacebookAccount()
+      successMessages.value[serviceId] = 'Facebook account unlinked successfully'
+    } else if (serviceId === 'onedrive') {
+      await unlinkOneDriveAccount()
+      successMessages.value[serviceId] = 'OneDrive account unlinked successfully'
     } else {
       errorMessages.value[serviceId] = `${serviceId} unlinking is not yet implemented.`
     }
@@ -373,6 +393,12 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)
       successMessages.value[serviceId] = 'Google account linked successfully!'
+    } else if (serviceId === 'facebook') {
+      const result = await linkFacebookAccount(code)
+      successMessages.value[serviceId] = 'Facebook account linked successfully!'
+    } else if (serviceId === 'onedrive') {
+      const result = await linkOneDriveAccount(code)
+      successMessages.value[serviceId] = 'OneDrive account linked successfully!'
     } else {
       errorMessages.value[serviceId] = `${serviceId} linking is not yet implemented.`
     }
