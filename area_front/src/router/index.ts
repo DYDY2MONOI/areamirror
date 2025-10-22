@@ -7,6 +7,7 @@ import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
 import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
+import AmazonCallbackPage from '../views/AmazonCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import ConfigureAreaPage from '../views/ConfigureAreaPage.vue'
@@ -56,6 +57,12 @@ const router = createRouter({
       path: '/auth/google/callback',
       name: 'google-callback',
       component: GoogleCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/auth/amazon/callback',
+      name: 'amazon-callback',
+      component: AmazonCallbackPage,
       meta: { requiresAuth: true }
     },
     {
@@ -136,5 +143,4 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
-
 

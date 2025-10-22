@@ -42,6 +42,17 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     isEnabled: true
   },
   {
+    id: 'amazon',
+    name: 'Amazon',
+    icon: 'amazon',
+    color: '#FF9900',
+    description: 'Connect your Amazon account to enable Amazon and Twitch automations',
+    authUrl: 'https://www.amazon.com/ap/oa',
+    callbackPath: '/auth/amazon/callback',
+    scopes: ['profile'],
+    isEnabled: true
+  },
+  {
     id: 'facebook',
     name: 'Facebook',
     icon: 'facebook',

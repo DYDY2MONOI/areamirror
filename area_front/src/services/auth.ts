@@ -19,6 +19,8 @@ export interface User {
   google_email?: string
   facebook_id?: string
   facebook_email?: string
+  amazon_id?: string
+  amazon_email?: string
   discord_id?: string
   discord_username?: string
   spotify_id?: string
@@ -445,6 +447,52 @@ class AuthService {
     if (!response.ok) {
       const errorData = await response.json()
       throw new Error(errorData.error || 'Failed to unlink Facebook account')
+    }
+
+    await this.fetchProfile()
+  }
+
+  async linkAmazonAccount(code: string): Promise<{ amazon_email: string | null }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/amazon/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Amazon account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkAmazonAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/amazon/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Amazon account')
     }
 
     await this.fetchProfile()

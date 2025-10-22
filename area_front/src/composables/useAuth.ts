@@ -145,6 +145,27 @@ export function useAuth() {
     }
   }
 
+  const linkAmazonAccount = async (code: string) => {
+    try {
+      const result = await authService.linkAmazonAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Amazon link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkAmazonAccount = async () => {
+    try {
+      await authService.unlinkAmazonAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Amazon unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -186,6 +207,8 @@ export function useAuth() {
     unlinkGoogleAccount,
     linkFacebookAccount,
     unlinkFacebookAccount,
+    linkAmazonAccount,
+    unlinkAmazonAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
