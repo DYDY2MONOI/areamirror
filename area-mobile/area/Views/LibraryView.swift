@@ -127,7 +127,6 @@ struct LibraryView: View {
                                         AreaCard(area: area, onEdit: {
                                             selectedArea = area
                                         }, onDelete: {
-                                            // TODO: Implement delete area logic
                                         })
                                     }
                                 }

@@ -16,14 +16,12 @@ struct EditAreaView: View {
     
     @State private var name: String = ""
     @State private var description: String = ""
-    
-    // Trigger (calendar/github/weather minimal fields supported now)
+    nimal fields supported now)
     @State private var eventDate: String = ""
     @State private var eventTime: String = ""
     @State private var eventTitle: String = ""
     @State private var calendarId: String = "primary"
     
-    // Action (gmail minimal fields supported now)
     @State private var toEmail: String = ""
     @State private var subject: String = ""
     @State private var emailBody: String = ""
@@ -32,19 +30,42 @@ struct EditAreaView: View {
     @State private var errorMessage: String?
     
     init(template: AreaTemplate, existingArea: Area? = nil) {
+        print("📱 EditAreaView init with template: \(template.title), existingArea: \(existingArea?.name ?? "nil")")
         self.template = template
         self.existingArea = existingArea
         
         _name = State(initialValue: existingArea?.name ?? template.title)
         _description = State(initialValue: existingArea?.description ?? template.description)
         
-        if template.actionService == "Gmail" {
+        if let existingArea = existingArea, let triggerConfig = existingArea.triggerConfig {
+            if template.triggerService == "Google Calendar" {
+                _eventDate = State(initialValue: triggerConfig["eventDate"]?.value as? String ?? "")
+                _eventTime = State(initialValue: triggerConfig["eventTime"]?.value as? String ?? "")
+                _eventTitle = State(initialValue: triggerConfig["eventTitle"]?.value as? String ?? "")
+                _calendarId = State(initialValue: triggerConfig["calendarId"]?.value as? String ?? "primary")
+            }
+        } else if template.triggerService == "Google Calendar" {
+            _eventDate = State(initialValue: "")
+            _eventTime = State(initialValue: "")
+            _eventTitle = State(initialValue: "")
+            _calendarId = State(initialValue: "primary")
+        }
+        
+        if let existingArea = existingArea, let actionConfig = existingArea.actionConfig {
+            if template.actionService == "Gmail" {
+                _toEmail = State(initialValue: actionConfig["toEmail"]?.value as? String ?? "")
+                _subject = State(initialValue: actionConfig["subject"]?.value as? String ?? "Reminder: {{eventTitle}}")
+                _emailBody = State(initialValue: actionConfig["body"]?.value as? String ?? "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}")
+            }
+        } else if template.actionService == "Gmail" {
+            _toEmail = State(initialValue: "")
             _subject = State(initialValue: "Reminder: {{eventTitle}}")
             _emailBody = State(initialValue: "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}")
         }
     }
     
     init(area: Area) {
+        print("📱 EditAreaView init with area: \(area.name) (ID: \(area.id))")
         self.init(template: .from(area: area), existingArea: area)
     }
     
@@ -71,6 +92,23 @@ struct EditAreaView: View {
                                 .foregroundColor(.red)
                                 .padding(.horizontal, 20)
                         }
+                        
+                        #if DEBUG
+                        if existingArea != nil {
+                            VStack(spacing: 8) {
+                                Text("DEBUG: Edit Mode")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                                Text("Area ID: \(existingArea!.id)")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                                Text("Will call: PUT /areas/\(existingArea!.id)")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                        #endif
                         
                         Button(action: saveArea) {
                             HStack(spacing: 10) {
@@ -182,7 +220,7 @@ struct EditAreaView: View {
                     ]
                 }
                 
-                let payload = AreaService.CreateOrUpdateAreaRequest(
+                let fullPayload = AreaService.CreateOrUpdateAreaRequest(
                     name: name,
                     description: description,
                     triggerService: template.triggerService,
@@ -195,26 +233,13 @@ struct EditAreaView: View {
                 )
                 
                 if let area = existingArea {
-                    var payload = AreaService.CreateOrUpdateAreaRequest()
-                    if name != area.name { payload.name = name }
-                    if description != area.description { payload.description = description }
-                    // TODO: a more robust diffing for trigger/action configs
-                    if !triggerConfig.isEmpty { payload.triggerConfig = triggerConfig }
-                    if !actionConfig.isEmpty { payload.actionConfig = actionConfig }
-                    _ = try await areaService.updateArea(areaId: area.id, payload: payload)
+                    print("🔄 Updating existing area with ID: \(area.id)")
+                    _ = try await areaService.updateArea(areaId: area.id, payload: fullPayload)
+                    print("✅ Area updated successfully")
                 } else {
-                    let payload = AreaService.CreateOrUpdateAreaRequest(
-                        name: name,
-                        description: description,
-                        triggerService: template.triggerService,
-                        triggerType: template.triggerService == "Google Calendar" ? "Event" : "Webhook",
-                        actionService: template.actionService,
-                        actionType: resolveActionType(template.actionService),
-                        triggerConfig: triggerConfig,
-                        actionConfig: actionConfig,
-                        isActive: true
-                    )
-                    _ = try await areaService.createArea(payload: payload)
+                    print("➕ Creating new area")
+                    _ = try await areaService.createArea(payload: fullPayload)
+                    print("✅ Area created successfully")
                 }
                 
                 DispatchQueue.main.async {
@@ -239,13 +264,21 @@ struct EditAreaView: View {
     }
 }
 
-// MARK: - Styled Sections
 extension EditAreaView {
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(existingArea == nil ? "Create AREA" : "Edit AREA")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+            HStack {
+                Text(existingArea == nil ? "Create AREA" : "Edit AREA")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                
+                if existingArea != nil {
+                    Text("(ID: \(existingArea!.id))")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                        .padding(.leading, 8)
+                }
+            }
             
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
@@ -331,7 +364,6 @@ extension EditAreaView {
     }
 }
 
-// MARK: - Modifiers & Helpers
 fileprivate struct CardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -387,7 +419,6 @@ fileprivate func serviceColor(_ service: String) -> Color {
     }
 }
 
-// MARK: - Preview
 #Preview {
     EditAreaView(
         template: AreaTemplate(

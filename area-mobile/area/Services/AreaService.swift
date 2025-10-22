@@ -16,6 +16,7 @@ class AreaService: ObservableObject {
     @Published var popularAreas: [AreaTemplate] = []
     @Published var recommendedAreas: [AreaTemplate] = []
     @Published var isLoading = false
+    @Published var userAreasLoaded = false
     @Published var errorMessage: String?
     
     private init() {}
@@ -48,15 +49,18 @@ class AreaService: ObservableObject {
                     let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
                     print("✅ Fetched \(areaResponse.data.count) user areas")
                     self.userAreas = areaResponse.data
+                    self.userAreasLoaded = true
                     self.isLoading = false
                 } else {
                     self.errorMessage = "Failed to fetch user areas"
+                    self.userAreasLoaded = true
                     self.isLoading = false
                 }
             }
         } catch {
             print("❌ Error fetching user areas: \(error.localizedDescription)")
             self.errorMessage = "Network error: \(error.localizedDescription)"
+            self.userAreasLoaded = true
             self.isLoading = false
         }
     }
@@ -137,7 +141,6 @@ class AreaService: ObservableObject {
         }
     }
 
-    // MARK: - Create/Update
     struct CreateOrUpdateAreaRequest: Codable {
         var name: String?
         var description: String?
@@ -166,10 +169,13 @@ class AreaService: ObservableObject {
     }
 
     func createArea(payload: CreateOrUpdateAreaRequest) async throws -> Area {
+        print("➕ AreaService.createArea called")
         guard let token = AuthService.shared.getAuthToken() else {
+            print("❌ No auth token for create")
             throw AreaServiceError.unauthorized
         }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/areas")) else {
+            print("❌ Invalid URL for create")
             throw AreaServiceError.invalidURL
         }
         var request = URLRequest(url: url)
@@ -202,12 +208,16 @@ class AreaService: ObservableObject {
     }
 
     func updateArea(areaId: String, payload: CreateOrUpdateAreaRequest) async throws -> Area {
+        print("🔄 AreaService.updateArea called with ID: \(areaId)")
         guard let token = AuthService.shared.getAuthToken() else {
+            print("❌ No auth token")
             throw AreaServiceError.unauthorized
         }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/areas/\(areaId)")) else {
+            print("❌ Invalid URL")
             throw AreaServiceError.invalidURL
         }
+        print("🔄 PUT request to: \(url.absoluteString)")
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -223,8 +233,13 @@ class AreaService: ObservableObject {
         request.httpBody = bodyData
         
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse else {
+            throw AreaServiceError.server("Invalid response")
+        }
+        print("📡 Update response status: \(http.statusCode)")
+        guard (200...299).contains(http.statusCode) else {
             let msg = String(data: data, encoding: .utf8) ?? "Server error"
+            print("❌ Update failed: \(msg)")
             throw AreaServiceError.server(msg)
         }
         do {
@@ -245,17 +260,14 @@ class AreaService: ObservableObject {
         }
     }
     
-    // MARK: - Lenient decoding helpers
     private static func parseAreaLenient(from data: Data) throws -> Area? {
         guard
             let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
             let area = root["data"] as? [String: Any]
         else { return nil }
         
-        // Create a clean dictionary with proper field mapping
         var cleanArea: [String: Any] = [:]
         
-        // Map snake_case to camelCase for required fields
         cleanArea["id"] = area["id"] as? String ?? UUID().uuidString
         cleanArea["name"] = area["name"] as? String ?? "Untitled"
         cleanArea["description"] = area["description"] as? String ?? ""
@@ -267,7 +279,6 @@ class AreaService: ObservableObject {
         cleanArea["updatedAt"] = area["updated_at"] as? String ?? ""
         cleanArea["userID"] = area["user_id"] as? Int ?? 0
         
-        // Map optional fields
         cleanArea["triggerIconURL"] = area["trigger_icon_url"]
         cleanArea["actionIconURL"] = area["action_icon_url"]
         cleanArea["status"] = area["status"]
@@ -288,7 +299,6 @@ class AreaService: ObservableObject {
         cleanArea["lastError"] = area["last_error"]
         cleanArea["dedupKeyTemplate"] = area["dedup_key_template"]
         
-        // Handle user object
         if let user = area["user"] as? [String: Any] {
             var cleanUser: [String: Any] = [:]
             cleanUser["id"] = user["id"] as? Int ?? 0
@@ -408,7 +418,6 @@ struct Area: Identifiable, Codable {
     }
 }
 
-// MARK: - Create/Update Models
 struct CreateOrUpdateAreaRequest: Codable {
     var name: String?
     var description: String?
@@ -501,7 +510,6 @@ struct AreaTemplate: Identifiable, Codable {
     }
 }
 
-// MARK: - Helpers
 enum AreaServiceError: Error, LocalizedError {
     case unauthorized
     case invalidURL
@@ -516,7 +524,6 @@ enum AreaServiceError: Error, LocalizedError {
     }
 }
 
-// A simple type-erased wrapper to encode heterogeneous values in dictionaries
 struct AnyCodable: Codable {
     let value: Any
     init(_ value: Any) { self.value = value }

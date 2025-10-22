@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var showTestView = false
     @State private var showNewArea = false
     @State private var selectedTemplate: AreaTemplate?
+    @State private var selectedArea: Area?
     @State private var selectedTab = 0
     let onLogout: () -> Void
 
@@ -65,18 +66,20 @@ struct HomeView: View {
                                     .foregroundColor(.white)
                                     .padding()
                             } else {
-                                if !areaService.popularAreas.isEmpty {
-                                    AppletSection(
-                                        title: "Popular AREAs",
-                                        applets: areaService.popularAreas.map { convertAreaTemplateToApplet($0) }
-                                    )
-                                }
+                                if areaService.userAreasLoaded {
+                                    if !areaService.popularAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Popular AREAs",
+                                            applets: areaService.popularAreas.map { convertAreaTemplateToApplet($0) }
+                                        )
+                                    }
 
-                                if !areaService.recommendedAreas.isEmpty {
-                                    AppletSection(
-                                        title: "Recommended for you",
-                                        applets: areaService.recommendedAreas.map { convertAreaTemplateToApplet($0) }
-                                    )
+                                    if !areaService.recommendedAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Recommended for you",
+                                            applets: areaService.recommendedAreas.map { convertAreaTemplateToApplet($0) }
+                                        )
+                                    }
                                 }
 
                                 if selectedTab == 1 && !areaService.userAreas.isEmpty {
@@ -135,6 +138,9 @@ struct HomeView: View {
         .fullScreenCover(item: $selectedTemplate) { template in
             EditAreaView(template: template)
         }
+        .fullScreenCover(item: $selectedArea) { area in
+            EditAreaView(area: area)
+        }
         .onAppear {
             Task {
                 await areaService.fetchAllAreas()
@@ -150,7 +156,7 @@ struct HomeView: View {
             icon: getServiceIcon(area.triggerService),
             gradient: getServiceGradient(area.triggerService, area.actionService),
             type: .create,
-            action: { print("Area tapped: \(area.name)") }
+            action: { selectedArea = area }
         )
     }
 
@@ -163,7 +169,26 @@ struct HomeView: View {
             gradient: getServiceGradient(template.triggerService, template.actionService),
             type: .create,
             action: {
-                selectedTemplate = template
+                print("🔍 Checking for existing area for template: \(template.title)")
+                print("🔍 User areas loaded: \(areaService.userAreasLoaded)")
+                print("🔍 User areas count: \(areaService.userAreas.count)")
+                print("🔍 Template trigger: \(template.triggerService), action: \(template.actionService)")
+                
+                for (index, area) in areaService.userAreas.enumerated() {
+                    print("🔍 User area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
+                }
+                
+                if let existingArea = areaService.userAreas.first(where: { 
+                    $0.triggerService == template.triggerService && 
+                    $0.actionService == template.actionService 
+                }) {
+                    print("🔄 Found existing area for template: \(template.title) -> Opening for edit")
+                    print("🔄 Selected area ID: \(existingArea.id)")
+                    selectedArea = existingArea
+                } else {w area
+                    print("➕ No existing area found for template: \(template.title) -> Opening for create")
+                    selectedTemplate = template
+                }
             }
         )
     }
