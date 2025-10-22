@@ -120,3 +120,33 @@ func OneDriveUploadFile(c *gin.Context) {
 		"data":    uploadResp,
 	})
 }
+
+func OneDriveDownloadFile(c *gin.Context) {
+	accessToken := c.GetHeader("X-OneDrive-Token")
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access token required"})
+		return
+	}
+
+	fileID := c.Param("fileId")
+	if fileID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File ID required"})
+		return
+	}
+
+	onedriveService, err := services.NewOneDriveService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OneDrive service not configured"})
+		return
+	}
+
+	content, err := onedriveService.DownloadFile(accessToken, fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download file: " + err.Error()})
+		return
+	}
+
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileID))
+	c.Data(http.StatusOK, "application/octet-stream", content)
+}
