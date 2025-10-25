@@ -336,7 +336,7 @@ extension EditAreaView {
         let dateStr = df.string(from: date)
 
         let iso = ISO8601DateFormatter()
-        iso.timeZone = TimeZone(secondsFromGMT: 0)
+        iso.timeZone = TimeZone.current
         iso.formatOptions = [.withInternetDateTime, .withColonSeparatorInTime]
         let isoStr = iso.string(from: date)
         return (dateStr, isoStr)

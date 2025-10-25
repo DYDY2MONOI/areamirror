@@ -490,7 +490,6 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 	}
 }
 
-// ExecuteAreaPublic is a public wrapper for executeArea
 func (s *SchedulerService) ExecuteAreaPublic(area models.Area, metadata map[string]interface{}) error {
 	return s.executeArea(area, metadata)
 }
@@ -733,7 +732,6 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		vars["interval"] = interval
 	}
 
-	// Telegram metadata
 	if messageText, ok := metadata["messageText"].(string); ok {
 		vars["messageText"] = messageText
 	}

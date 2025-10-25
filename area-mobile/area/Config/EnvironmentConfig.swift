@@ -15,7 +15,7 @@ enum AppEnvironment {
     var baseURL: String {
         switch self {
         case .development:
-            return "http://10.68.247.126:8080"
+            return "http://192.168.1.99:8080"
         case .staging:
             return "https://staging-api.area.com"
         case .production:
