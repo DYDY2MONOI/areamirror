@@ -1541,6 +1541,23 @@ const testGoogleSheets = async () => {
   }
 }
 
+const formatDateTimeWithTimezone = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  
+  const timezoneOffset = -date.getTimezoneOffset()
+  const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
+  const offsetMinutes = Math.abs(timezoneOffset) % 60
+  const offsetSign = timezoneOffset >= 0 ? '+' : '-'
+  const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
+}
+
 const createArea = async () => {
   if (!isFormValid.value) return
 
@@ -1609,6 +1626,22 @@ const createArea = async () => {
 
       await areaService.createArea(areaData)
     } else {
+      let triggerConfig = { ...form.triggerConfig }
+      
+      if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
+        const eventDateTime = new Date(form.triggerConfig.eventTime)
+        const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
+        
+        const [datePart, timePart] = formattedDateTime.split('T')
+        
+        triggerConfig = {
+          eventDate: datePart,
+          eventTime: formattedDateTime,
+          eventTitle: form.triggerConfig.eventTitle || '',
+          calendarId: form.triggerConfig.calendarId || 'primary'
+        }
+      }
+      
       const areaData = {
         name: form.areaName,
         description: form.description,
@@ -1616,7 +1649,7 @@ const createArea = async () => {
         triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-        triggerConfig: form.triggerConfig,
+        triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
       }
 

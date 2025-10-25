@@ -691,12 +691,6 @@ const existingArea = ref<Area | null>(null)
 const isEditingExisting = ref(false)
 const form = reactive({
   triggerConfig: {
-    eventDate: '',
-    eventTime: '',
-    eventTitle: '',
-    calendarId: 'primary',
-    repository: '',
-    branch: 'main'
   } as any,
   actionConfig: {
     toEmail: '',
@@ -938,10 +932,27 @@ const canTestGitHubTrigger = computed(() => {
          form.triggerConfig.events.length > 0
 })
 
+const formatDateTimeWithTimezone = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  
+  const timezoneOffset = -date.getTimezoneOffset()
+  const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
+  const offsetMinutes = Math.abs(timezoneOffset) % 60
+  const offsetSign = timezoneOffset >= 0 ? '+' : '-'
+  const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
+}
+
 const getCombinedDateTime = () => {
   if (form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
     const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
-    return eventDateTime.toISOString()
+    return formatDateTimeWithTimezone(eventDateTime)
   }
   return 'Not set'
 }
@@ -1348,8 +1359,15 @@ const createArea = async () => {
 
     if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
-      triggerConfig.eventTime = eventDateTime.toISOString()
+      triggerConfig.eventTime = formatDateTimeWithTimezone(eventDateTime)
       console.log('Combined event time:', triggerConfig.eventTime)
+      
+      triggerConfig = {
+        eventDate: triggerConfig.eventDate,
+        eventTime: triggerConfig.eventTime,
+        eventTitle: triggerConfig.eventTitle,
+        calendarId: triggerConfig.calendarId || 'primary'
+      }
     }
 
     if (template.value.triggerService === 'GitHub') {
