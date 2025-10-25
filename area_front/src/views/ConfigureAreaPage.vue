@@ -691,7 +691,6 @@ const existingArea = ref<Area | null>(null)
 const isEditingExisting = ref(false)
 const form = reactive({
   triggerConfig: {
-    // Default fields - will be properly initialized when template loads
   } as any,
   actionConfig: {
     toEmail: '',
@@ -1363,7 +1362,6 @@ const createArea = async () => {
       triggerConfig.eventTime = formatDateTimeWithTimezone(eventDateTime)
       console.log('Combined event time:', triggerConfig.eventTime)
       
-      // Clean up: only keep calendar-related fields
       triggerConfig = {
         eventDate: triggerConfig.eventDate,
         eventTime: triggerConfig.eventTime,

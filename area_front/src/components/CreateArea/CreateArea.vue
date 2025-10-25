@@ -1628,12 +1628,10 @@ const createArea = async () => {
     } else {
       let triggerConfig = { ...form.triggerConfig }
       
-      // Handle Google Calendar datetime formatting with timezone
       if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
         const eventDateTime = new Date(form.triggerConfig.eventTime)
         const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
         
-        // Split into date and time for backend
         const [datePart, timePart] = formattedDateTime.split('T')
         
         triggerConfig = {
