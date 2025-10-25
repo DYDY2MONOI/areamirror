@@ -10,8 +10,6 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-// GoogleSheetsService provides read access to Google Sheets ranges using the public API.
-// It uses an API key defined in the environment variable GOOGLE_SHEETS_API_KEY.
 type GoogleSheetsService struct {
 	client *sheets.Service
 }
