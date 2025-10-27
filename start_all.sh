@@ -52,24 +52,60 @@ elif [ "$choice" = "2" ]; then
   echo "Generating .ipa for connected device..."
   echo "Make sure your iPhone/iPad is connected via USB and unlocked."
   cd "$XCODE_PROJECT_PATH" || { echo "Error: Xcode path not found"; exit 1; }
-  DEVICE_UDID=$(xcrun xctrace list devices | grep -E "iPhone|iPad" | grep -v Simulator | head -n 1 | awk '{print $NF}' | tr -d '()')
+  DEVICE_UDID=$(xcrun xctrace list devices 2>&1 | sed -n '/== Devices ==/,/== Simulators ==/p' | grep -v "== Devices ==" | grep -v "== Simulators ==" | grep -v "^$" | grep -v "^MacBook\|^Mac" | head -n 1 | sed 's/.*(\([^)]*\))$/\1/')
   if [ -z "$DEVICE_UDID" ]; then
     echo "Error: No connected device detected. Connect an iPhone/iPad via USB."
+    echo "Make sure the device is:"
+    echo "  - Unlocked"
+    echo "  - Trusted (tap 'Trust' when prompted on device)"
+    echo "  - Has Developer Mode enabled (Settings > Privacy & Security > Developer Mode)"
     exit 1
   fi
   echo "Device detected: UDID $DEVICE_UDID"
-  xcodebuild build -scheme "$SCHEME_NAME" -destination "platform=iOS,id=$DEVICE_UDID" || { echo "Error: Build failed"; exit 1; }
-  xcodebuild archive -scheme "$SCHEME_NAME" -sdk iphoneos -archivePath "./build/$APP_NAME.xcarchive" || { echo "Error: Archive failed"; exit 1; }
-  xcodebuild -exportArchive -archivePath "./build/$APP_NAME.xcarchive" -exportPath "./build/$APP_NAME" -exportOptionsPlist <(echo '<?xml version="1.0" encoding="UTF-8"?>
+  
+  echo "Detecting development team..."
+  TEAM_ID=$(xcodebuild -showBuildSettings -scheme "$SCHEME_NAME" 2>/dev/null | grep "DEVELOPMENT_TEAM" | head -n 1 | awk '{print $3}')
+  if [ -z "$TEAM_ID" ]; then
+    echo "Warning: No Team ID found. Make sure you have a development team set in Xcode."
+    echo "Go to: Xcode → Project → Signing & Capabilities → Team"
+    exit 1
+  fi
+  echo "Using Team ID: $TEAM_ID"
+  
+  EXPORT_PLIST="./build/ExportOptions.plist"
+  mkdir -p ./build
+  cat > "$EXPORT_PLIST" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>method</key>
     <string>development</string>
+    <key>teamID</key>
+    <string>$TEAM_ID</string>
 </dict>
-</plist>') || { echo "Error: Export failed"; exit 1; }
-  echo ".ipa generated in $XCODE_PROJECT_PATH/build/$APP_NAME !"
-  echo "To install, open Xcode, go to Window > Devices and Simulators, and drag the .ipa onto the device."
+</plist>
+EOF
+  
+  echo "Building for device..."
+  xcodebuild build -scheme "$SCHEME_NAME" -destination "platform=iOS,id=$DEVICE_UDID" || { echo "Error: Build failed"; exit 1; }
+  
+  echo "Creating archive..."
+  xcodebuild archive -scheme "$SCHEME_NAME" -sdk iphoneos -archivePath "./build/$APP_NAME.xcarchive" || { echo "Error: Archive failed"; exit 1; }
+  
+  echo "Exporting .ipa..."
+  xcodebuild -exportArchive -archivePath "./build/$APP_NAME.xcarchive" -exportPath "./build/$APP_NAME" -exportOptionsPlist "$EXPORT_PLIST" || { echo "Error: Export failed"; rm -f "$EXPORT_PLIST"; exit 1; }
+  
+  rm -f "$EXPORT_PLIST"
+  
+  echo ""
+  echo "SUCCESS! .ipa generated at: $XCODE_PROJECT_PATH/build/$APP_NAME/$APP_NAME.ipa"
+  echo ""
+  echo "To install on your device:"
+  echo "  1. Open Xcode"
+  echo "  2. Go to Window → Devices and Simulators"
+  echo "  3. Select your device (@dydy2monoi 🐈‍⬛)"
+  echo "  4. Drag and drop the .ipa file onto the 'Installed Apps' section"
 
 elif [ "$choice" = "3" ]; then
   echo "Stopping script."
