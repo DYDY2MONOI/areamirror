@@ -38,7 +38,7 @@ extension Service {
         Service(name: "WhatsApp", icon: "whatsapp", color: .green, category: .communication),
         
         Service(name: "Gmail", icon: "gmail", color: .red, category: .productivity),
-        Service(name: "Google Calendar", icon: "google-calendar", color: .blue, category: .productivity),
+        Service(name: "Date Timer", icon: "google-calendar", color: .blue, category: .productivity),
         Service(name: "Notion", icon: "notion", color: .gray, category: .productivity),
         Service(name: "Trello", icon: "trello", color: .blue, category: .productivity),
         Service(name: "Asana", icon: "asana", color: .orange, category: .productivity),

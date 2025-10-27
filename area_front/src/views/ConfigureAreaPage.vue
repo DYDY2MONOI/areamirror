@@ -59,7 +59,7 @@
           <p class="debug-info">Form Data: {{ JSON.stringify(form) }}</p>
         </div>
 
-        <div v-if="template && template.triggerService === 'Google Calendar'" class="config-card">
+        <div v-if="template && template.triggerService === 'Date Timer'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
               <v-icon size="24" color="white">mdi-calendar</v-icon>
@@ -574,7 +574,7 @@
           </div>
         </div>
 
-        <div class="test-trigger-section" v-if="template?.triggerService === 'Google Calendar'">
+        <div class="test-trigger-section" v-if="template?.triggerService === 'Date Timer'">
           <div class="test-trigger-info">
             <h4>🕐 Test Calendar Trigger</h4>
             <p>Test if your calendar trigger is working correctly. This will simulate the trigger firing.</p>
@@ -754,7 +754,7 @@ watch(() => template.value, (newTemplate) => {
     sheetsTestResult.value = null
     sheetsTestError.value = null
 
-    if (newTemplate.triggerService === 'Google Calendar') {
+    if (newTemplate.triggerService === 'Date Timer') {
       form.triggerConfig = {
         eventDate: '',
         eventTime: '',
@@ -866,7 +866,7 @@ const triggerIsValid = computed(() => {
   if (!template.value) return false
 
   switch (template.value.triggerService) {
-    case 'Google Calendar':
+    case 'Date Timer':
       return !!form.triggerConfig.eventDate &&
              !!form.triggerConfig.eventTime
     case 'GitHub':
@@ -1048,7 +1048,7 @@ const getTodayDate = () => {
 
 const resolveTriggerType = (service: string) => {
   switch (service) {
-    case 'Google Calendar':
+    case 'Date Timer':
       return 'Event'
     case 'Google Sheets':
       return 'SpreadsheetChange'
@@ -1191,7 +1191,7 @@ const testTrigger = async () => {
     const areaData = {
       name: `Test Area - ${template.value?.title || 'Unknown'}`,
       description: 'Temporary test area',
-      triggerService: template.value?.triggerService || 'Google Calendar',
+      triggerService: template.value?.triggerService || 'Date Timer',
       triggerType: 'Event',
       actionService: template.value?.actionService || 'Gmail',
       actionType: resolveActionType(template.value?.actionService || 'Gmail'),
@@ -1357,7 +1357,7 @@ const createArea = async () => {
   try {
     let triggerConfig = { ...form.triggerConfig }
 
-    if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
+    if (template.value.triggerService === 'Date Timer' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = formatDateTimeWithTimezone(eventDateTime)
       console.log('Combined event time:', triggerConfig.eventTime)
@@ -1428,7 +1428,7 @@ const createArea = async () => {
 
 const getTriggerIcon = (service: string) => {
   switch (service) {
-    case "Google Calendar": return "mdi-calendar"
+    case "Date Timer": return "mdi-calendar"
     case "GitHub": return "mdi-github"
     case "Gmail": return "mdi-email-outline"
     case "Discord": return "mdi-discord"

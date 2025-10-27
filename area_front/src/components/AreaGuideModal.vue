@@ -35,7 +35,7 @@
                     <v-icon size="18" color="#22c55e">mdi-lightbulb-on</v-icon>
                     Example
                   </div>
-                  <p>"When a new event is added to my Google Calendar (Trigger), send me an email reminder via Gmail (Action)"</p>
+                  <p>"When a new event is added to my Date Timer (Trigger), send me an email reminder via Gmail (Action)"</p>
                 </div>
               </div>
 
@@ -111,7 +111,7 @@
                 <div class="services-grid">
                   <div class="service-card">
                     <v-icon size="24" color="#3b82f6">mdi-calendar</v-icon>
-                    <h4>Google Calendar</h4>
+                    <h4>Date Timer</h4>
                     <p>When an event is coming up</p>
                   </div>
                   <div class="service-card">
@@ -241,7 +241,7 @@
                       <v-icon size="20" color="#3b82f6">mdi-calendar</v-icon>
                       <span>Calendar Reminder</span>
                     </div>
-                    <p>Google Calendar → Gmail</p>
+                    <p>Date Timer → Gmail</p>
                   </div>
                   <div class="popular-item">
                     <div class="popular-header">
