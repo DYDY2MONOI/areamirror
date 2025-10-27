@@ -1,6 +1,6 @@
 <template>
-  <v-dialog :model-value="isOpen" @update:model-value="$emit('close')" max-width="900" persistent>
-    <div class="guide-modal">
+  <v-dialog v-model="dialogModel" max-width="900" persistent>
+    <v-card class="guide-modal" flat>
       <div class="guide-header">
         <div class="header-content">
           <div class="header-icon">
@@ -18,7 +18,7 @@
 
       <div class="guide-content">
         <div class="slides-container">
-          <transition :name="slideDirection" mode="out-in">
+          <transition :name="slideDirection" mode="out-in" appear>
             <div :key="currentSlide" class="slide">
               <div v-if="currentSlide === 0" class="slide-content">
                 <div class="slide-icon">
@@ -43,32 +43,49 @@
                 <div class="slide-icon">
                   <v-icon size="64" color="#f59e0b">mdi-cog-outline</v-icon>
                 </div>
-                <h3 class="slide-title">How Does it Work?</h3>
-                <div class="workflow-diagram">
-                  <div class="workflow-step">
-                    <div class="step-icon trigger">
-                      <v-icon size="24" color="white">mdi-play-circle</v-icon>
+                <h3 class="slide-title">Comment ça fonctionne ?</h3>
+                
+                <div class="explanation-section">
+                  <div class="concept-card trigger-card">
+                    <div class="concept-header">
+                      <v-icon size="28" color="#3b82f6">mdi-play-circle</v-icon>
+                      <h4>🎯 Trigger (Déclencheur)</h4>
                     </div>
-                    <div class="step-content">
-                      <h4>1. Trigger Service</h4>
-                      <p>The event that starts everything</p>
+                    <p class="concept-text">
+                      Un <strong>trigger</strong> est l'<strong>événement qui démarre</strong> votre automatisation. 
+                      C'est le "QUAND" de votre area.
+                    </p>
+                    <div class="concept-examples">
+                      <div class="mini-example">📅 Quand un événement arrive</div>
+                      <div class="mini-example">💬 Quand je reçois un message</div>
+                      <div class="mini-example">⏰ Toutes les heures</div>
                     </div>
                   </div>
-                  <div class="workflow-arrow">
-                    <v-icon size="32" color="#3b82f6">mdi-arrow-right</v-icon>
+                  
+                  <div class="arrow-divider">
+                    <v-icon size="40" color="#3b82f6">mdi-arrow-right-bold</v-icon>
                   </div>
-                  <div class="workflow-step">
-                    <div class="step-icon action">
-                      <v-icon size="24" color="white">mdi-lightning-bolt</v-icon>
+                  
+                  <div class="concept-card action-card">
+                    <div class="concept-header">
+                      <v-icon size="28" color="#10b981">mdi-lightning-bolt</v-icon>
+                      <h4>⚡ Action (Réaction)</h4>
                     </div>
-                    <div class="step-content">
-                      <h4>2. Action Service</h4>
-                      <p>What happens automatically</p>
+                    <p class="concept-text">
+                      Une <strong>action</strong> est ce qui se <strong>passe automatiquement</strong> quand le trigger se déclenche.
+                      C'est le "ALORS" de votre area.
+                    </p>
+                    <div class="concept-examples">
+                      <div class="mini-example">📧 Envoyer un email</div>
+                      <div class="mini-example">💬 Poster sur Discord</div>
+                      <div class="mini-example">📱 Notifier sur Telegram</div>
                     </div>
                   </div>
                 </div>
+                
                 <div class="info-box">
-                  <p>The scheduler checks every 30 seconds for triggers and executes the corresponding actions automatically!</p>
+                  <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                  <p>Le système vérifie automatiquement vos triggers toutes les 30 secondes et exécute les actions correspondantes !</p>
                 </div>
               </div>
 
@@ -106,34 +123,46 @@
                 <div class="slide-icon">
                   <v-icon size="64" color="#ef4444">mdi-play-circle-outline</v-icon>
                 </div>
-                <h3 class="slide-title">Step 2: Select a Trigger</h3>
-                <p class="slide-text">Choose the service that will start your automation:</p>
+                <h3 class="slide-title">Étape 2 : Choisir un Trigger (Déclencheur)</h3>
+                <p class="slide-text">
+                  Le <strong>trigger</strong> est l'événement qui <strong>démarre</strong> votre automatisation. 
+                  C'est la condition "QUAND" qui active votre area.
+                </p>
                 <div class="services-grid">
                   <div class="service-card">
                     <v-icon size="24" color="#3b82f6">mdi-calendar</v-icon>
                     <h4>Google Calendar</h4>
-                    <p>When an event is coming up</p>
+                    <p>Quand un événement approche</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#8b5cf6">mdi-github</v-icon>
                     <h4>GitHub</h4>
-                    <p>When code is pushed</p>
+                    <p>Quand du code est poussé</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#f59e0b">mdi-weather-partly-cloudy</v-icon>
                     <h4>Weather</h4>
-                    <p>When conditions change</p>
+                    <p>Quand la météo change</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#10b981">mdi-table</v-icon>
                     <h4>Google Sheets</h4>
-                    <p>When data is modified</p>
+                    <p>Quand des données changent</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#06b6d4">mdi-clock-outline</v-icon>
                     <h4>Timer</h4>
-                    <p>At regular intervals</p>
+                    <p>À intervalles réguliers</p>
                   </div>
+                  <div class="service-card">
+                    <v-icon size="24" color="#0088cc">mdi-send</v-icon>
+                    <h4>Telegram</h4>
+                    <p>Quand je reçois un message</p>
+                  </div>
+                </div>
+                <div class="tip-box">
+                  <v-icon size="18" color="#f59e0b">mdi-lightbulb</v-icon>
+                  <p>💡 Chaque trigger a ses propres paramètres (ex: Chat ID pour Telegram, ville pour Weather)</p>
                 </div>
               </div>
 
@@ -141,24 +170,37 @@
                 <div class="slide-icon">
                   <v-icon size="64" color="#3b82f6">mdi-lightning-bolt-outline</v-icon>
                 </div>
-                <h3 class="slide-title">Step 3: Select an Action</h3>
-                <p class="slide-text">Choose what should happen when the trigger fires:</p>
+                <h3 class="slide-title">Étape 3 : Choisir une Action (Réaction)</h3>
+                <p class="slide-text">
+                  L'<strong>action</strong> est ce qui se <strong>passe automatiquement</strong> quand le trigger se déclenche.
+                  C'est la partie "ALORS" qui exécute quelque chose.
+                </p>
                 <div class="services-grid">
                   <div class="service-card">
                     <v-icon size="24" color="#ea4335">mdi-gmail</v-icon>
                     <h4>Gmail</h4>
-                    <p>Send an email notification</p>
+                    <p>Envoyer un email</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#5865f2">mdi-discord</v-icon>
                     <h4>Discord</h4>
-                    <p>Post to a Discord channel</p>
+                    <p>Poster un message</p>
                   </div>
                   <div class="service-card">
                     <v-icon size="24" color="#0088cc">mdi-send</v-icon>
                     <h4>Telegram</h4>
-                    <p>Send a Telegram message</p>
+                    <p>Envoyer sur Telegram</p>
                   </div>
+                </div>
+                <div class="example-box">
+                  <div class="example-title">
+                    <v-icon size="18" color="#22c55e">mdi-lightbulb-on</v-icon>
+                    Exemple Complet
+                  </div>
+                  <p>
+                    <strong>QUAND</strong> je reçois un message Telegram (Trigger)<br/>
+                    <strong>ALORS</strong> envoyer le message sur Discord (Action)
+                  </p>
                 </div>
               </div>
 
@@ -200,32 +242,84 @@
                 <div class="slide-icon">
                   <v-icon size="64" color="#8b5cf6">mdi-code-braces</v-icon>
                 </div>
-                <h3 class="slide-title">Step 5: Use Template Variables</h3>
-                <p class="slide-text">Make your messages dynamic with these variables:</p>
-                <div class="variables-showcase">
-                  <div class="variable-item">
-                    <code v-pre>{{areaName}}</code>
-                    <span>Your area name</span>
+                <h3 class="slide-title">Les Variables Template avec <code v-pre>{{}}</code></h3>
+                
+                <div class="variables-explanation">
+                  <p class="slide-text">
+                    Les <strong>variables template</strong> sont des <strong>placeholders magiques</strong> qui sont 
+                    <strong>automatiquement remplacés</strong> par des valeurs réelles quand votre area s'exécute.
+                  </p>
+                  
+                  <div class="how-it-works-box">
+                    <div class="example-row">
+                      <div class="before">
+                        <strong>❌ Vous écrivez :</strong>
+                        <code v-pre>Message de {{firstName}}: {{messageText}}</code>
+                      </div>
+                      <v-icon size="24" color="#3b82f6">mdi-arrow-right</v-icon>
+                      <div class="after">
+                        <strong>✅ Le système envoie :</strong>
+                        <code>Message de John: Bonjour !</code>
+                      </div>
+                    </div>
                   </div>
-                  <div class="variable-item">
-                    <code v-pre>{{eventTime}}</code>
-                    <span>Event date & time</span>
-                  </div>
-                  <div class="variable-item">
-                    <code v-pre>{{triggerTime}}</code>
-                    <span>When triggered</span>
-                  </div>
-                  <div class="variable-item">
-                    <code v-pre>{{interval}}</code>
-                    <span>Timer interval</span>
+                  
+                  <h4 class="variables-section-title">📋 Variables Disponibles :</h4>
+                  
+                  <div class="variables-categories">
+                    <div class="variable-category">
+                      <div class="category-title">
+                        <v-icon size="20" color="#3b82f6">mdi-clock</v-icon>
+                        Générales
+                      </div>
+                      <div class="variables-list">
+                        <div class="var-item"><code v-pre>{{areaName}}</code> → Nom de votre area</div>
+                        <div class="var-item"><code v-pre>{{eventTime}}</code> → Date et heure</div>
+                        <div class="var-item"><code v-pre>{{triggerService}}</code> → Service trigger</div>
+                      </div>
+                    </div>
+                    
+                    <div class="variable-category">
+                      <div class="category-title">
+                        <v-icon size="20" color="#0088cc">mdi-send</v-icon>
+                        Telegram
+                      </div>
+                      <div class="variables-list">
+                        <div class="var-item"><code v-pre>{{messageText}}</code> → Texte du message</div>
+                        <div class="var-item"><code v-pre>{{firstName}}</code> → Prénom de l'expéditeur</div>
+                        <div class="var-item"><code v-pre>{{username}}</code> → @username</div>
+                        <div class="var-item"><code v-pre>{{chatId}}</code> → ID du chat</div>
+                      </div>
+                    </div>
+                    
+                    <div class="variable-category">
+                      <div class="category-title">
+                        <v-icon size="20" color="#10b981">mdi-table</v-icon>
+                        Google Sheets
+                      </div>
+                      <div class="variables-list">
+                        <div class="var-item"><code v-pre>{{sheetName}}</code> → Nom de la feuille</div>
+                        <div class="var-item"><code v-pre>{{rowNumber}}</code> → Numéro de ligne</div>
+                        <div class="var-item"><code v-pre>{{rowData}}</code> → Données de la ligne</div>
+                      </div>
+                    </div>
+                    
+                    <div class="variable-category">
+                      <div class="category-title">
+                        <v-icon size="20" color="#06b6d4">mdi-timer</v-icon>
+                        Timer
+                      </div>
+                      <div class="variables-list">
+                        <div class="var-item"><code v-pre>{{triggerTime}}</code> → Heure du déclenchement</div>
+                        <div class="var-item"><code v-pre>{{interval}}</code> → Intervalle configuré</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="example-box">
-                  <div class="example-title">
-                    <v-icon size="18" color="#22c55e">mdi-lightbulb-on</v-icon>
-                    Example Message
-                  </div>
-                  <p v-pre>⏰ Reminder for {{areaName}} at {{eventTime}}</p>
+                
+                <div class="tip-box">
+                  <v-icon size="18" color="#f59e0b">mdi-lightbulb</v-icon>
+                  <p>💡 Utilisez autant de variables que vous voulez dans vos messages pour les rendre dynamiques et informatifs !</p>
                 </div>
               </div>
 
@@ -339,31 +433,70 @@
       </div>
 
       <div class="guide-footer">
-        <button v-if="currentSlide < slides.length - 1" class="secondary-btn" @click="$emit('close')">
-          Skip Tutorial
+        <button 
+          class="nav-btn prev-btn" 
+          @click="prevSlide" 
+          :disabled="currentSlide === 0"
+        >
+          <v-icon size="20">mdi-chevron-left</v-icon>
+          Précédent
         </button>
-        <button v-else class="primary-btn" @click="$emit('close')">
+        
+        <div class="footer-center">
+          <div class="progress-dots">
+            <span 
+              v-for="(slide, index) in slides" 
+              :key="index"
+              class="progress-dot"
+              :class="{ active: index === currentSlide }"
+              @click="currentSlide = index"
+            ></span>
+          </div>
+          <button v-if="currentSlide < slides.length - 1" class="secondary-btn" @click="$emit('close')">
+            Passer le tutoriel
+          </button>
+        </div>
+        
+        <button 
+          v-if="currentSlide < slides.length - 1"
+          class="nav-btn next-btn" 
+          @click="nextSlide"
+        >
+          Suivant
+          <v-icon size="20">mdi-chevron-right</v-icon>
+        </button>
+        <button 
+          v-else 
+          class="nav-btn finish-btn" 
+          @click="$emit('close')"
+        >
           <v-icon size="18">mdi-check</v-icon>
-          Got it, let's create!
+          C'est parti !
         </button>
       </div>
-    </div>
+    </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+// Pont v-model : quand le dialog veut se fermer, on émet 'close'
+const dialogModel = computed({
+  get: () => props.isOpen,
+  set: (val: boolean) => { if (!val) emit('close') }
+})
+
 const currentSlide = ref(0)
-const slideDirection = ref('slide-left')
+const slideDirection = ref<'slide-left' | 'slide-right'>('slide-left')
 
 const slides = [
   'What is an Area?',
@@ -485,21 +618,24 @@ const goToSlide = (index: number) => {
   flex: 1;
   position: relative;
   overflow: hidden;
+  min-height: 500px;
 }
 
 .slide {
   position: absolute;
+  inset: 0;
   width: 100%;
-  height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
 }
 
 .slide-content {
   width: 100%;
   text-align: center;
   padding: 2rem;
+  max-width: 900px;
 }
 
 .slide-icon {
@@ -549,10 +685,8 @@ const goToSlide = (index: number) => {
 }
 
 .slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: all 0.4s ease;
+.slide-left-leave-active {
+  transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
 .slide-left-enter-from {
@@ -560,14 +694,39 @@ const goToSlide = (index: number) => {
   opacity: 0;
 }
 
+.slide-left-enter-to {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-left-leave-from {
+  transform: translateX(0);
+  opacity: 1;
+}
+
 .slide-left-leave-to {
   transform: translateX(-100%);
   opacity: 0;
 }
 
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
 .slide-right-enter-from {
   transform: translateX(-100%);
   opacity: 0;
+}
+
+.slide-right-enter-to {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-right-leave-from {
+  transform: translateX(0);
+  opacity: 1;
 }
 
 .slide-right-leave-to {
@@ -947,8 +1106,74 @@ const goToSlide = (index: number) => {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.02);
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
+}
+
+.footer-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progress-dots {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: #667eea;
+  transform: scale(1.3);
+}
+
+.progress-dot:hover {
+  background: rgba(102, 126, 234, 0.7);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.nav-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.prev-btn {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.finish-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .primary-btn,
@@ -1019,4 +1244,181 @@ const goToSlide = (index: number) => {
     height: 40px;
   }
 }
+
+.explanation-section {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.concept-card {
+  flex: 1;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid;
+}
+
+.trigger-card {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.action-card {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.concept-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.concept-header h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.concept-text {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.concept-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mini-example {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.arrow-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Variables Template Section */
+.variables-explanation {
+  width: 100%;
+}
+
+.how-it-works-box {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+}
+
+.example-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.before, .after {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.before code, .after code {
+  display: block;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #a3e635;
+  font-family: 'Courier New', monospace;
+}
+
+.variables-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 1.5rem 0 1rem 0;
+}
+
+.variables-categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.variable-category {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.variables-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.var-item {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.var-item code {
+  color: #a3e635;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .explanation-section {
+    flex-direction: column;
+  }
+  
+  .arrow-divider {
+    transform: rotate(90deg);
+  }
+  
+  .example-row {
+    flex-direction: column;
+  }
+  
+  .variables-categories {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+
+
+
+
+
+

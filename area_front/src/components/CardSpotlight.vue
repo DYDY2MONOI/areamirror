@@ -298,9 +298,19 @@ const getIconUrl = (iconName: string) => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .card-spotlight {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .card-spotlight:hover {
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .card-spotlight:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 .spotlight {
@@ -354,9 +364,20 @@ const getIconUrl = (iconName: string) => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .service-icon {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .service-icon:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
+}
+
+[data-theme="light"] .service-icon:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .service-arrow {
@@ -401,11 +422,19 @@ const getIconUrl = (iconName: string) => {
   line-height: 1.2;
 }
 
+[data-theme="light"] .card-title {
+  color: #1a1a1a;
+}
+
 .card-subtitle {
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   font-size: 16px;
   margin: 0 0 10px 0;
+}
+
+[data-theme="light"] .card-subtitle {
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .card-description {
@@ -418,6 +447,10 @@ const getIconUrl = (iconName: string) => {
   -webkit-box-orient: vertical;
   line-clamp: 3;
   overflow: hidden;
+}
+
+[data-theme="light"] .card-description {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .delete-button {
@@ -438,9 +471,26 @@ const getIconUrl = (iconName: string) => {
   z-index: 10;
 }
 
+[data-theme="light"] .delete-button {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 .delete-button:hover {
   background: rgba(239, 68, 68, 0.4);
   transform: scale(1.1);
+}
+
+[data-theme="light"] .delete-button:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="light"] .card-spotlight :deep(.v-icon) {
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-theme="light"] .icon-fallback {
+  filter: brightness(0);
 }
 
 .delete-button:active {
@@ -480,3 +530,9 @@ const getIconUrl = (iconName: string) => {
   }
 }
 </style>
+
+
+
+
+
+

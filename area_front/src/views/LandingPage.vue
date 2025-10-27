@@ -81,6 +81,12 @@
             ></v-list-item>
           </template>
         </v-tooltip>
+
+        <v-divider class="my-2"></v-divider>
+
+        <v-list-item class="sidebar-theme-toggle">
+          <ThemeToggle />
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -369,6 +375,37 @@
     </div>
   </div>
 
+  <div v-if="showDeleteDialog" class="logout-modal-overlay" @click="showDeleteDialog = false">
+    <div class="logout-modal-container" @click.stop>
+      <div class="logout-modal-content">
+        <div class="logout-modal-header">
+                      <div class="logout-icon-wrapper">
+              <div class="logout-icon-bg delete-icon-bg">
+                <v-icon size="24" color="#ef4444">mdi-delete-outline</v-icon>
+              </div>
+            </div>
+          <h2 class="logout-modal-title">Delete Area</h2>
+          <p class="logout-modal-subtitle">Are you sure you want to delete "{{ areaToDelete?.name || 'this area' }}"? This action cannot be undone.</p>
+        </div>
+
+        <div class="logout-modal-actions">
+          <button
+            class="logout-action-btn logout-cancel-btn"
+            @click="showDeleteDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="logout-action-btn delete-confirm-btn"
+            @click="confirmDelete"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
     <div class="custom-modal-content area-modal" @click.stop>
       <div class="area-modal-header">
@@ -432,7 +469,7 @@
     </div>
   </div>
 
-
+  <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
 
 </template>
 
@@ -442,6 +479,8 @@ import SidebarButton from '../components/CreateArea/SidebarButton.vue'
 import CardButton from '../components/CreateArea/CardButton.vue'
 import CardSpotlight from '../components/CardSpotlight.vue'
 import Globe from '../components/Globe.vue'
+import OnboardingTutorial from '../components/OnboardingTutorial.vue'
+import ThemeToggle from '../components/ThemeToggle.vue'
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
@@ -464,8 +503,11 @@ interface AreaTemplate {
 const year = new Date().getFullYear()
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
+const showDeleteDialog = ref(false)
+const areaToDelete = ref<Area | null>(null)
 const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
+const showOnboarding = ref(false)
 const searchQuery = ref('')
 const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth >= 1280 : true)
 
@@ -532,31 +574,54 @@ const getServiceIcon = (serviceName: string | undefined) => {
 
 
 
-onMounted(() => {
+onMounted(async () => {
   const onResize = () => {
     isDesktop.value = window.innerWidth >= 1280
   }
   window.addEventListener('resize', onResize)
-  refreshProfile()
-    .then(() => fetchPopularAreas())
-    .then(() => fetchRecommendedAreas())
-    .then(() => {
-      if (currentUser.value && currentUser.value.id) {
-        return fetchUserAreas(currentUser.value.id)
-      }
-    })
-  window.addEventListener('beforeunload', () => {
-    window.removeEventListener('resize', onResize)
-  })
-})
-
-onMounted(async () => {
+  
   await refreshProfile()
   await fetchPopularAreas()
   await fetchRecommendedAreas()
   if (currentUser.value?.id) {
     await fetchUserAreas(currentUser.value.id)
   }
+  
+  const isNewUser = localStorage.getItem('area_new_user') === 'true'
+  
+  console.log('🔍 Onboarding Check:', {
+    isNewUser,
+    currentUser: currentUser.value,
+    userId: currentUser.value?.id
+  })
+  
+  if (isNewUser && currentUser.value) {
+    const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
+    const tutorialCompleted = localStorage.getItem(tutorialKey) === 'true'
+    
+    console.log('📚 Tutorial Status:', {
+      tutorialKey,
+      tutorialCompleted,
+      willShowTutorial: !tutorialCompleted
+    })
+    
+    if (!tutorialCompleted) {
+      setTimeout(() => {
+        console.log('🎉 Affichage du tutoriel!')
+        showOnboarding.value = true
+        localStorage.removeItem('area_new_user')
+      }, 1000)
+    } else {
+      console.log('✅ Tutoriel déjà complété pour cet utilisateur')
+      localStorage.removeItem('area_new_user')
+    }
+  } else {
+    console.log('❌ Conditions non remplies pour afficher le tutoriel')
+  }
+  
+  window.addEventListener('beforeunload', () => {
+    window.removeEventListener('resize', onResize)
+  })
 })
 
 
@@ -609,17 +674,35 @@ const handleAreaClick = (area: AreaTemplate | Area) => {
   })
 }
 
-const handleDeleteArea = async (area: AreaTemplate | Area) => {
-  requireAuth(async () => {
-    const areaName = 'name' in area ? area.name : area.title
-    if (confirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`)) {
-      try {
-        await deleteArea(area.id)
-      } catch (error) {
-        alert(`Failed to delete area: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-    }
+const closeOnboarding = () => {
+  showOnboarding.value = false
+  if (currentUser.value) {
+    const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
+    localStorage.setItem(tutorialKey, 'true')
+  }
+  localStorage.removeItem('area_new_user')
+}
+
+const handleDeleteArea = (area: AreaTemplate | Area) => {
+  requireAuth(() => {
+    areaToDelete.value = area as Area
+    showDeleteDialog.value = true
   })
+}
+
+const confirmDelete = async () => {
+  if (!areaToDelete.value) return
+  
+  try {
+    await deleteArea(areaToDelete.value.id)
+    showDeleteDialog.value = false
+    areaToDelete.value = null
+  } catch (error) {
+    showDeleteDialog.value = false
+    areaToDelete.value = null
+    // Error is already handled by the deleteArea function
+    console.error('Failed to delete area:', error)
+  }
 }
 
 const createAreaFromTemplate = () => {
@@ -1263,12 +1346,24 @@ watch(showCreateModal, (isOpen) => {
   filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.1));
 }
 
+[data-theme="light"] .search-title {
+  background: linear-gradient(135deg, #1a1a1a 0%, #3b82f6 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
 .search-subtitle {
   font-size: 1rem;
   color: #9ca3af;
   margin: 0;
   line-height: 1.6;
   font-weight: 400;
+}
+
+[data-theme="light"] .search-subtitle {
+  color: #4b5563;
 }
 
 .search-bar {
@@ -1492,6 +1587,18 @@ watch(showCreateModal, (isOpen) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sidebar-theme-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem !important;
+}
+
+.sidebar-theme-toggle :deep(.theme-toggle) {
+  width: 100%;
+  max-width: 100%;
 }
 
 .user-status {
@@ -1738,7 +1845,7 @@ watch(showCreateModal, (isOpen) => {
   z-index: 1001;
 }
 .nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.nav-btn { color: white !important; text-transform: none; }
+.nav-btn { color: var(--text-primary) !important; text-transform: none; }
 .sidebar-desktop {
   display: none;
   position: relative;
@@ -2016,6 +2123,23 @@ body.modal-open {
   box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
 
+.delete-icon-bg {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.3)) !important;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3) !important;
+}
+
+.delete-confirm-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.delete-confirm-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
 @media (prefers-color-scheme: dark) {
   .logout-modal-content {
     background: rgba(28, 28, 30, 0.95);
@@ -2037,6 +2161,14 @@ body.modal-open {
 
   .logout-cancel-btn:hover {
     background: rgba(142, 142, 147, 0.3);
+  }
+
+  .delete-confirm-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  .delete-confirm-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
   }
 }
 
@@ -2927,5 +3059,11 @@ body.modal-open {
 }
 
 </style>
+
+
+
+
+
+
 
 
