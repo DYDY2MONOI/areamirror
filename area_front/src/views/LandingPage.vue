@@ -375,7 +375,6 @@
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
   <div v-if="showDeleteDialog" class="logout-modal-overlay" @click="showDeleteDialog = false">
     <div class="logout-modal-container" @click.stop>
       <div class="logout-modal-content">
@@ -470,7 +469,6 @@
     </div>
   </div>
 
-  <!-- Onboarding Tutorial -->
   <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
 
 </template>
@@ -589,7 +587,6 @@ onMounted(async () => {
     await fetchUserAreas(currentUser.value.id)
   }
   
-  // Vérifier si c'est un nouvel utilisateur et afficher le tutoriel
   const isNewUser = localStorage.getItem('area_new_user') === 'true'
   
   console.log('🔍 Onboarding Check:', {
@@ -599,7 +596,6 @@ onMounted(async () => {
   })
   
   if (isNewUser && currentUser.value) {
-    // Vérifier si le tutoriel a été complété pour CET utilisateur spécifique
     const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
     const tutorialCompleted = localStorage.getItem(tutorialKey) === 'true'
     
@@ -610,15 +606,12 @@ onMounted(async () => {
     })
     
     if (!tutorialCompleted) {
-      // Attendre un peu pour que la page charge complètement
       setTimeout(() => {
         console.log('🎉 Affichage du tutoriel!')
         showOnboarding.value = true
-        // Retirer le flag de nouveau user une fois le tutoriel affiché
         localStorage.removeItem('area_new_user')
       }, 1000)
     } else {
-      // Tutoriel déjà complété pour cet utilisateur
       console.log('✅ Tutoriel déjà complété pour cet utilisateur')
       localStorage.removeItem('area_new_user')
     }
@@ -709,7 +702,6 @@ const confirmDelete = async () => {
   } catch (error) {
     showDeleteDialog.value = false
     areaToDelete.value = null
-    // Error is already handled by the deleteArea function
     console.error('Failed to delete area:', error)
   }
 }
@@ -2132,7 +2124,6 @@ body.modal-open {
   box-shadow: 0 6px 16px rgba(255, 59, 48, 0.4);
 }
 
-/* Delete modal specific styles */
 .delete-icon-bg {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.3)) !important;
   box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3) !important;
