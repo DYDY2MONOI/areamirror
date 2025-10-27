@@ -10,11 +10,9 @@
 import { onMounted } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 
-// Initialiser le thème
 const { currentTheme } = useTheme()
 
 onMounted(() => {
-  // Appliquer le thème au chargement
   document.documentElement.setAttribute('data-theme', currentTheme.value)
 })
 </script>
