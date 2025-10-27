@@ -1,4 +1,3 @@
-/* Reset et base */
 * {
   margin: 0;
   padding: 0;
@@ -7,12 +6,12 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0f1419;
-  color: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Classes utilitaires */
 .min-h-screen { min-height: 100vh; }
 .relative { position: relative; }
 .absolute { position: absolute; }
@@ -58,11 +57,11 @@ body {
 .text-sm { font-size: 0.875rem; }
 .text-2xl { font-size: 1.5rem; }
 .text-4xl { font-size: 2.25rem; }
-.text-white { color: white; }
-.text-gray-300 { color: #d1d5db; }
-.text-gray-400 { color: #9ca3af; }
-.text-blue-500 { color: #3b82f6; }
-.text-blue-400 { color: #60a5fa; }
+.text-white { color: var(--text-primary); }
+.text-gray-300 { color: var(--text-secondary); }
+.text-gray-400 { color: var(--text-muted); }
+.text-blue-500 { color: var(--accent-primary); }
+.text-blue-400 { color: var(--accent-tertiary); }
 .bg-slate-900 { background-color: #0f172a; }
 .bg-slate-800 { background-color: #1e293b; }
 .bg-slate-800\/50 { background-color: rgba(30, 41, 59, 0.5); }
@@ -102,7 +101,6 @@ body {
 .focus\:border-transparent:focus { border-color: transparent; }
 .pointer-events-none { pointer-events: none; }
 
-/* Éléments géométriques */
 .geometric-shape {
   position: absolute;
   opacity: 0.2;
@@ -128,7 +126,6 @@ body {
   opacity: 0.1;
 }
 
-/* Champs de saisie */
 .input-field {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -149,7 +146,6 @@ body {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-/* Boutons */
 .btn-primary {
   width: 100%;
   padding: 0.75rem;
@@ -183,7 +179,6 @@ body {
   background-color: #334155;
 }
 
-/* Liens */
 a {
   color: #3b82f6;
   text-decoration: none;
@@ -194,12 +189,10 @@ a:hover {
   color: #60a5fa;
 }
 
-/* Checkbox */
 input[type="checkbox"] {
   accent-color: #3b82f6;
 }
 
-/* Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -295,7 +288,6 @@ input[type="checkbox"] {
   }
 }
 
-/* Classes d'animation */
 .animate-fade-in-up {
   opacity: 0;
   transform: translateY(30px);
