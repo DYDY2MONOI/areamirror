@@ -1695,9 +1695,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   position: relative;
 }
 
+[data-theme="light"] .main-card {
+  background: #e5e7eb;
+  border: 3px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
 .card-header {
   padding: 2rem 2rem 1rem 2rem;
   border-bottom: 1px solid var(--color-border-primary);
+}
+
+[data-theme="light"] .card-header {
+  border-bottom: 3px solid rgba(0, 0, 0, 0.3);
 }
 
 .header-content {
@@ -1744,9 +1756,24 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   justify-content: center;
 }
 
+[data-theme="light"] .close-button {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .close-button :deep(.v-icon) {
+  color: #1a1a1a !important;
+}
+
 .close-button:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .close-button:hover {
+  background: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .icon-container {
@@ -1774,6 +1801,12 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
+}
+
+[data-theme="light"] .card-title {
+  color: #8b5cf6;
+  text-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+  font-weight: 800;
 }
 
 .card-subtitle {
@@ -1845,11 +1878,25 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   outline: none;
 }
 
+[data-theme="light"] .modern-input,
+[data-theme="light"] .modern-textarea {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-input:focus,
 .modern-textarea:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-input:focus,
+[data-theme="light"] .modern-textarea:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .modern-input::placeholder,
@@ -1878,9 +1925,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .service-selector {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .service-selector:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .service-selector:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .selector-header {
@@ -1935,10 +1993,22 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   width: 100%;
 }
 
+[data-theme="light"] .modern-select {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-select:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-select:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .selected-service {
@@ -2580,9 +2650,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .config-section {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .config-section:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .config-section:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .config-header {
