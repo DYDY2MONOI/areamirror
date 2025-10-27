@@ -159,6 +159,8 @@ const handleRegister = async () => {
     console.log('🔄 Appel du service d\'authentification...')
     await authService.register(form.value)
     console.log('✅ Compte créé avec succès')
+    // Marquer comme nouveau utilisateur pour afficher le tutoriel
+    localStorage.setItem('area_new_user', 'true')
     router.push('/')
   } catch (err) {
     console.error('❌ Erreur lors de la création:', err)
