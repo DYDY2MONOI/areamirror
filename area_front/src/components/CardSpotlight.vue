@@ -485,7 +485,6 @@ const getIconUrl = (iconName: string) => {
   background: rgba(239, 68, 68, 0.25);
 }
 
-/* Icônes Material Design en mode clair */
 [data-theme="light"] .card-spotlight :deep(.v-icon) {
   color: rgba(0, 0, 0, 0.8) !important;
 }
@@ -531,3 +530,9 @@ const getIconUrl = (iconName: string) => {
   }
 }
 </style>
+
+
+
+
+
+

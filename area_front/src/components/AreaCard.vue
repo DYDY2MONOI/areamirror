@@ -282,22 +282,19 @@ const getIconUrl = (iconName: string) => {
   position: relative;
 }
 
-/* GitHub to Discord gradient */
 .gradient-github-discord {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Discord to Notion gradient */
 .gradient-discord-notion {
   background: linear-gradient(135deg, #5865f2 0%, #00d4aa 100%);
 }
 
-/* GitHub to Gmail gradient */
 .gradient-github-gmail {
   background: linear-gradient(135deg, #333333 0%, #ea4335 100%);
 }
 
-/* Default gradient for other combinations */
+
 .gradient-default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
@@ -361,7 +358,6 @@ const getIconUrl = (iconName: string) => {
   z-index: 10;
 }
 
-/* Icônes en mode clair */
 .area-card :deep(.icon-mdi),
 .area-card :deep(.arrow-icon) {
   color: white !important;
@@ -479,3 +475,9 @@ const getIconUrl = (iconName: string) => {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 </style>
+
+
+
+
+
+

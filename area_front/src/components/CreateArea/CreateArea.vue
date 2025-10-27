@@ -967,7 +967,6 @@
       </div>
     </div>
 
-    <!-- Guide Modal -->
     <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
@@ -2640,7 +2639,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary) !important;
 }
 
-/* Configuration Section Styles */
+
 .config-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-primary);
@@ -2851,7 +2850,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
-/* Info box for Timer and other configs */
+
 .info-box {
   display: flex;
   align-items: center;
@@ -2984,3 +2983,9 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 </style>
+
+
+
+
+
+
