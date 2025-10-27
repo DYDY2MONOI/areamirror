@@ -87,7 +87,6 @@ struct HomeView: View {
                                         )
                                     }
                                 } else {
-                                    //ssage while waiting for user areas
                                     VStack {
                                         ProgressView("Loading your areas...")
                                             .foregroundColor(.white)

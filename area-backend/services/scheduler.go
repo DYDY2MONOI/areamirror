@@ -18,11 +18,11 @@ import (
 )
 
 type SchedulerService struct {
-	emailService   *EmailService
-	discordService *DiscordService
-	weatherService *WeatherService
-	sheetsService  *GoogleSheetsService
-  driveService   *GoogleDriveService
+	emailService    *EmailService
+	discordService  *DiscordService
+	weatherService  *WeatherService
+	sheetsService   *GoogleSheetsService
+	driveService    *GoogleDriveService
 	telegramService *TelegramService
 	agendaService  *GoogleAgendaService
 }
@@ -102,9 +102,9 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking Google Sheets triggers: %v", err)
 	}
 
-    if err := s.checkGoogleDriveTriggers(); err != nil {
-        log.Printf("Error checking Google Drive triggers: %v", err)
-    }
+	if err := s.checkGoogleDriveTriggers(); err != nil {
+		log.Printf("Error checking Google Drive triggers: %v", err)
+	}
 
 	if err := s.checkGoogleAgendaTriggers(); err != nil {
 		log.Printf("Error checking Google Agenda triggers: %v", err)
@@ -118,9 +118,9 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 }
 
 type googleDriveTriggerConfig struct {
-    FolderID     string            `json:"folderId"`
-    KnownFileIDs map[string]bool   `json:"knownFileIds"`
-    LastChecked  *time.Time        `json:"lastChecked"`
+	FolderID     string          `json:"folderId"`
+	KnownFileIDs map[string]bool `json:"knownFileIds"`
+	LastChecked  *time.Time      `json:"lastChecked"`
 }
 
 func (s *SchedulerService) checkGoogleDriveTriggers() error {
@@ -424,14 +424,6 @@ func (s *SchedulerService) shouldTriggerArea(area models.Area, triggerConfig map
 		return false
 	}
 
-	if area.LastRunAt != nil {
-		timeSinceLastRun := now.Sub(*area.LastRunAt)
-		if timeSinceLastRun < 5*time.Minute {
-			log.Printf("Area %s already executed recently, skipping", area.Name)
-			return false
-		}
-	}
-
 	timeDiff := eventTime.Sub(now)
 	return timeDiff >= 0 && timeDiff <= 30*time.Second
 }
@@ -440,14 +432,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 	if s.weatherService == nil {
 		log.Printf("Weather service not available for area %s", area.Name)
 		return false
-	}
-
-	if area.LastRunAt != nil {
-		timeSinceLastRun := time.Since(*area.LastRunAt)
-		if timeSinceLastRun < 10*time.Minute {
-			log.Printf("Weather area %s already executed recently, skipping", area.Name)
-			return false
-		}
 	}
 
 	city, ok := triggerConfig["city"].(string)
@@ -555,19 +539,6 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 		return false
 	}
 
-	interval, err := time.ParseDuration(intervalStr)
-	if err != nil {
-		log.Printf("Failed to parse interval '%s' for timer area %s: %v", intervalStr, area.Name, err)
-		return false
-	}
-
-	if area.LastRunAt != nil {
-		timeSinceLastRun := now.Sub(*area.LastRunAt)
-		if timeSinceLastRun < interval {
-			return false
-		}
-	}
-
 	log.Printf("Timer trigger activated for area %s (interval: %s)", area.Name, intervalStr)
 	return true
 }
@@ -593,7 +564,6 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 	}
 }
 
-// ExecuteAreaPublic is a public wrapper for executeArea
 func (s *SchedulerService) ExecuteAreaPublic(area models.Area, metadata map[string]interface{}) error {
 	return s.executeArea(area, metadata)
 }
@@ -836,7 +806,6 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		vars["interval"] = interval
 	}
 
-	// Telegram metadata
 	if messageText, ok := metadata["messageText"].(string); ok {
 		vars["messageText"] = messageText
 	}

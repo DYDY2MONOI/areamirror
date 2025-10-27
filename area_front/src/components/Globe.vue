@@ -123,9 +123,8 @@ function createGlobeOnMounted() {
     return;
   }
 
-  // Ensure we have a valid width
   if (width.value === 0) {
-    width.value = 400; // fallback width
+    width.value = 400;
   }
 
   const config = { ...DEFAULT_CONFIG, ...props.config };
