@@ -676,12 +676,10 @@ const handleAreaClick = (area: AreaTemplate | Area) => {
 
 const closeOnboarding = () => {
   showOnboarding.value = false
-  // Marquer le tutoriel comme complété pour cet utilisateur spécifique
   if (currentUser.value) {
     const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
     localStorage.setItem(tutorialKey, 'true')
   }
-  // Retirer le marqueur de nouvel utilisateur
   localStorage.removeItem('area_new_user')
 }
 
