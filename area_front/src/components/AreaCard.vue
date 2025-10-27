@@ -9,11 +9,11 @@
             :alt="area.triggerService"
             class="service-logo"
           />
-          <v-icon v-else :size="32" color="white">{{ getTriggerIcon(area.triggerService) }}</v-icon>
+          <v-icon v-else :size="32" class="icon-mdi">{{ getTriggerIcon(area.triggerService) }}</v-icon>
           <div v-if="!area.triggerIconUrl" class="icon-fallback">{{ getTriggerEmoji(area.triggerService) }}</div>
         </div>
         <div class="service-arrow">
-          <v-icon size="20" color="white">mdi-arrow-right</v-icon>
+          <v-icon size="20" class="arrow-icon">mdi-arrow-right</v-icon>
           <div class="arrow-fallback">→</div>
         </div>
         <div class="service-icon action-icon">
@@ -23,7 +23,7 @@
             :alt="area.actionService"
             class="service-logo"
           />
-          <v-icon v-else :size="32" color="white">{{ getActionIcon(area.actionService) }}</v-icon>
+          <v-icon v-else :size="32" class="icon-mdi">{{ getActionIcon(area.actionService) }}</v-icon>
           <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
         </div>
       </div>
@@ -33,7 +33,7 @@
         @click.stop="handleDelete"
         type="button"
       >
-        <v-icon size="18" color="white">mdi-delete</v-icon>
+        <v-icon size="18" class="delete-icon">mdi-delete</v-icon>
       </button>
     </v-sheet>
     <div class="card-title">{{ 'title' in area ? area.title : area.name }}</div>
@@ -321,6 +321,12 @@ const getIconUrl = (iconName: string) => {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+[data-theme="light"] .service-icon {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .trigger-icon {
   background: rgba(255, 255, 255, 0.2);
 }
@@ -355,6 +361,29 @@ const getIconUrl = (iconName: string) => {
   z-index: 10;
 }
 
+/* Icônes en mode clair */
+.area-card :deep(.icon-mdi),
+.area-card :deep(.arrow-icon) {
+  color: white !important;
+}
+
+.area-card :deep(.delete-icon) {
+  color: white !important;
+}
+
+[data-theme="light"] .area-card :deep(.icon-mdi),
+[data-theme="light"] .area-card :deep(.arrow-icon) {
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-theme="light"] .area-card :deep(.delete-icon) {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="light"] .area-card .icon-fallback {
+  filter: brightness(0);
+}
+
 .service-logo {
   width: 32px;
   height: 32px;
@@ -385,18 +414,18 @@ const getIconUrl = (iconName: string) => {
   margin-top: 12px;
   font-weight: 800;
   font-size: 20px;
-  color: white;
+  color: var(--text-primary);
 }
 
 .card-subtitle {
-  color: rgba(255,255,255,0.85);
+  color: var(--text-secondary);
   font-weight: 700;
   font-size: 14px;
   margin-top: 4px;
 }
 
 .card-description {
-  color: rgba(255,255,255,0.7);
+  color: var(--text-tertiary);
   font-size: 14px;
   margin-top: 8px;
   line-height: 1.4;
@@ -420,12 +449,33 @@ const getIconUrl = (iconName: string) => {
   z-index: 10;
 }
 
+[data-theme="light"] .delete-button {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 .delete-button:hover {
   background: rgba(255, 0, 0, 0.4);
   transform: scale(1.1);
 }
 
+[data-theme="light"] .delete-button:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
 .delete-button:active {
   transform: scale(0.95);
+}
+
+[data-theme="light"] .service-logo {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .area-card {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .area-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 </style>
