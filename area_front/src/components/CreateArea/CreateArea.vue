@@ -84,38 +84,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.triggerService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 15)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectTrigger(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllTriggerServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.triggerService)?.icon || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.triggerService" class="service-grid">
+                    <div
+                      v-for="item in appItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectTrigger(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
-                      <span class="service-type">Trigger Service</span>
+                    <div class="service-card more-services" @click="showAllTriggerServices = true" v-if="services.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.triggerService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.triggerService || ''] || getFallbackIcon(form.triggerService || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
+                        <span class="service-type">Trigger Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.triggerService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -141,38 +153,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.actionService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 15)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectAction(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllReactionServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.actionService" class="service-grid">
+                    <div
+                      v-for="item in appItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectAction(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
-                      <span class="service-type">Action Service</span>
+                    <div class="service-card more-services" @click="showAllReactionServices = true" v-if="services.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.actionService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.actionService || ''] || getFallbackIcon(form.actionService || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                        <span class="service-type">Action Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.actionService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -974,15 +998,17 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import appsJson from '../../assets/apps.json'
+import { API_BASE_URL } from '../../config/api'
 import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
-import { API_BASE_URL } from '../../config/api'
 import AreaGuideModal from '../AreaGuideModal.vue'
 
-type AppDef = { name: string; icon: string }
-const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
+type ServiceInfo = {
+  name: string
+  actions: { name: string; description: string }[]
+  reactions: { name: string; description: string }[]
+}
 
 interface AreaTemplate {
   id: string
@@ -1020,8 +1046,102 @@ const priorityServices = [
   'Twitter'
 ]
 
+const services = ref<ServiceInfo[]>([])
+const serviceIcons = ref<Record<string, string>>({})
+const isLoadingServices = ref(false)
+const servicesError = ref<string | null>(null)
+
+const fetchServices = async () => {
+  isLoadingServices.value = true
+  servicesError.value = null
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/about.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch services: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const fetchedServices = (data?.server?.services || []) as ServiceInfo[]
+
+    services.value = fetchedServices
+
+    const icons: Record<string, string> = {}
+    const defaultIcons: Record<string, string> = {
+      Gmail: 'gmail.png',
+      Slack: 'slack.png',
+      GitHub: 'github.png',
+      Weather: 'weather.png',
+      'Google Calendar': 'google-calendar.png',
+      Discord: 'discord.png',
+      'Google Sheets': 'google-sheets.png',
+      'Google Drive': 'google-drive.png',
+      Timer: 'google-calendar.png',
+      Telegram: 'telegram.png'
+    }
+
+    fetchedServices.forEach(service => {
+      const key = service.name
+      const normalized = key.toLowerCase()
+      const matchedDefault = Object.keys(defaultIcons).find(name => name.toLowerCase() === normalized)
+      if (matchedDefault) {
+        icons[key] = getIconUrl(defaultIcons[matchedDefault])
+      } else {
+        const sanitized = key.toLowerCase().replace(/\s+/g, '-')
+        icons[key] = getIconUrl(`${sanitized}.png`)
+      }
+    })
+
+    serviceIcons.value = icons
+  } catch (err) {
+    servicesError.value = err instanceof Error ? err.message : 'Failed to load services'
+  } finally {
+    isLoadingServices.value = false
+  }
+}
+
+onMounted(() => {
+  fetchServices()
+})
+
+const getFallbackIcon = (serviceName: string) => {
+  if (!serviceName) {
+    return getIconUrl('gmail.png')
+  }
+
+  const normalized = serviceName.toLowerCase()
+  if (serviceIcons.value[serviceName]) {
+    return serviceIcons.value[serviceName]
+  }
+
+  const defaultIcons: Record<string, string> = {
+    gmail: 'gmail.png',
+    slack: 'slack.png',
+    github: 'github.png',
+    weather: 'weather.png',
+    'google calendar': 'google-calendar.png',
+    discord: 'discord.png',
+    'google sheets': 'google-sheets.png',
+    'google drive': 'google-drive.png',
+    timer: 'google-calendar.png',
+    telegram: 'telegram.png'
+  }
+
+  const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
+  if (matchedDefault) {
+    return getIconUrl(defaultIcons[matchedDefault])
+  }
+
+  const sanitized = normalized.replace(/\s+/g, '-')
+  return getIconUrl(`${sanitized}.png`)
+}
+
 const appItems = computed(() => {
-  const sortedApps = [...apps].sort((a, b) => {
+  if (services.value.length === 0) {
+    return []
+  }
+
+  const sortedServices = [...services.value].sort((a, b) => {
     const aPriority = priorityServices.indexOf(a.name)
     const bPriority = priorityServices.indexOf(b.name)
 
@@ -1033,7 +1153,11 @@ const appItems = computed(() => {
     return aPriority - bPriority
   })
 
-  return sortedApps.map(a => ({ title: a.name, value: a.name, icon: getIconUrl(a.icon) }))
+  return sortedServices.map(service => ({
+    title: service.name,
+    value: service.name,
+    icon: serviceIcons.value[service.name] || getFallbackIcon(service.name)
+  }))
 })
 
 const form = reactive({
@@ -1157,7 +1281,7 @@ const isFormValid = computed(() => {
     const hasBasicTelegramConfig = hasBasicInfo &&
            form.triggerConfig.chatId &&
            form.triggerConfig.triggerType
-    
+
     if (form.triggerConfig.triggerType === 'keyword_match') {
       return hasBasicTelegramConfig && form.triggerConfig.keyword
     }
@@ -1548,13 +1672,13 @@ const formatDateTimeWithTimezone = (date: Date): string => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
-  
+
   const timezoneOffset = -date.getTimezoneOffset()
   const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
   const offsetMinutes = Math.abs(timezoneOffset) % 60
   const offsetSign = timezoneOffset >= 0 ? '+' : '-'
   const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
-  
+
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
 }
 
@@ -1606,7 +1730,7 @@ const createArea = async () => {
       const triggerConfig: any = {
         chatId: form.triggerConfig.chatId
       }
-      
+
       if (form.triggerConfig.triggerType === 'keyword_match') {
         triggerConfig.keyword = form.triggerConfig.keyword
       } else if (form.triggerConfig.triggerType === 'command_received') {
@@ -1627,13 +1751,13 @@ const createArea = async () => {
       await areaService.createArea(areaData)
     } else {
       let triggerConfig = { ...form.triggerConfig }
-      
+
       if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
         const eventDateTime = new Date(form.triggerConfig.eventTime)
         const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
-        
+
         const [datePart, timePart] = formattedDateTime.split('T')
-        
+
         triggerConfig = {
           eventDate: datePart,
           eventTime: formattedDateTime,
@@ -1641,7 +1765,7 @@ const createArea = async () => {
           calendarId: form.triggerConfig.calendarId || 'primary'
         }
       }
-      
+
       const areaData = {
         name: form.areaName,
         description: form.description,
