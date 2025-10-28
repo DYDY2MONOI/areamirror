@@ -10,6 +10,7 @@ import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import ConfigureAreaPage from '../views/ConfigureAreaPage.vue'
+import AllAreasPage from '../views/AllAreasPage.vue'
 import { authService } from '../services/auth'
 
 const router = createRouter({
@@ -70,6 +71,24 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/oauth2/github/callback',
+      name: 'oauth2-github-callback',
+      component: () => import('@/views/OAuth2GitHubCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/oauth2/google/callback',
+      name: 'oauth2-google-callback',
+      component: () => import('@/views/OAuth2GoogleCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/oauth2/facebook/callback',
+      name: 'oauth2-facebook-callback',
+      component: () => import('@/views/OAuth2FacebookCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/profile/edit',
       name: 'edit-profile',
       component: EditProfilePage,
@@ -79,6 +98,12 @@ const router = createRouter({
       path: '/configure-area',
       name: 'configure-area',
       component: ConfigureAreaPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/areas',
+      name: 'all-areas',
+      component: AllAreasPage,
       meta: { requiresAuth: true }
     },
   ],

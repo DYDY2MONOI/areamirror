@@ -10,7 +10,7 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
   build-full-stack:
     name: Build Full Stack with Docker Compose
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -67,4 +67,3 @@ jobs:
 
     - name: Verify docker-compose configuration
       run: docker compose config
-

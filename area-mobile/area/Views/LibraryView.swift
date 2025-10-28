@@ -9,8 +9,9 @@ import SwiftUI
 
 struct LibraryView: View {
     @StateObject private var authService = AuthService.shared
+    @StateObject private var areaService = AreaService.shared
     @State private var selectedFilter = "All"
-    @State private var areas: [AreaItem] = []
+    @State private var selectedArea: Area?
     
     let filters = ["All", "Active", "Inactive", "Recent", "Favorites"]
     
@@ -57,7 +58,7 @@ struct LibraryView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            Text("\(areas.count) automation areas")
+                            Text("\(areaService.userAreas.count) automation areas")
                                 .font(.body)
                                 .foregroundColor(.gray)
                         }
@@ -89,7 +90,7 @@ struct LibraryView: View {
                             .padding(.horizontal, 20)
                         }
                         
-                        if areas.isEmpty {
+                        if areaService.userAreas.isEmpty {
                             VStack(spacing: 20) {
                                 Image(systemName: "plus.circle")
                                     .font(.system(size: 60))
@@ -122,8 +123,11 @@ struct LibraryView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(areas) { area in
-                                        AreaCard(area: area)
+                                    ForEach(areaService.userAreas) { area in
+                                        AreaCard(area: area, onEdit: {
+                                            selectedArea = area
+                                        }, onDelete: {
+                                        })
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -134,20 +138,32 @@ struct LibraryView: View {
                     }
                 }
             }
+            .sheet(item: $selectedArea, onDismiss: {
+                Task {
+                    await areaService.fetchUserAreas()
+                }
+            }) { area in
+                EditAreaView(area: area)
+            }
         }
         .navigationTitle("Library")
         .navigationBarHidden(true)
         .onAppear {
-            loadAreas()
+            Task {
+                await areaService.fetchUserAreas()
+            }
         }
     }
     
-    private func loadAreas() {
-        areas = [
-            AreaItem(id: 1, name: "Email to Slack", description: "Send Slack message when new email arrives", isActive: true, action: "New Email", reaction: "Send Slack Message"),
-            AreaItem(id: 2, name: "GitHub to Discord", description: "Notify Discord when new commit", isActive: true, action: "New Commit", reaction: "Send Discord Message"),
-            AreaItem(id: 3, name: "Weather Alert", description: "Send email when temperature is high", isActive: false, action: "High Temperature", reaction: "Send Email")
-        ]
+    private func convertAreaToAreaItem(_ area: Area) -> AreaItem {
+        return AreaItem(
+            id: area.id,
+            name: area.name,
+            description: area.description,
+            isActive: area.isActive,
+            action: area.triggerService,
+            reaction: area.actionService
+        )
     }
     
     private func filterAreas() {
@@ -156,7 +172,7 @@ struct LibraryView: View {
 }
 
 struct AreaItem: Identifiable {
-    let id: Int
+    let id: String
     let name: String
     let description: String
     let isActive: Bool
@@ -165,7 +181,9 @@ struct AreaItem: Identifiable {
 }
 
 struct AreaCard: View {
-    let area: AreaItem
+    let area: Area
+    var onEdit: () -> Void
+    var onDelete: () -> Void
     @State private var isToggled = false
     
     var body: some View {
@@ -194,11 +212,11 @@ struct AreaCard: View {
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("When: \(area.action)")
+                    Text("When: \(area.triggerService)")
                         .font(.caption)
                         .foregroundColor(.gray)
                     
-                    Text("Then: \(area.reaction)")
+                    Text("Then: \(area.actionService)")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -206,15 +224,13 @@ struct AreaCard: View {
                 Spacer()
                 
                 HStack(spacing: 12) {
-                    Button(action: {
-                    }) {
+                    Button(action: onEdit) {
                         Image(systemName: "pencil")
                             .font(.title3)
                             .foregroundColor(AppColors.primaryBlue)
                     }
                     
-                    Button(action: {
-                    }) {
+                    Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.title3)
                             .foregroundColor(.red)

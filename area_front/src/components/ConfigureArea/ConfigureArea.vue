@@ -57,7 +57,7 @@
           </div>
         </div>
 
-        <div v-if="currentUser?.role !== 'admin'" class="form-section">
+        <div class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
@@ -183,7 +183,7 @@
           </button>
 
           <button
-            v-if="template?.triggerService === 'Google Calendar' && template?.actionService === 'Gmail' && currentUser?.role !== 'admin'"
+            v-if="template?.triggerService === 'Google Calendar' && template?.actionService === 'Gmail'"
             class="action-btn test-email-btn"
             @click="sendTestEmail"
             :disabled="!canSendTestEmail || isSendingTest"
@@ -238,6 +238,12 @@ watch(() => props.template, (newTemplate) => {
         subject: 'Reminder: {{eventTitle}}',
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
+    } else if (newTemplate.triggerService === 'Weather') {
+      form.triggerConfig = {
+        city: '',
+        temperature: 30,
+        condition: ''
+      }
     }
   }
 }, { immediate: true })
@@ -245,14 +251,15 @@ watch(() => props.template, (newTemplate) => {
 const isFormValid = computed(() => {
   if (!props.template) return false
 
-  if (currentUser.value?.role === 'admin') {
-    return true
-  }
-
   if (props.template.triggerService === 'Google Calendar' && props.template.actionService === 'Gmail') {
     return form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
+  }
+
+  if (props.template.triggerService === 'Weather') {
+    return form.triggerConfig.city &&
+           form.triggerConfig.temperature !== undefined
   }
 
   return true
@@ -312,20 +319,6 @@ const createArea = async () => {
   error.value = null
 
   try {
-    let triggerConfig = form.triggerConfig
-    let actionConfig = form.actionConfig
-
-    if (currentUser.value?.role === 'admin') {
-      triggerConfig = {
-        type: 'default',
-        enabled: true
-      }
-      actionConfig = {
-        type: 'default',
-        enabled: true
-      }
-    }
-
     const areaData = {
       name: props.template.title,
       description: props.template.description,
@@ -333,8 +326,8 @@ const createArea = async () => {
       triggerType: props.template.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
       actionService: props.template.actionService,
       actionType: props.template.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-      triggerConfig: triggerConfig,
-      actionConfig: actionConfig
+      triggerConfig: form.triggerConfig,
+      actionConfig: form.actionConfig
     }
 
     await areaService.createArea(areaData)

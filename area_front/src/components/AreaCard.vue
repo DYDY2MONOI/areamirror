@@ -27,6 +27,14 @@
           <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
         </div>
       </div>
+      <button
+        v-if="showDeleteButton"
+        class="delete-button"
+        @click.stop="handleDelete"
+        type="button"
+      >
+        <v-icon size="18" color="white">mdi-delete</v-icon>
+      </button>
     </v-sheet>
     <div class="card-title">{{ 'title' in area ? area.title : area.name }}</div>
     <div v-if="'subtitle' in area" class="card-subtitle">{{ area.subtitle }}</div>
@@ -70,14 +78,20 @@ interface AreaTemplate {
 
 const props = defineProps<{
   area: AreaTemplate | Area
+  showDeleteButton?: boolean
 }>()
 
 const emit = defineEmits<{
   click: [area: AreaTemplate | Area]
+  delete: [area: AreaTemplate | Area]
 }>()
 
 const handleClick = () => {
   emit('click', props.area)
+}
+
+const handleDelete = () => {
+  emit('delete', props.area)
 }
 
 const getTriggerIcon = (service: string) => {
@@ -243,7 +257,7 @@ const getIconUrl = (iconName: string) => {
 
 <style scoped>
 .card-col {
-  max-width: 320px;
+  max-width: 400px;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -260,13 +274,12 @@ const getIconUrl = (iconName: string) => {
   border-radius: 24px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.25);
   transform: translateY(0) scale(1);
-  background-size: 130% 130%;
-  background-position: 50% 50%;
+  background-size: 100% 100%;
   transition:
     transform .25s ease,
     box-shadow .25s ease,
-    background-position .6s ease,
     filter .25s ease;
+  position: relative;
 }
 
 /* GitHub to Discord gradient */
@@ -356,13 +369,12 @@ const getIconUrl = (iconName: string) => {
 }
 
 .area-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-  background-position: 80% 20%;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
 .area-card:hover :deep(.v-icon) {
-  transform: translateY(-2px) scale(1.06);
+  transform: translateY(-1px) scale(1.03);
 }
 
 .area-card:active {
@@ -388,5 +400,32 @@ const getIconUrl = (iconName: string) => {
   font-size: 14px;
   margin-top: 8px;
   line-height: 1.4;
+}
+
+.delete-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.delete-button:hover {
+  background: rgba(255, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.delete-button:active {
+  transform: scale(0.95);
 }
 </style>

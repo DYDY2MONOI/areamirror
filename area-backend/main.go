@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{}, &models.DiscordMessageLog{})
 
 	database.SeedData()
 
@@ -34,10 +34,22 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Routes d'authentification directement accessibles (pour compatibilité avec le frontend)
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
+
+	r.POST("/oauth2/login", controllers.OAuth2Login)
+	r.POST("/oauth2/refresh", controllers.RefreshToken)
+	r.GET("/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
+
+	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
+	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
+	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
+
+	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
+	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
+	r.GET("/mobile/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
+
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
 	r.POST("/profile/github/link", controllers.AuthMiddleware(), controllers.LinkGitHubAccount)
@@ -47,14 +59,18 @@ func main() {
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
 
-	// Routes GitHub dans le groupe /api
+	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
+	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
+	r.GET("/gmail/oauth2/status", controllers.AuthMiddleware(), controllers.GetGmailTokenStatus)
+	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
+	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
+
 	api := r.Group("/api")
 	{
 		api.GET("/github/repositories", controllers.AuthMiddleware(), controllers.GetGitHubRepositories)
 		api.POST("/areas/github-gmail", controllers.AuthMiddleware(), controllers.CreateGitHubGmailArea)
 	}
 
-	// Autres routes directement accessibles
 	r.GET("/users", controllers.GetUsers)
 	r.GET("/users/:id", controllers.GetUser)
 	r.POST("/users", controllers.CreateUser)
@@ -83,11 +99,13 @@ func main() {
 	r.GET("/service/:id/reactions", controllers.GetServiceReactions)
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
-	r.GET("/areas/:id", controllers.AuthMiddleware(), controllers.GetArea)
-	r.POST("/areas", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.CreateArea)
-	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateArea)
-	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.DeleteArea)
-	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.ToggleArea)
+	r.GET("/areas/:id", controllers.GetArea)
+	r.GET("/areas/:id/discord-logs", controllers.AuthMiddleware(), controllers.GetAreaDiscordLogs)
+	r.GET("/test-area/:id", controllers.GetArea)
+	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
+	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
+	r.DELETE("/areas/:id", controllers.AuthMiddleware(), controllers.DeleteArea)
+	r.PATCH("/areas/:id/toggle", controllers.AuthMiddleware(), controllers.ToggleArea)
 
 	r.GET("/user/me/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
 
@@ -99,6 +117,7 @@ func main() {
 
 	githubWebhookController := controllers.NewGitHubWebhookController()
 	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
 
@@ -108,6 +127,9 @@ func main() {
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
+	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
+	r.POST("/test/weather", controllers.TestWeatherTrigger)
+	r.GET("/weather", controllers.GetWeatherData)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)
 
 	r.GET("/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetRoles)

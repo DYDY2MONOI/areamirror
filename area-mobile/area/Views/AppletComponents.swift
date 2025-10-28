@@ -11,7 +11,12 @@ struct AppletCard: View {
     let applet: Applet
     
     var body: some View {
-        Button(action: applet.action) {
+        Button(action: {
+            print("🔘 AppletCard tapped: \(applet.title)")
+            print("🔘 About to call applet.action()")
+            applet.action()
+            print("🔘 applet.action() completed")
+        }) {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
@@ -153,12 +158,11 @@ struct NowPlayingBar: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sizeThatFitsLayout) {
     VStack {
         AppletCard(applet: Applet.sampleApplets[0])
         AppletCard(applet: Applet.sampleApplets[1])
         AppletCard(applet: Applet.sampleApplets[3])
     }
     .background(Color.black)
-    .previewLayout(.sizeThatFits)
 }

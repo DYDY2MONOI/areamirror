@@ -4,38 +4,42 @@
 //
 //  Created by Dydy2Brazil on 16/09/2025.
 //
-
 import SwiftUI
 
 struct HomeView: View {
+    @StateObject private var areaService = AreaService.shared
     @State private var showTestView = false
     @State private var showNewArea = false
+    @State private var selectedArea: Area? {
+        didSet {
+            if let area = selectedArea {
+                print("🔄 selectedArea set to: \(area.name) (ID: \(area.id))")
+            } else {
+                print("🔄 selectedArea cleared")
+            }
+        }
+    }
     @State private var selectedTab = 0
     let onLogout: () -> Void
-    
-    private let popularAreas = Applet.testApplets
-    private let recommendedAreas = Applet.testApplets
-    
+
     init(onLogout: @escaping () -> Void) {
         self.onLogout = onLogout
-        print("HomeView init - popularAreas count: \(popularAreas.count)")
-        print("HomeView init - recommendedAreas count: \(recommendedAreas.count)")
     }
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 Color.black
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 0) {
                         VStack(spacing: 20) {
                             HStack {
                                 ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
-                                
+
                                 Spacer()
-                                
+
                                 Button(action: { showTestView = true }) {
                                     Image(systemName: "testtube.2")
                                         .font(.system(size: 20))
@@ -44,7 +48,7 @@ struct HomeView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 10)
-                            
+
                             HStack(spacing: 0) {
                                 TabButton(title: "All", isSelected: selectedTab == 0) {
                                     selectedTab = 0
@@ -61,18 +65,56 @@ struct HomeView: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        
+
                         VStack(spacing: 32) {
-                            AppletSection(
-                                title: "Popular AREAs",
-                                applets: popularAreas
-                            )
-                            
-                            AppletSection(
-                                title: "Recommended for you",
-                                applets: recommendedAreas
-                            )
-                            
+                            if areaService.isLoading {
+                                ProgressView("Loading areas...")
+                                    .foregroundColor(.white)
+                                    .padding()
+                            } else {
+                                if areaService.userAreasLoaded {
+                                    if !areaService.popularAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Popular AREAs",
+                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
+                                        )
+                                    }
+
+                                    if !areaService.recommendedAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Recommended for you",
+                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
+                                        )
+                                    }
+                                } else {
+                                    VStack {
+                                        ProgressView("Loading your areas...")
+                                            .foregroundColor(.white)
+                                        Text("Please wait while we check your existing areas")
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .font(.caption)
+                                    }
+                                    .padding()
+                                }
+
+                                if selectedTab == 1 && !areaService.userAreas.isEmpty {
+                                    AppletSection(
+                                        title: "My AREAs",
+                                        applets: areaService.userAreas.map { area in
+                                            Applet(
+                                                title: area.name,
+                                                subtitle: "\(area.triggerService) → \(area.actionService)",
+                                                description: area.description,
+                                                icon: getServiceIcon(area.triggerService),
+                                                gradient: getServiceGradient(area.triggerService, area.actionService),
+                                                type: .create,
+                                                action: { selectedArea = area }
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+
                             AppletSection(
                                 title: "Create new AREA",
                                 applets: [
@@ -118,6 +160,74 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showNewArea) {
             NewAreaView()
         }
+        .fullScreenCover(item: $selectedArea) { area in
+            EditAreaView(area: area)
+        }
+        .onAppear {
+            Task {
+                await areaService.fetchAllAreas()
+            }
+        }
+    }
+
+
+    private func convertAreaToApplet(_ area: Area) -> Applet {
+        return Applet(
+            title: area.name,
+            subtitle: "\(area.triggerService) → \(area.actionService)",
+            description: area.description,
+            icon: getServiceIcon(area.triggerService),
+            gradient: getServiceGradient(area.triggerService, area.actionService),
+            type: .create,
+            action: { selectedArea = area }
+        )
+    }
+
+    private func getServiceIcon(_ service: String) -> String {
+        switch service.lowercased() {
+        case "github": return "hammer.fill"
+        case "gmail": return "envelope.fill"
+        case "discord": return "message.fill"
+        case "slack": return "message.circle.fill"
+        case "weather": return "cloud.sun.fill"
+        case "instagram": return "camera.fill"
+        case "twitter": return "bird.fill"
+        case "youtube": return "play.rectangle.fill"
+        case "spotify": return "music.note"
+        case "telegram": return "paperplane.fill"
+        case "dropbox": return "folder.fill"
+        case "notion": return "doc.text.fill"
+        default: return "gear.fill"
+        }
+    }
+
+    private func getServiceGradient(_ trigger: String, _ action: String) -> LinearGradient {
+        let triggerColor = getServiceColor(trigger)
+        let actionColor = getServiceColor(action)
+
+        return LinearGradient(
+            gradient: Gradient(colors: [triggerColor, actionColor]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private func getServiceColor(_ service: String) -> Color {
+        switch service.lowercased() {
+        case "github": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        case "gmail": return Color(red: 0.92, green: 0.26, blue: 0.21)
+        case "discord": return Color(red: 0.35, green: 0.4, blue: 0.95)
+        case "slack": return Color(red: 0.36, green: 0.8, blue: 0.36)
+        case "weather": return Color(red: 0.0, green: 0.7, blue: 1.0)
+        case "instagram": return Color(red: 0.8, green: 0.2, blue: 0.6)
+        case "twitter": return Color(red: 0.1, green: 0.6, blue: 0.9)
+        case "youtube": return Color(red: 1.0, green: 0.0, blue: 0.0)
+        case "spotify": return Color(red: 0.2, green: 0.8, blue: 0.2)
+        case "telegram": return Color(red: 0.0, green: 0.7, blue: 0.9)
+        case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
+        case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        default: return Color.blue
+        }
     }
 }
 
@@ -125,13 +235,13 @@ struct TabButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(isSelected ? .white : .gray)
-                .padding(.horizontal, 16)
+            .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)

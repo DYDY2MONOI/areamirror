@@ -2,22 +2,24 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
-	"net/smtp"
 	"os"
+	"time"
+
+	"Golang-API-tutoriel/database"
+	"Golang-API-tutoriel/models"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
-	"google.golang.org/api/option"
 )
 
 type EmailService struct {
 	service *gmail.Service
+	config  *oauth2.Config
 }
 
 type EmailRequest struct {
@@ -41,13 +43,13 @@ type GitHubEventData struct {
 		Description string `json:"description"`
 	} `json:"repository"`
 	Commits []struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
-		URL      string `json:"url"`
+		URL      string   `json:"url"`
 		Added    []string `json:"added"`
 		Removed  []string `json:"removed"`
 		Modified []string `json:"modified"`
@@ -64,13 +66,13 @@ type GitHubEventData struct {
 	Forced     bool   `json:"forced"`
 	Compare    string `json:"compare"`
 	HeadCommit struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
-		URL      string `json:"url"`
+		URL      string   `json:"url"`
 		Added    []string `json:"added"`
 		Removed  []string `json:"removed"`
 		Modified []string `json:"modified"`
@@ -78,14 +80,10 @@ type GitHubEventData struct {
 }
 
 func NewEmailService() (*EmailService, error) {
-	ctx := context.Background()
-
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	accessToken := os.Getenv("GOOGLE_ACCESS_TOKEN")
-	refreshToken := os.Getenv("GOOGLE_REFRESH_TOKEN")
 
-	if clientID == "" || clientSecret == "" || accessToken == "" {
+	if clientID == "" || clientSecret == "" {
 		return nil, fmt.Errorf("Google OAuth credentials not configured")
 	}
 
@@ -100,20 +98,9 @@ func NewEmailService() (*EmailService, error) {
 		Endpoint: google.Endpoint,
 	}
 
-	token := &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}
-
-	client := config.Client(ctx, token)
-
-	service, err := gmail.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Gmail service: %v", err)
-	}
-
 	return &EmailService{
-		service: service,
+		service: nil,
+		config:  config,
 	}, nil
 }
 
@@ -144,28 +131,41 @@ func (es *EmailService) SendGitHubNotification(to, subjectTemplate, bodyTemplate
 }
 
 func (es *EmailService) sendEmail(req EmailRequest) error {
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-
-	fromEmail := os.Getenv("GMAIL_USER")
-	fromPassword := os.Getenv("GMAIL_PASSWORD")
-
-	if fromEmail == "" || fromPassword == "" {
-		return fmt.Errorf("GMAIL_USER and GMAIL_PASSWORD environment variables must be set")
+	var oauth2Token models.OAuth2Token
+	if err := database.DB.Where("service = ?", "gmail").First(&oauth2Token).Error; err != nil {
+		if err := database.DB.Where("service = ?", "google").First(&oauth2Token).Error; err != nil {
+			return fmt.Errorf("no Gmail/Google OAuth2 token found: %v", err)
+		}
 	}
 
-	message := fmt.Sprintf("From: %s\r\n", fromEmail)
-	message += fmt.Sprintf("To: %s\r\n", req.To)
-	message += fmt.Sprintf("Subject: %s\r\n", req.Subject)
-	message += "MIME-Version: 1.0\r\n"
-	message += "Content-Type: text/html; charset=UTF-8\r\n"
-	message += "\r\n"
-	message += req.Body
+	if oauth2Token.NeedsRefresh() {
+		if err := es.refreshToken(&oauth2Token); err != nil {
+			return fmt.Errorf("failed to refresh token: %v", err)
+		}
+	}
 
-	auth := smtp.PlainAuth("", fromEmail, fromPassword, smtpHost)
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{req.To}, []byte(message))
+	token := &oauth2.Token{
+		AccessToken:  oauth2Token.AccessToken,
+		RefreshToken: oauth2Token.RefreshToken,
+		TokenType:    oauth2Token.TokenType,
+		Expiry:       *oauth2Token.ExpiresAt,
+	}
+
+	client := es.config.Client(oauth2.NoContext, token)
+
+	gmailService, err := gmail.New(client)
 	if err != nil {
-		return fmt.Errorf("failed to send email via SMTP: %v", err)
+		return fmt.Errorf("failed to create Gmail service: %v", err)
+	}
+
+	message := es.createEmailMessage(req.To, req.Subject, req.Body)
+
+	_, err = gmailService.Users.Messages.Send("me", &gmail.Message{
+		Raw: message,
+	}).Do()
+
+	if err != nil {
+		return fmt.Errorf("failed to send email via Gmail API: %v", err)
 	}
 
 	return nil
@@ -247,21 +247,41 @@ func (es *EmailService) GetDefaultPushBodyTemplate() string {
 }
 
 func (e *EmailService) SendEmail(req EmailRequest) error {
-	message := e.createEmailMessage(req.To, req.Subject, req.Body)
+	return e.sendEmail(req)
+}
 
-	_, err := e.service.Users.Messages.Send("me", &gmail.Message{
-		Raw: message,
-	}).Do()
-
-	if err != nil {
-		return fmt.Errorf("failed to send email: %v", err)
+func (es *EmailService) refreshToken(oauth2Token *models.OAuth2Token) error {
+	token := &oauth2.Token{
+		AccessToken:  oauth2Token.AccessToken,
+		RefreshToken: oauth2Token.RefreshToken,
+		TokenType:    oauth2Token.TokenType,
+		Expiry:       *oauth2Token.ExpiresAt,
 	}
 
-	log.Printf("Email sent successfully to %s with subject: %s", req.To, req.Subject)
+	newToken, err := es.config.TokenSource(oauth2.NoContext, token).Token()
+	if err != nil {
+		return fmt.Errorf("failed to refresh token: %v", err)
+	}
+
+	oauth2Token.AccessToken = newToken.AccessToken
+	if newToken.RefreshToken != "" {
+		oauth2Token.RefreshToken = newToken.RefreshToken
+	}
+	if newToken.Expiry.IsZero() {
+		expiry := time.Now().Add(time.Hour)
+		oauth2Token.ExpiresAt = &expiry
+	} else {
+		oauth2Token.ExpiresAt = &newToken.Expiry
+	}
+
+	if err := database.DB.Save(oauth2Token).Error; err != nil {
+		return fmt.Errorf("failed to save refreshed token: %v", err)
+	}
+
 	return nil
 }
 
-func (e *EmailService) createEmailMessage(to, subject, body string) string {
+func (es *EmailService) createEmailMessage(to, subject, body string) string {
 	emailContent := fmt.Sprintf(
 		"To: %s\r\n"+
 			"Subject: %s\r\n"+
@@ -276,12 +296,39 @@ func (e *EmailService) createEmailMessage(to, subject, body string) string {
 	return encoded
 }
 
-func (e *EmailService) TestConnection() error {
-	profile, err := e.service.Users.GetProfile("me").Do()
-	if err != nil {
-		return fmt.Errorf("Gmail connection failed: %v", err)
+func (es *EmailService) TestConnection() error {
+	var oauth2Token models.OAuth2Token
+	if err := database.DB.Where("service = ?", "gmail").First(&oauth2Token).Error; err != nil {
+		if err := database.DB.Where("service = ?", "google").First(&oauth2Token).Error; err != nil {
+			return fmt.Errorf("no Gmail/Google OAuth2 token found: %v", err)
+		}
 	}
 
-	log.Printf("Gmail connection successful. User: %s", profile.EmailAddress)
+	if oauth2Token.NeedsRefresh() {
+		if err := es.refreshToken(&oauth2Token); err != nil {
+			return fmt.Errorf("failed to refresh token: %v", err)
+		}
+	}
+
+	token := &oauth2.Token{
+		AccessToken:  oauth2Token.AccessToken,
+		RefreshToken: oauth2Token.RefreshToken,
+		TokenType:    oauth2Token.TokenType,
+		Expiry:       *oauth2Token.ExpiresAt,
+	}
+
+	client := es.config.Client(oauth2.NoContext, token)
+
+	gmailService, err := gmail.New(client)
+	if err != nil {
+		return fmt.Errorf("failed to create Gmail service: %v", err)
+	}
+
+	profile, err := gmailService.Users.GetProfile("me").Do()
+	if err != nil {
+		return fmt.Errorf("Gmail API connection failed: %v", err)
+	}
+
+	log.Printf("Gmail API connection successful. User: %s", profile.EmailAddress)
 	return nil
 }

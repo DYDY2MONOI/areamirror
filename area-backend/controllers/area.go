@@ -5,6 +5,7 @@ import (
 	"Golang-API-tutoriel/models"
 	"Golang-API-tutoriel/services"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -30,14 +31,18 @@ func GetAreas(c *gin.Context) {
 }
 
 func GetArea(c *gin.Context) {
+	log.Println("GetArea function called")
 	var area models.Area
 	id := c.Param("id")
+	log.Printf("Looking for area with ID: %s", id)
 
-	if err := database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	if err := database.DB.First(&area, id).Error; err != nil {
+		log.Printf("Area not found: %v", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
+	log.Printf("Area found: %+v", area)
 	c.JSON(http.StatusOK, gin.H{"data": area})
 }
 
@@ -122,6 +127,8 @@ func getIconUrlForService(service string) string {
 		return "youtube.png"
 	case "Spotify":
 		return "spotify.png"
+	case "Google Sheets":
+		return "google-sheets.png"
 	case "Telegram":
 		return "telegram.png"
 	case "Twitch":
@@ -136,46 +143,112 @@ func getIconUrlForService(service string) string {
 }
 
 func UpdateArea(c *gin.Context) {
-	var area models.Area
-	id := c.Param("id")
+	log.Println("UpdateArea called with ID:", c.Param("id"))
 
-	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	userID, exists := c.Get("userID")
+	if !exists {
+		log.Printf("User not authenticated")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	var input models.Area
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var area models.Area
+	id := c.Param("id")
+
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		log.Printf("Area not found for user %v: %v", userID, err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
+		return
+	}
+
+	log.Printf("Area found: %+v", area)
+
+	var req CreateAreaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("JSON binding error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	database.DB.Model(&area).Updates(input)
+	log.Printf("Input data: %+v", req)
 
-	database.DB.Preload("User").Preload("Actions").Preload("Reactions").First(&area, area.ID)
+	var triggerConfigJSON, actionConfigJSON datatypes.JSON
+	if req.TriggerConfig != nil {
+		triggerConfigBytes, _ := json.Marshal(req.TriggerConfig)
+		triggerConfigJSON = datatypes.JSON(triggerConfigBytes)
+	}
+	if req.ActionConfig != nil {
+		actionConfigBytes, _ := json.Marshal(req.ActionConfig)
+		actionConfigJSON = datatypes.JSON(actionConfigBytes)
+	}
 
+	updates := map[string]interface{}{
+		"name":            req.Name,
+		"description":     req.Description,
+		"trigger_service": req.TriggerService,
+		"trigger_type":    req.TriggerType,
+		"action_service":  req.ActionService,
+		"action_type":     req.ActionType,
+	}
+
+	if req.TriggerConfig != nil {
+		updates["trigger_config"] = triggerConfigJSON
+	}
+	if req.ActionConfig != nil {
+		updates["action_config"] = actionConfigJSON
+	}
+
+	if req.TriggerService != "" {
+		updates["trigger_icon_url"] = getIconUrlForService(req.TriggerService)
+	}
+	if req.ActionService != "" {
+		updates["action_icon_url"] = getIconUrlForService(req.ActionService)
+	}
+
+	log.Printf("Updating area with: %+v", updates)
+	if err := database.DB.Model(&area).Updates(updates).Error; err != nil {
+		log.Printf("Database update error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update area"})
+		return
+	}
+
+	database.DB.First(&area, area.ID)
+
+	log.Printf("Updated area: %+v", area)
 	c.JSON(http.StatusOK, gin.H{"data": area})
 }
 
 func DeleteArea(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var area models.Area
 	id := c.Param("id")
 
-	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
 	database.DB.Delete(&area)
-	c.JSON(http.StatusOK, gin.H{"message": "AREA supprimée avec succès"})
+	c.JSON(http.StatusOK, gin.H{"message": "Area deleted successfully"})
 }
 
 func ToggleArea(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var area models.Area
 	id := c.Param("id")
 
-	if err := database.DB.First(&area, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "AREA non trouvée"})
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&area).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Area not found"})
 		return
 	}
 
@@ -188,51 +261,13 @@ func ToggleArea(c *gin.Context) {
 func GetPopularAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func GetRecommendedAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Offset(4).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func getSubtitleForArea(area models.Area) string {
@@ -243,6 +278,8 @@ func getSubtitleForArea(area models.Area) string {
 		return "Development alerts"
 	case "Gmail":
 		return "Email automation"
+	case "Google Sheets":
+		return "Spreadsheet automation"
 	default:
 		return "Automation"
 	}
@@ -270,6 +307,8 @@ func getIconForService(service string) string {
 		return "mdi-youtube"
 	case "Spotify":
 		return "mdi-music"
+	case "Google Sheets":
+		return "mdi-google-spreadsheet"
 	case "Telegram":
 		return "mdi-telegram"
 	case "Twitch":
@@ -304,6 +343,8 @@ func getGradientClassForArea(area models.Area) string {
 	case "YouTube":
 		return "gradient-red"
 	case "Spotify":
+		return "gradient-green"
+	case "Google Sheets":
 		return "gradient-green"
 	case "Telegram":
 		return "gradient-blue"
@@ -355,6 +396,43 @@ func TestEmail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test email sent successfully!",
 		"to":      req.To,
+	})
+}
+
+type GoogleSheetsTestRequest struct {
+	SpreadsheetID string `json:"spreadsheetId" binding:"required"`
+	Range         string `json:"range" binding:"required"`
+}
+
+func TestGoogleSheets(c *gin.Context) {
+	var req GoogleSheetsTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sheetsService, err := services.NewGoogleSheetsService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Google Sheets service not available: " + err.Error()})
+		return
+	}
+
+	rows, err := sheetsService.FetchValues(req.SpreadsheetID, req.Range)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sheet values: " + err.Error()})
+		return
+	}
+
+	const previewLimit = 5
+	preview := rows
+	if len(rows) > previewLimit {
+		preview = rows[:previewLimit]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Google Sheets connection successful",
+		"rowCount":    len(rows),
+		"previewRows": preview,
 	})
 }
 
@@ -492,5 +570,79 @@ func TestSlack(c *gin.Context) {
 		"message":     "Test Slack message sent successfully!",
 		"webhookUrl":  webhookURL,
 		"messageType": messageType,
+	})
+}
+
+type WeatherTriggerRequest struct {
+	City        string  `json:"city" binding:"required"`
+	Temperature float64 `json:"temperature"`
+	Condition   string  `json:"condition"`
+	Operator    string  `json:"operator"`
+}
+
+type WeatherTestRequest struct {
+	TriggerConfig WeatherTriggerRequest `json:"triggerConfig" binding:"required"`
+}
+
+func TestWeatherTrigger(c *gin.Context) {
+	var req WeatherTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	weatherService, err := services.NewWeatherService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize weather service"})
+		return
+	}
+
+	config := services.WeatherTriggerConfig{
+		City:        req.TriggerConfig.City,
+		Temperature: req.TriggerConfig.Temperature,
+		Condition:   req.TriggerConfig.Condition,
+		Operator:    req.TriggerConfig.Operator,
+	}
+
+	if config.Operator == "" {
+		config.Operator = "greater_than"
+	}
+
+	result, err := weatherService.TestWeatherTrigger(config)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"triggered": result.Triggered,
+		"message":   result.Message,
+		"data":      result.Data,
+	})
+}
+
+func GetWeatherData(c *gin.Context) {
+	city := c.Query("city")
+	if city == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "City parameter is required"})
+		return
+	}
+
+	weatherService, err := services.NewWeatherService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize weather service"})
+		return
+	}
+
+	weather, err := weatherService.GetCurrentWeather(city)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    weather,
 	})
 }
