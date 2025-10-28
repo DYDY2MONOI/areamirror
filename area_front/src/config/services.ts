@@ -68,9 +68,10 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'spotify',
     color: '#1db954',
     description: 'Connect your Spotify account to control music and playlists',
-    callbackPath: '/auth/spotify/callback',
+    authUrl: 'https://accounts.spotify.com/authorize',
+    callbackPath: '/oauth2/spotify/callback',
     scopes: ['user-read-email', 'user-read-private'],
-    isEnabled: false // Not implemented yet
+    isEnabled: true
   }
 ]
 

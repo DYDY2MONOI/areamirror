@@ -236,7 +236,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount } = useAuth()
+const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkSpotifyAccount, unlinkSpotifyAccount } = useAuth()
 
 const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
@@ -327,6 +327,20 @@ const linkService = async (serviceId: string) => {
       const googleAuthUrl = `${service.authUrl}?client_id=${googleClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(' ')}&response_type=code&access_type=offline&prompt=consent`
 
       window.location.href = googleAuthUrl
+    } else if (serviceId === 'spotify') {
+      const spotifyClientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'your_spotify_client_id_here'
+
+      if (!spotifyClientId || spotifyClientId === 'your_spotify_client_id_here') {
+        errorMessages.value[serviceId] = 'Spotify OAuth not configured. Please set the VITE_SPOTIFY_CLIENT_ID environment variable.'
+        return
+      }
+
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
+      const redirectUri = encodeURIComponent(overrideRedirect)
+      const scopeParam = encodeURIComponent(service.scopes.join(' '))
+      const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
+
+      window.location.href = spotifyAuthUrl
     } else {
       errorMessages.value[serviceId] = `${service.name} integration is not yet implemented.`
     }
@@ -350,6 +364,9 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'google') {
       await unlinkGoogleAccount()
       successMessages.value[serviceId] = 'Google account unlinked successfully'
+    } else if (serviceId === 'spotify') {
+      await unlinkSpotifyAccount()
+      successMessages.value[serviceId] = 'Spotify account unlinked successfully'
     } else {
       errorMessages.value[serviceId] = `${serviceId} unlinking is not yet implemented.`
     }
@@ -373,6 +390,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)
       successMessages.value[serviceId] = 'Google account linked successfully!'
+    } else if (serviceId === 'spotify') {
+      const result = await linkSpotifyAccount(code)
+      successMessages.value[serviceId] = 'Spotify account linked successfully!'
     } else {
       errorMessages.value[serviceId] = `${serviceId} linking is not yet implemented.`
     }

@@ -449,6 +449,52 @@ class AuthService {
 
     await this.fetchProfile()
   }
+
+  async linkSpotifyAccount(code: string): Promise<{ spotify_email: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/spotify/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Spotify account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkSpotifyAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/spotify/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Spotify account')
+    }
+
+    await this.fetchProfile()
+  }
 }
 
 export const authService = new AuthService()
