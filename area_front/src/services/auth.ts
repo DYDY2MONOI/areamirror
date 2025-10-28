@@ -19,6 +19,8 @@ export interface User {
   google_email?: string
   facebook_id?: string
   facebook_email?: string
+  onedrive_id?: string
+  onedrive_email?: string
   discord_id?: string
   discord_username?: string
   spotify_id?: string
@@ -450,13 +452,13 @@ class AuthService {
     await this.fetchProfile()
   }
 
-  async linkSpotifyAccount(code: string): Promise<{ spotify_email: string }> {
+  async linkOneDriveAccount(code: string): Promise<{ onedrive_email: string }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
     }
 
-    const response = await fetch(`${API_BASE_URL}/profile/spotify/link`, {
+    const response = await fetch(`${API_BASE_URL}/profile/onedrive/link`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -467,7 +469,7 @@ class AuthService {
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to link Spotify account')
+      throw new Error(errorData.error || 'Failed to link OneDrive account')
     }
 
     const data = await response.json()
@@ -475,13 +477,13 @@ class AuthService {
     return data
   }
 
-  async unlinkSpotifyAccount(): Promise<void> {
+  async unlinkOneDriveAccount(): Promise<void> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
     }
 
-    const response = await fetch(`${API_BASE_URL}/profile/spotify/unlink`, {
+    const response = await fetch(`${API_BASE_URL}/profile/onedrive/unlink`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -490,7 +492,7 @@ class AuthService {
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.error || 'Failed to unlink Spotify account')
+      throw new Error(errorData.error || 'Failed to unlink OneDrive account')
     }
 
     await this.fetchProfile()
