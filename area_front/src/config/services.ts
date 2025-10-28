@@ -30,15 +30,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     description: 'Connect your Google account to access Gmail, Calendar, and Drive',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     callbackPath: '/callback',
-    scopes: [
-      'openid',
-      'email',
-      'profile',
-      'https://www.googleapis.com/auth/gmail.send',
-      'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/drive.readonly',
-      'https://www.googleapis.com/auth/drive.metadata.readonly'
-    ],
+    scopes: ['openid', 'email', 'profile'],
     isEnabled: true
   },
   {
@@ -68,9 +60,19 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'spotify',
     color: '#1db954',
     description: 'Connect your Spotify account to control music and playlists',
-    authUrl: 'https://accounts.spotify.com/authorize',
-    callbackPath: '/oauth2/spotify/callback',
+    callbackPath: '/auth/spotify/callback',
     scopes: ['user-read-email', 'user-read-private'],
+    isEnabled: false // Not implemented yet
+  },
+  {
+    id: 'onedrive',
+    name: 'OneDrive',
+    icon: 'onedrive',
+    color: '#0078D4',
+    description: 'Connect your OneDrive account to manage files and folders',
+    authUrl: 'http://localhost:8080/onedrive/auth/start',
+    callbackPath: '/auth/onedrive/callback',
+    scopes: ['Files.ReadWrite', 'Files.ReadWrite.All', 'offline_access'],
     isEnabled: true
   }
 ]

@@ -7,6 +7,7 @@ import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
 import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
+import OneDriveCallbackPage from '../views/OneDriveCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
 import ConfigureAreaPage from '../views/ConfigureAreaPage.vue'
@@ -65,6 +66,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/auth/onedrive/callback',
+      name: 'onedrive-callback',
+      component: OneDriveCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/google-oauth-callback',
       name: 'google-oauth-callback',
       component: GoogleOAuthCallback,
@@ -86,12 +93,6 @@ const router = createRouter({
       path: '/oauth2/facebook/callback',
       name: 'oauth2-facebook-callback',
       component: () => import('@/views/OAuth2FacebookCallback.vue'),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: '/oauth2/spotify/callback',
-      name: 'oauth2-spotify-callback',
-      component: () => import('@/views/OAuth2SpotifyCallback.vue'),
       meta: { requiresAuth: false }
     },
     {
@@ -142,3 +143,5 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
+
+

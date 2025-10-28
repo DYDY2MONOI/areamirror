@@ -24,8 +24,8 @@
     "icon": "twitter.png"
   },
   {
-    "name": "Google Drive",
-    "icon": "google-drive.png"
+    "name": "OneDrive",
+    "icon": "onedrive.png"
   },
   {
     "name": "GitHub",
@@ -130,14 +130,6 @@
   {
     "name": "Google Sheets",
     "icon": "google-sheets.png"
-  },
-  {
-    "name": "Timer",
-    "icon": "google-calendar.png"
-  },
-  {
-    "name": "Telegram",
-    "icon": "telegram.png"
   },
   {
     "name": "Google Docs",
