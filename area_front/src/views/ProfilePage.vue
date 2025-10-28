@@ -321,7 +321,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
+const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkSpotifyAccount, unlinkSpotifyAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const profileImageUrl = ref<string | null>(null)
@@ -421,6 +421,20 @@ const linkService = async (serviceId: string) => {
       const facebookAuthUrl = `${service.authUrl}?client_id=${facebookClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}&response_type=code`
 
       window.location.href = facebookAuthUrl
+    } else if (serviceId === 'spotify') {
+      const spotifyClientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'your_spotify_client_id_here'
+
+      if (!spotifyClientId || spotifyClientId === 'your_spotify_client_id_here') {
+        errorMessages.value = { ...errorMessages.value, [serviceId]: 'Spotify OAuth not configured. Please set the VITE_SPOTIFY_CLIENT_ID environment variable.' }
+        return
+      }
+
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
+      const redirectUri = encodeURIComponent(overrideRedirect)
+      const scopeParam = encodeURIComponent(service.scopes.join(' '))
+      const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
+
+      window.location.href = spotifyAuthUrl
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${service.name} integration is not yet implemented.` }
     }
@@ -447,6 +461,9 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'facebook') {
       await unlinkFacebookAccount()
       successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account unlinked successfully' }
+    } else if (serviceId === 'spotify') {
+      await unlinkSpotifyAccount()
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Spotify account unlinked successfully' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} unlinking is not yet implemented.` }
     }
@@ -473,6 +490,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'facebook') {
       const result = await linkFacebookAccount(code)
       successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account linked successfully!' }
+    } else if (serviceId === 'spotify') {
+      const result = await linkSpotifyAccount(code)
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Spotify account linked successfully!' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} linking is not yet implemented.` }
     }

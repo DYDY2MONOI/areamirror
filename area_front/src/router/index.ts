@@ -89,6 +89,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/oauth2/spotify/callback',
+      name: 'oauth2-spotify-callback',
+      component: () => import('@/views/OAuth2SpotifyCallback.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/profile/edit',
       name: 'edit-profile',
       component: EditProfilePage,
@@ -136,5 +142,3 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
-
-

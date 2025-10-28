@@ -145,6 +145,27 @@ export function useAuth() {
     }
   }
 
+  const linkSpotifyAccount = async (code: string) => {
+    try {
+      const result = await authService.linkSpotifyAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Spotify link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkSpotifyAccount = async () => {
+    try {
+      await authService.unlinkSpotifyAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Spotify unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -186,6 +207,8 @@ export function useAuth() {
     unlinkGoogleAccount,
     linkFacebookAccount,
     unlinkFacebookAccount,
+    linkSpotifyAccount,
+    unlinkSpotifyAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
