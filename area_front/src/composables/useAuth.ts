@@ -166,6 +166,27 @@ export function useAuth() {
     }
   }
 
+  const linkTwitterAccount = async (code: string, codeVerifier: string) => {
+    try {
+      const result = await authService.linkTwitterAccount(code, codeVerifier)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Twitter link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkTwitterAccount = async () => {
+    try {
+      await authService.unlinkTwitterAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Twitter unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -209,6 +230,8 @@ export function useAuth() {
     unlinkFacebookAccount,
     linkSpotifyAccount,
     unlinkSpotifyAccount,
+    linkTwitterAccount,
+    unlinkTwitterAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,

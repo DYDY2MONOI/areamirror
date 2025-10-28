@@ -236,11 +236,32 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkSpotifyAccount, unlinkSpotifyAccount } = useAuth()
+const { currentUser, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkSpotifyAccount, unlinkSpotifyAccount, linkTwitterAccount, unlinkTwitterAccount } = useAuth()
 
 const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
 const successMessages = ref<Record<string, string>>({})
+
+// PKCE helper functions for Twitter OAuth 2.0
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return base64URLEncode(array)
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(verifier)
+  const hash = await crypto.subtle.digest('SHA-256', data)
+  return base64URLEncode(new Uint8Array(hash))
+}
+
+function base64URLEncode(array: Uint8Array): string {
+  return btoa(String.fromCharCode.apply(null, Array.from(array)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
 
 const enabledServices = computed(() => getEnabledServices())
 
@@ -251,6 +272,7 @@ const linkedServicesCount = computed(() => {
   if (currentUser.value.google_id) count++
   if (currentUser.value.discord_id) count++
   if (currentUser.value.spotify_id) count++
+  if (currentUser.value.twitter_username) count++
   return count
 })
 
@@ -287,6 +309,8 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.discord_id
     case 'spotify':
       return !!currentUser.value.spotify_id
+    case 'twitter':
+      return !!currentUser.value.twitter_username
     default:
       return false
   }
@@ -341,6 +365,25 @@ const linkService = async (serviceId: string) => {
       const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
 
       window.location.href = spotifyAuthUrl
+    } else if (serviceId === 'twitter') {
+      const twitterApiKey = import.meta.env.VITE_TWITTER_API_KEY || 'your_twitter_api_key_here'
+
+      if (!twitterApiKey || twitterApiKey === 'your_twitter_api_key_here') {
+        errorMessages.value[serviceId] = 'Twitter OAuth not configured. Please set the VITE_TWITTER_API_KEY environment variable.'
+        return
+      }
+
+      // Generate PKCE parameters for Twitter OAuth 2.0
+      const codeVerifier = generateCodeVerifier()
+      const codeChallenge = await generateCodeChallenge(codeVerifier)
+      
+      // Store code_verifier in sessionStorage for later use
+      sessionStorage.setItem('twitter_code_verifier', codeVerifier)
+
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
+      const twitterAuthUrl = `${service.authUrl}?client_id=${twitterApiKey}&response_type=code&redirect_uri=${redirectUri}&scope=${encodeURIComponent(service.scopes.join(' '))}&state=link&code_challenge=${codeChallenge}&code_challenge_method=S256`
+
+      window.location.href = twitterAuthUrl
     } else {
       errorMessages.value[serviceId] = `${service.name} integration is not yet implemented.`
     }
@@ -367,6 +410,9 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'spotify') {
       await unlinkSpotifyAccount()
       successMessages.value[serviceId] = 'Spotify account unlinked successfully'
+    } else if (serviceId === 'twitter') {
+      await unlinkTwitterAccount()
+      successMessages.value[serviceId] = 'Twitter account unlinked successfully'
     } else {
       errorMessages.value[serviceId] = `${serviceId} unlinking is not yet implemented.`
     }
@@ -393,6 +439,14 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'spotify') {
       const result = await linkSpotifyAccount(code)
       successMessages.value[serviceId] = 'Spotify account linked successfully!'
+    } else if (serviceId === 'twitter') {
+      const codeVerifier = sessionStorage.getItem('twitter_code_verifier')
+      if (!codeVerifier) {
+        throw new Error('PKCE verification failed')
+      }
+      const result = await linkTwitterAccount(code, codeVerifier)
+      sessionStorage.removeItem('twitter_code_verifier')
+      successMessages.value[serviceId] = 'Twitter account linked successfully!'
     } else {
       errorMessages.value[serviceId] = `${serviceId} linking is not yet implemented.`
     }

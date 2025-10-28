@@ -23,6 +23,8 @@ export interface User {
   discord_username?: string
   spotify_id?: string
   spotify_email?: string
+  twitter_id?: string
+  twitter_username?: string
   profile_image?: string
 }
 
@@ -491,6 +493,52 @@ class AuthService {
     if (!response.ok) {
       const errorData = await response.json()
       throw new Error(errorData.error || 'Failed to unlink Spotify account')
+    }
+
+    await this.fetchProfile()
+  }
+
+  async linkTwitterAccount(code: string, codeVerifier: string): Promise<{ twitter_username: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/twitter/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code, code_verifier: codeVerifier })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Twitter/X account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkTwitterAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/twitter/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Twitter/X account')
     }
 
     await this.fetchProfile()
