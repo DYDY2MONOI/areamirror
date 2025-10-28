@@ -33,7 +33,7 @@ func SeedData() {
 		{Name: "Weather", Description: "Service météorologique", IconURL: "https://weather.com/icon.png", IsActive: true},
 		{Name: "Google Calendar", Description: "Service de calendrier Google", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
-		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
+		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -43,14 +43,14 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, sheets models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
 	DB.Where("name = ?", "Weather").First(&weather)
 	DB.Where("name = ?", "Google Calendar").First(&calendar)
 	DB.Where("name = ?", "Discord").First(&discord)
-	DB.Where("name = ?", "Google Sheets").First(&sheets)
+	DB.Where("name = ?", "OneDrive").First(&onedrive)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -58,7 +58,8 @@ func SeedData() {
 		{ServiceID: weather.ID, Name: "Température élevée", Description: "Se déclenche si température > seuil", Parameters: `{"city": "", "temperature": 30}`},
 		{ServiceID: calendar.ID, Name: "Nouvel événement", Description: "Se déclenche quand un nouvel événement est créé", Parameters: `{"calendar": "", "event": ""}`},
 		{ServiceID: github.ID, Name: "Nouvelle issue", Description: "Se déclenche quand une nouvelle issue est créée", Parameters: `{"repository": "", "issue": ""}`},
-		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
+		{ServiceID: onedrive.ID, Name: "Nouveau fichier", Description: "Se déclenche quand un nouveau fichier est ajouté", Parameters: `{"folder": "", "fileName": ""}`},
+		{ServiceID: onedrive.ID, Name: "Fichier modifié", Description: "Se déclenche quand un fichier est modifié", Parameters: `{"folder": "", "fileName": ""}`},
 	}
 
 	for _, action := range actions {
@@ -74,6 +75,8 @@ func SeedData() {
 		{ServiceID: github.ID, Name: "Créer issue", Description: "Crée une nouvelle issue", Parameters: `{"repository": "", "title": "", "body": ""}`},
 		{ServiceID: gmail.ID, Name: "Envoyer email de notification", Description: "Envoie un email de notification", Parameters: `{"to": "", "subject": "", "body": ""}`},
 		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
+		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
+		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
 	}
 
 	for _, reaction := range reactions {

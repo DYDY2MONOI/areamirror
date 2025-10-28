@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{}, &models.DiscordMessageLog{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{})
 
 	database.SeedData()
 
@@ -34,8 +34,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	r.GET("/about.json", controllers.AboutJSON)
-
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
@@ -46,7 +44,6 @@ func main() {
 
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
-	r.GET("/oauth2/spotify/callback", controllers.SpotifyDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
 
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
@@ -61,14 +58,24 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
-	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
-	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
+	r.POST("/profile/onedrive/link", controllers.AuthMiddleware(), controllers.LinkOneDriveAccount)
+	r.DELETE("/profile/onedrive/unlink", controllers.AuthMiddleware(), controllers.UnlinkOneDriveAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
 	r.GET("/gmail/oauth2/status", controllers.AuthMiddleware(), controllers.GetGmailTokenStatus)
 	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
 	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
+
+	// OneDrive routes
+	r.GET("/onedrive/auth/start", controllers.OneDriveAuthStart)
+	r.GET("/onedrive/callback", controllers.OneDriveCallback)
+	r.GET("/onedrive/files", controllers.OneDriveListFiles)
+	r.POST("/onedrive/upload", controllers.OneDriveUploadFile)
+	r.GET("/onedrive/download/:fileId", controllers.OneDriveDownloadFile)
+	r.DELETE("/onedrive/delete/:fileId", controllers.OneDriveDeleteFile)
+	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
+	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
 
 	api := r.Group("/api")
 	{
@@ -105,7 +112,6 @@ func main() {
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
 	r.GET("/areas/:id", controllers.GetArea)
-	r.GET("/areas/:id/discord-logs", controllers.AuthMiddleware(), controllers.GetAreaDiscordLogs)
 	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
 	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
@@ -122,9 +128,11 @@ func main() {
 
 	githubWebhookController := controllers.NewGitHubWebhookController()
 	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
-	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
+	r.StaticFile("/test-onedrive.html", "./test-onedrive.html")
+	r.StaticFile("/test-slack.html", "./test-slack.html")
+	r.StaticFile("/test-slack-advanced.html", "./test-slack-advanced.html")
 
 	r.GET("/areas/popular", controllers.GetPopularAreas)
 	r.GET("/areas/recommended", controllers.GetRecommendedAreas)
@@ -132,7 +140,6 @@ func main() {
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
-	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
 	r.POST("/test/weather", controllers.TestWeatherTrigger)
 	r.GET("/weather", controllers.GetWeatherData)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)
