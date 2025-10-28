@@ -34,6 +34,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	r.GET("/about.json", controllers.AboutJSON)
+
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
