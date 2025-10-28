@@ -44,6 +44,7 @@ func main() {
 
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
+	r.GET("/oauth2/spotify/callback", controllers.SpotifyDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
 
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
@@ -58,6 +59,8 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
+	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
+	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
