@@ -56,7 +56,9 @@ export const createSpotifyOAuth = (options: SpotifyOAuthOptions = {}): SpotifyOA
     throw new Error('Spotify OAuth client ID is not configured')
   }
 
-  const scope = options.scope || 'user-read-email user-read-private'
+  const scope =
+    options.scope ||
+    'user-read-email user-read-private user-read-currently-playing user-read-playback-state'
   const redirectUri = options.redirectUri || defaultRedirect
 
   return new SpotifyOAuth({

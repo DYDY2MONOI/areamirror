@@ -819,6 +819,7 @@
                     <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Spotify'">&#123;&#123;trackName&#125;&#125;, &#123;&#123;artistNames&#125;&#125;, &#123;&#123;albumName&#125;&#125;, &#123;&#123;trackUrl&#125;&#125;</span>
                     <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
                   </small>
                 </div>
@@ -1414,6 +1415,8 @@ const selectAction = (serviceId: string) => {
       ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
       : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing: {{trackName}} — {{artistNames}}\n🔗 {{trackUrl}}'
       : form.triggerService === 'Timer'
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
@@ -1429,6 +1432,8 @@ const selectAction = (serviceId: string) => {
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Telegram'
       ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing on Spotify: {{trackName}} — {{artistNames}}'
       : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
@@ -1770,7 +1775,11 @@ const createArea = async () => {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+        triggerType: form.triggerService === 'Google Calendar'
+          ? 'Event'
+          : form.triggerService === 'Spotify'
+          ? 'Playback'
+          : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: triggerConfig,

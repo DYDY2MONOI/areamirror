@@ -70,7 +70,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     description: 'Connect your Spotify account to control music and playlists',
     authUrl: 'https://accounts.spotify.com/authorize',
     callbackPath: '/oauth2/spotify/callback',
-    scopes: ['user-read-email', 'user-read-private'],
+    scopes: ['user-read-email', 'user-read-private', 'user-read-currently-playing', 'user-read-playback-state'],
     isEnabled: true
   }
 ]
