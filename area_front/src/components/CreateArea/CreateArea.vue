@@ -303,6 +303,7 @@
                         v-model="form.triggerConfig.notificationTypes"
                         value="push"
                         @change="onNotificationTypeChange"
+                        @click.stop
                       />
                       <span class="checkbox-label">Push Events</span>
                     </label>
@@ -312,6 +313,7 @@
                         v-model="form.triggerConfig.notificationTypes"
                         value="pull_request"
                         @change="onNotificationTypeChange"
+                        @click.stop
                       />
                       <span class="checkbox-label">Pull Requests</span>
                     </label>
@@ -321,6 +323,7 @@
                         v-model="form.triggerConfig.notificationTypes"
                         value="issues"
                         @change="onNotificationTypeChange"
+                        @click.stop
                       />
                       <span class="checkbox-label">Issues</span>
                     </label>
@@ -1347,10 +1350,8 @@ const selectTrigger = (serviceId: string) => {
     }
   } else if (serviceId === 'GitHub') {
     form.triggerConfig = {
-      repository: '',
-      branch: '',
-      events: [],
-      webhookSecret: ''
+      repositoryId: '',
+      notificationTypes: ['push']
     }
   } else if (serviceId === 'Weather') {
     form.triggerConfig = {
