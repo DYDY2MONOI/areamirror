@@ -52,6 +52,10 @@ services:
       FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
       GOOGLE_SHEETS_API_KEY: AIzaSyAG2M7Hv6TGS92z7-0Y-huE8a8J0iEdVhY
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
+      SPOTIFY_LINK_REDIRECT_URI: ${SPOTIFY_LINK_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
     ports:
       - "8080:8080"
     depends_on:
