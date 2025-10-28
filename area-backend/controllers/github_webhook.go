@@ -104,6 +104,14 @@ func (ghc *GitHubWebhookController) handlePushEvent(body []byte) error {
 		return fmt.Errorf("failed to unmarshal push event payload: %v", err)
 	}
 
+    fmt.Printf("📦 Push payload summary: repo=%s id=%d ref=%s commits=%d head=%s\n",
+        payload.Repository.FullName,
+        payload.Repository.ID,
+        payload.Ref,
+        len(payload.Commits),
+        payload.HeadCommit.ID,
+    )
+
 	return ghc.eventProcessor.ProcessPushEvent(payload)
 }
 
@@ -123,4 +131,56 @@ func (ghc *GitHubWebhookController) handleIssuesEvent(body []byte) error {
 	}
 
 	return ghc.eventProcessor.ProcessIssuesEvent(payload)
+}
+
+type TestPushRequest struct {
+    RepositoryFullName string   `json:"repository_full_name"`
+    RepositoryID       int      `json:"repository_id"`
+    Ref                string   `json:"ref"`
+    Commits            []struct {
+        ID      string `json:"id"`
+        Message string `json:"message"`
+        URL     string `json:"url"`
+    } `json:"commits"`
+}
+
+func TestGitHubPush(c *gin.Context) {
+    var req TestPushRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    payload := services.GitHubWebhookPayload{}
+    payload.Ref = req.Ref
+    payload.Repository.FullName = req.RepositoryFullName
+    payload.Repository.Name = req.RepositoryFullName
+    payload.Repository.ID = req.RepositoryID
+
+    for _, cm := range req.Commits {
+        payload.Commits = append(payload.Commits, struct {
+            ID      string   `json:"id"`
+            Message string   `json:"message"`
+            Author  struct {
+                Name  string `json:"name"`
+                Email string `json:"email"`
+            } `json:"author"`
+            URL      string   `json:"url"`
+            Added    []string `json:"added"`
+            Removed  []string `json:"removed"`
+            Modified []string `json:"modified"`
+        }{
+            ID:      cm.ID,
+            Message: cm.Message,
+            URL:     cm.URL,
+        })
+    }
+
+    processor := services.NewGitHubEventProcessor()
+    if err := processor.ProcessPushEvent(payload); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"status": "ok", "processed": true})
 }

@@ -1205,8 +1205,16 @@ func CreateGitHubGmailArea(c *gin.Context) {
 		return
 	}
 
-	githubService := services.NewGitHubIntegrationService()
-	webhookResp, err := githubService.CreateWebhook(targetRepo.FullName[:strings.Index(targetRepo.FullName, "/")], targetRepo.Name)
+    githubService := services.NewGitHubIntegrationService()
+    owner := ""
+    repoName := targetRepo.Name
+    if idx := strings.Index(targetRepo.FullName, "/"); idx != -1 {
+        owner = targetRepo.FullName[:idx]
+    }
+    if owner == "" {
+        owner = *user.GitHubUsername
+    }
+    webhookResp, err := githubService.CreateWebhook(owner, repoName)
 
 	var webhookMessage string
 	if err != nil {

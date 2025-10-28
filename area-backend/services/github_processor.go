@@ -1,11 +1,12 @@
 package services
 
 import (
-	"Golang-API-tutoriel/database"
-	"Golang-API-tutoriel/models"
-	"encoding/json"
-	"fmt"
-	"log"
+    "Golang-API-tutoriel/database"
+    "Golang-API-tutoriel/models"
+    "encoding/json"
+    "fmt"
+    "log"
+    "strings"
 )
 
 type GitHubEventProcessor struct {
@@ -80,10 +81,15 @@ func NewGitHubEventProcessor() *GitHubEventProcessor {
 }
 
 func (gep *GitHubEventProcessor) ProcessPushEvent(payload GitHubWebhookPayload) error {
-	log.Printf("Processing push event for repository: %s (ID: %d)", payload.Repository.FullName, payload.Repository.ID)
+    log.Printf("Processing push event for repository: %s (ID: %d) ref=%s commits=%d",
+        payload.Repository.FullName,
+        payload.Repository.ID,
+        payload.Ref,
+        len(payload.Commits),
+    )
 
-	var areas []models.Area
-	err := database.DB.Where("trigger_service = ? AND is_active = ?", "github", true).Find(&areas).Error
+    var areas []models.Area
+    err := database.DB.Where("is_active = ? AND (trigger_service = ? OR trigger_service = ?)", true, "github", "GitHub").Find(&areas).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch GitHub areas: %v", err)
 	}
@@ -95,9 +101,9 @@ func (gep *GitHubEventProcessor) ProcessPushEvent(payload GitHubWebhookPayload) 
 		log.Printf("Area %d: Name=%s, TriggerService=%s, IsActive=%t", i+1, area.Name, area.TriggerService, area.IsActive)
 	}
 
-	log.Printf("Found %d GitHub areas to process", len(areas))
+    log.Printf("Found %d GitHub areas to process", len(areas))
 	for i, area := range areas {
-		log.Printf("Processing area %d: %s (ID: %d)", i+1, area.Name, area.ID)
+        log.Printf("Processing area %d: %s (ID: %d) trigger_service=%s", i+1, area.Name, area.ID, area.TriggerService)
 		if err := gep.processAreaForEvent(area, payload); err != nil {
 			log.Printf("Error processing area %s: %v", area.Name, err)
 			continue
@@ -114,19 +120,37 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		return fmt.Errorf("failed to unmarshal trigger config: %v", err)
 	}
 
-	if config.RepositoryFullName != payload.Repository.FullName {
-		log.Printf("Repository mismatch: config=%s, payload=%s", config.RepositoryFullName, payload.Repository.FullName)
+    log.Printf("Area %d config: repo_full=%s repo_id=%d notify=%v", area.ID, config.RepositoryFullName, config.RepositoryID, config.NotificationTypes)
+
+    repoFullMatches := false
+    if config.RepositoryFullName != "" && payload.Repository.FullName != "" {
+        repoFullMatches = strings.EqualFold(config.RepositoryFullName, payload.Repository.FullName)
+    }
+
+    repoIdMatches := false
+    if config.RepositoryID != 0 && payload.Repository.ID != 0 {
+        repoIdMatches = (config.RepositoryID == payload.Repository.ID)
+    }
+
+    if !(repoFullMatches || repoIdMatches) {
+        log.Printf("Repository mismatch: config_full=%s payload_full=%s | config_id=%d payload_id=%d",
+            config.RepositoryFullName, payload.Repository.FullName,
+            config.RepositoryID, payload.Repository.ID,
+        )
+        return nil
+    }
+
+    if !gep.shouldSendNotification(config.NotificationTypes, payload) {
+        log.Printf("Notification types do not match for area %d; skipping", area.ID)
 		return nil
 	}
 
-	if !gep.shouldSendNotification(config.NotificationTypes, payload) {
-		return nil
-	}
-
-	var actionConfig AreaConfig
+    var actionConfig AreaConfig
 	if err := json.Unmarshal(area.ActionConfig, &actionConfig); err != nil {
 		return fmt.Errorf("failed to unmarshal action config: %v", err)
 	}
+
+    log.Printf("Email target: %s", actionConfig.DestinationEmail)
 
 	eventData := gep.convertToEventData(payload)
 

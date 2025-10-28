@@ -117,8 +117,9 @@ func main() {
 	r.PUT("/user/:id/applets/:id", controllers.UpdateApplet)
 	r.DELETE("/user/:id/applets/:id", controllers.DeleteApplet)
 
-	githubWebhookController := controllers.NewGitHubWebhookController()
-	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+    githubWebhookController := controllers.NewGitHubWebhookController()
+    r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+    r.POST("/test/github-push", controllers.TestGitHubPush)
 	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
