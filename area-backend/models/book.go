@@ -34,6 +34,8 @@ type User struct {
 	FacebookEmail      *string    `json:"facebook_email"`
 	SpotifyID          *string    `json:"spotify_id" gorm:"uniqueIndex"`
 	SpotifyEmail       *string    `json:"spotify_email"`
+	TwitterID          *string    `json:"twitter_id" gorm:"uniqueIndex"`
+	TwitterUsername    *string    `json:"twitter_username"`
 	Role               string     `json:"role" gorm:"default:'member'"`
 	IsActive           bool       `json:"is_active" gorm:"default:true"`
 
