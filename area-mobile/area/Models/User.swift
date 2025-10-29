@@ -21,6 +21,16 @@ struct User: Codable, Identifiable {
     let lang: String?
     let loginProvider: String?
     let profileImage: String?
+    let githubID: String?
+    let githubUsername: String?
+    let googleID: String?
+    let googleEmail: String?
+    let facebookID: String?
+    let facebookEmail: String?
+    let spotifyID: String?
+    let spotifyEmail: String?
+    let twitterID: String?
+    let twitterUsername: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -36,6 +46,16 @@ struct User: Codable, Identifiable {
         case lang
         case loginProvider = "login_provider"
         case profileImage = "profile_image"
+        case githubID = "github_id"
+        case githubUsername = "github_username"
+        case googleID = "google_id"
+        case googleEmail = "google_email"
+        case facebookID = "facebook_id"
+        case facebookEmail = "facebook_email"
+        case spotifyID = "spotify_id"
+        case spotifyEmail = "spotify_email"
+        case twitterID = "twitter_id"
+        case twitterUsername = "twitter_username"
     }
 }
 

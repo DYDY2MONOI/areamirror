@@ -41,12 +41,27 @@ struct OAuthCallbackTokens {
     let tokenType: String
 }
 
+struct OAuthLinkCallback {
+    let providerID: String
+    let authorizationCode: String
+    let codeVerifier: String?
+}
+
 @available(iOS 13.0, *)
 final class OAuthLoginManager: NSObject, ObservableObject {
+    private enum Flow {
+        case login
+        case link
+    }
+
     static let shared = OAuthLoginManager()
 
     private var session: ASWebAuthenticationSession?
-    private var completionHandler: ((Result<OAuthCallbackTokens, Error>) -> Void)?
+    private var currentFlow: Flow?
+    private var currentProvider: OAuthProvider?
+    private var currentCodeVerifier: String?
+    private var loginCompletion: ((Result<OAuthCallbackTokens, Error>) -> Void)?
+    private var linkCompletion: ((Result<OAuthLinkCallback, Error>) -> Void)?
 
     func startLogin(with provider: OAuthProvider, completion: @escaping (Result<OAuthCallbackTokens, Error>) -> Void) {
         guard provider.isEnabled else {
@@ -59,22 +74,89 @@ final class OAuthLoginManager: NSObject, ObservableObject {
             return
         }
 
-        guard let authorizationURL = buildAuthorizationURL(for: provider) else {
+        guard loginCompletion == nil && linkCompletion == nil else {
+            completion(.failure(OAuthLoginError.authenticationFailed))
+            return
+        }
+
+        currentFlow = .login
+        currentProvider = provider
+        loginCompletion = completion
+
+        guard let authorizationURL = buildAuthorizationURL(for: provider, flow: .login) else {
+            completion(.failure(OAuthLoginError.invalidConfiguration))
+            cleanup()
+            return
+        }
+
+        startSession(with: authorizationURL) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let url):
+                self.handleCallbackURL(url)
+            case .failure(let error):
+                self.failCurrentFlow(with: error)
+            }
+        }
+    }
+
+    func startLink(with provider: OAuthProvider, completion: @escaping (Result<OAuthLinkCallback, Error>) -> Void) {
+        guard provider.isEnabled else {
+            completion(.failure(OAuthLoginError.providerDisabled))
+            return
+        }
+
+        guard !provider.clientId.isEmpty else {
             completion(.failure(OAuthLoginError.invalidConfiguration))
             return
         }
 
-        completionHandler = completion
+        guard loginCompletion == nil && linkCompletion == nil else {
+            completion(.failure(OAuthLoginError.authenticationFailed))
+            return
+        }
 
-        let session = ASWebAuthenticationSession(url: authorizationURL, callbackURLScheme: OAuthConfig.callbackScheme) { [weak self] callbackURL, error in
+        currentFlow = .link
+        currentProvider = provider
+        linkCompletion = completion
+
+        guard let authorizationURL = buildAuthorizationURL(for: provider, flow: .link) else {
+            completion(.failure(OAuthLoginError.invalidConfiguration))
+            cleanup()
+            return
+        }
+
+        startSession(with: authorizationURL) { [weak self] result in
             guard let self else { return }
+            switch result {
+            case .success(let url):
+                self.handleCallbackURL(url)
+            case .failure(let error):
+                self.failCurrentFlow(with: error)
+            }
+        }
+    }
 
+    @MainActor
+    func performLink(with provider: OAuthProvider) async throws -> OAuthLinkCallback {
+        try await withCheckedThrowingContinuation { continuation in
+            startLink(with: provider) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    private func startSession(with url: URL, completion: @escaping (Result<URL, Error>) -> Void) {
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: OAuthConfig.callbackScheme) { [weak self] callbackURL, error in
+            guard let self else { return }
             defer { self.cleanup() }
 
             if let error = error as? ASWebAuthenticationSessionError, error.code == .canceledLogin {
                 completion(.failure(OAuthLoginError.userCancelled))
                 return
-            } else if let error {
+            }
+
+            if let error {
                 completion(.failure(error))
                 return
             }
@@ -84,7 +166,7 @@ final class OAuthLoginManager: NSObject, ObservableObject {
                 return
             }
 
-            completion(self.handleCallbackURL(callbackURL))
+            completion(.success(callbackURL))
         }
 
         session.presentationContextProvider = self
@@ -97,7 +179,7 @@ final class OAuthLoginManager: NSObject, ObservableObject {
         }
     }
 
-    private func buildAuthorizationURL(for provider: OAuthProvider) -> URL? {
+    private func buildAuthorizationURL(for provider: OAuthProvider, flow: Flow) -> URL? {
         guard var components = URLComponents(string: provider.authorizationEndpoint) else {
             return nil
         }
@@ -109,17 +191,32 @@ final class OAuthLoginManager: NSObject, ObservableObject {
             URLQueryItem(name: "scope", value: provider.scopeValue)
         ]
 
-        let state: String
-        if provider.requiresPKCE {
-            let verifier = PKCEHelper.generateCodeVerifier()
-            let challenge = PKCEHelper.codeChallenge(for: verifier)
-            queryItems.append(URLQueryItem(name: "code_challenge", value: challenge))
-            queryItems.append(URLQueryItem(name: "code_challenge_method", value: "S256"))
-            state = "mobile:\(verifier)"
-        } else {
-            state = "mobile"
+        currentCodeVerifier = nil
+        var stateComponents: [String] = ["mobile"]
+
+        switch flow {
+        case .login:
+            if provider.requiresPKCE {
+                let verifier = PKCEHelper.generateCodeVerifier()
+                currentCodeVerifier = verifier
+                let challenge = PKCEHelper.codeChallenge(for: verifier)
+                queryItems.append(URLQueryItem(name: "code_challenge", value: challenge))
+                queryItems.append(URLQueryItem(name: "code_challenge_method", value: "S256"))
+                stateComponents.append(verifier)
+            }
+        case .link:
+            stateComponents.append("link")
+            if provider.requiresPKCE {
+                let verifier = PKCEHelper.generateCodeVerifier()
+                currentCodeVerifier = verifier
+                let challenge = PKCEHelper.codeChallenge(for: verifier)
+                queryItems.append(URLQueryItem(name: "code_challenge", value: challenge))
+                queryItems.append(URLQueryItem(name: "code_challenge_method", value: "S256"))
+                stateComponents.append(verifier)
+            }
         }
 
+        let state = stateComponents.joined(separator: ":")
         queryItems.append(URLQueryItem(name: "state", value: state))
 
         provider.additionalParameters.forEach { key, value in
@@ -130,27 +227,43 @@ final class OAuthLoginManager: NSObject, ObservableObject {
         return components.url
     }
 
-    private func handleCallbackURL(_ url: URL) -> Result<OAuthCallbackTokens, Error> {
+    private func handleCallbackURL(_ url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let queryItems = components.queryItems else {
-            return .failure(OAuthLoginError.missingCallbackData)
+              let items = components.queryItems else {
+            failCurrentFlow(with: OAuthLoginError.missingCallbackData)
+            return
         }
 
         var data: [String: String] = [:]
-        queryItems.forEach { data[$0.name] = $0.value }
+        items.forEach { data[$0.name] = $0.value }
+
+        let mode = data["mode"]
+
+        if mode == "link" || currentFlow == .link {
+            guard let providerID = data["provider"] ?? currentProvider?.id,
+                  let code = data["code"] else {
+                failCurrentFlow(with: OAuthLoginError.missingCallbackData)
+                return
+            }
+
+            let verifier = data["code_verifier"] ?? currentCodeVerifier
+            let callback = OAuthLinkCallback(providerID: providerID, authorizationCode: code, codeVerifier: verifier)
+            completeLink(with: callback)
+            return
+        }
 
         guard
-            let providerID = data["provider"],
+            let providerID = data["provider"] ?? currentProvider?.id,
             let accessToken = data["access_token"],
             let expiresString = data["expires_in"],
             let expiresIn = Int(expiresString),
             let tokenType = data["token_type"]
         else {
-            return .failure(OAuthLoginError.missingCallbackData)
+            failCurrentFlow(with: OAuthLoginError.missingCallbackData)
+            return
         }
 
         let refreshToken = data["refresh_token"]
-
         let tokens = OAuthCallbackTokens(
             providerID: providerID,
             accessToken: accessToken,
@@ -159,12 +272,49 @@ final class OAuthLoginManager: NSObject, ObservableObject {
             tokenType: tokenType
         )
 
-        return .success(tokens)
+        completeLogin(with: tokens)
+    }
+
+    private func failCurrentFlow(with error: Error) {
+        switch currentFlow {
+        case .login:
+            if let completion = loginCompletion {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        case .link:
+            if let completion = linkCompletion {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        case .none:
+            break
+        }
+    }
+
+    private func completeLogin(with tokens: OAuthCallbackTokens) {
+        guard let completion = loginCompletion else { return }
+        DispatchQueue.main.async {
+            completion(.success(tokens))
+        }
+    }
+
+    private func completeLink(with callback: OAuthLinkCallback) {
+        guard let completion = linkCompletion else { return }
+        DispatchQueue.main.async {
+            completion(.success(callback))
+        }
     }
 
     private func cleanup() {
         session = nil
-        completionHandler = nil
+        currentFlow = nil
+        currentProvider = nil
+        currentCodeVerifier = nil
+        loginCompletion = nil
+        linkCompletion = nil
     }
 }
 

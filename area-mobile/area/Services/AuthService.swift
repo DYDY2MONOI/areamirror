@@ -13,6 +13,9 @@ enum AuthServiceError: LocalizedError {
     case missingRefreshToken
     case invalidResponse
     case tokenRefreshFailed
+    case unsupportedPlatform
+    case invalidProvider
+    case custom(String)
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +25,12 @@ enum AuthServiceError: LocalizedError {
             return "Received invalid response from server."
         case .tokenRefreshFailed:
             return "Unable to refresh authentication token."
+        case .unsupportedPlatform:
+            return "This feature requires a newer version of iOS."
+        case .invalidProvider:
+            return "Unsupported authentication provider."
+        case .custom(let message):
+            return message
         }
     }
 }
@@ -372,6 +381,21 @@ class AuthService: ObservableObject {
         return "\(tokenType) \(token)"
     }
 
+    @MainActor
+    func getValidToken() async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            ensureValidToken { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    @MainActor
+    func getValidAuthorizationHeader() async throws -> String {
+        let token = try await getValidToken()
+        return "\(tokenType) \(token)"
+    }
+
     private func ensureValidToken(completion: @escaping (Result<String, Error>) -> Void) {
         if let token = accessToken, !shouldRefreshToken {
             completion(.success(token))
@@ -448,6 +472,28 @@ class AuthService: ObservableObject {
                 }
             }
         }.resume()
+    }
+
+    @MainActor
+    func linkAccount(_ provider: OAuthProvider) async throws {
+        guard #available(iOS 13.0, *) else {
+            throw AuthServiceError.unsupportedPlatform
+        }
+
+        let linkResult = try await OAuthLoginManager.shared.performLink(with: provider)
+
+        guard linkResult.providerID == provider.id else {
+            throw AuthServiceError.invalidProvider
+        }
+
+        try await sendLinkRequest(providerID: provider.id, code: linkResult.authorizationCode, codeVerifier: linkResult.codeVerifier)
+        fetchProfile()
+    }
+
+    @MainActor
+    func unlinkAccount(_ provider: OAuthProvider) async throws {
+        try await sendUnlinkRequest(providerID: provider.id)
+        fetchProfile()
     }
     
     func updateProfile(firstName: String?, lastName: String?, phone: String?, country: String?, currentPassword: String?, newPassword: String?) {
@@ -613,7 +659,138 @@ class AuthService: ObservableObject {
         }.resume()
     }
 
-    private static func decodeErrorMessage(from data: Data) -> String? {
-        (try? JSONDecoder().decode([String: String].self, from: data))?["error"]
+@MainActor
+func isProviderLinked(_ providerID: String) -> Bool {
+    guard let user = currentUser else { return false }
+
+    switch providerID {
+    case "github":
+        return !(user.githubUsername?.isEmpty ?? true)
+    case "google":
+        return !(user.googleID?.isEmpty ?? true)
+    case "facebook":
+        return !(user.facebookID?.isEmpty ?? true)
+    case "spotify":
+        return !(user.spotifyID?.isEmpty ?? true)
+    case "twitter":
+        return !(user.twitterUsername?.isEmpty ?? true)
+    default:
+        return false
     }
+}
+
+@MainActor
+func linkedDetail(for providerID: String) -> String? {
+    guard let user = currentUser else { return nil }
+
+    switch providerID {
+    case "github":
+        return user.githubUsername
+    case "google":
+        return user.googleEmail
+    case "facebook":
+        return user.facebookEmail
+    case "spotify":
+        return user.spotifyEmail
+    case "twitter":
+        return user.twitterUsername
+    default:
+        return nil
+    }
+}
+
+@MainActor
+private func sendLinkRequest(providerID: String, code: String, codeVerifier: String?) async throws {
+    guard let endpoint = linkEndpoint(for: providerID) else {
+        throw AuthServiceError.invalidProvider
+    }
+
+    var payload: [String: Any] = ["code": code]
+    if providerID == "twitter" {
+        guard let verifier = codeVerifier, !verifier.isEmpty else {
+            throw AuthServiceError.custom("Missing verification data for Twitter linking.")
+        }
+        payload["code_verifier"] = verifier
+    }
+
+    let body = try JSONSerialization.data(withJSONObject: payload, options: [])
+    _ = try await performAuthorizedRequest(path: endpoint, method: "POST", body: body)
+}
+
+@MainActor
+private func sendUnlinkRequest(providerID: String) async throws {
+    guard let endpoint = unlinkEndpoint(for: providerID) else {
+        throw AuthServiceError.invalidProvider
+    }
+
+    _ = try await performAuthorizedRequest(path: endpoint, method: "DELETE")
+}
+
+@MainActor
+private func performAuthorizedRequest(path: String, method: String, body: Data? = nil) async throws -> Data {
+    let header = try await getValidAuthorizationHeader()
+
+    guard let url = URL(string: AppConfig.getAPIEndpoint(path)) else {
+        throw AuthServiceError.invalidResponse
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = method
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue(header, forHTTPHeaderField: "Authorization")
+    request.httpBody = body
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+
+    guard let httpResponse = response as? HTTPURLResponse else {
+        throw AuthServiceError.invalidResponse
+    }
+
+    guard (200...299).contains(httpResponse.statusCode) else {
+        if let message = AuthService.decodeErrorMessage(from: data) {
+            throw AuthServiceError.custom(message)
+        }
+        throw AuthServiceError.invalidResponse
+    }
+
+    return data
+}
+
+private func linkEndpoint(for providerID: String) -> String? {
+    switch providerID {
+    case "github":
+        return "/profile/github/link"
+    case "google":
+        return "/profile/google/link"
+    case "facebook":
+        return "/profile/facebook/link"
+    case "spotify":
+        return "/profile/spotify/link"
+    case "twitter":
+        return "/profile/twitter/link"
+    default:
+        return nil
+    }
+}
+
+private func unlinkEndpoint(for providerID: String) -> String? {
+    switch providerID {
+    case "github":
+        return "/profile/github/unlink"
+    case "google":
+        return "/profile/google/unlink"
+    case "facebook":
+        return "/profile/facebook/unlink"
+    case "spotify":
+        return "/profile/spotify/unlink"
+    case "twitter":
+        return "/profile/twitter/unlink"
+    default:
+        return nil
+    }
+}
+
+private static func decodeErrorMessage(from data: Data) -> String? {
+    (try? JSONDecoder().decode([String: String].self, from: data))?["error"]
+}
 }
