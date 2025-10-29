@@ -1,0 +1,18 @@
+{
+  "name": "Telegram Command Trigger",
+  "description": "Execute an action when a specific command is sent in Telegram",
+  "trigger_service": "Telegram",
+  "trigger_type": "command_received",
+  "trigger_config": {
+    "chatId": "YOUR_CHAT_ID_HERE",
+    "command": "/status"
+  },
+  "action_service": "Telegram",
+  "action_type": "send_message",
+  "action_config": {
+    "chatId": "YOUR_CHAT_ID_HERE",
+    "message": "Status command received! System is operational."
+  }
+}
+
+

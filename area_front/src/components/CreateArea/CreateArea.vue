@@ -141,6 +141,55 @@
               <div class="arrow-line"></div>
             </div>
 
+            <div v-if="form.triggerService" class="service-selector intermediate-selector">
+              <div class="selector-header">
+                <div class="selector-icon">
+                  <v-icon size="24" color="#8b5cf6">mdi-brain</v-icon>
+                </div>
+                <div class="selector-info">
+                  <h3 class="selector-title">✨ Transform with AI (Optional)</h3>
+                  <p class="selector-subtitle">Use OpenAI to generate text before sending</p>
+                </div>
+              </div>
+
+              <div class="service-selection">
+                <div v-if="!form.intermediateActionService" class="service-grid">
+                  <div
+                    class="service-card optional-card"
+                    @click="form.intermediateActionService = 'OpenAI'"
+                  >
+                    <div class="service-card-icon">
+                      <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+                    </div>
+                    <span class="service-card-name">Add OpenAI</span>
+                  </div>
+                </div>
+
+                <div v-else class="selected-service-display">
+                  <div class="selected-service-card">
+                    <div class="service-avatar">
+                      <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+                    </div>
+                    <div class="service-info">
+                      <span class="service-name">OpenAI</span>
+                      <span class="service-type">Intermediate Action</span>
+                    </div>
+                    <button class="change-service-btn" @click="form.intermediateActionService = ''">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="form.intermediateActionService" class="connection-arrow">
+              <div class="arrow-line"></div>
+              <div class="arrow-icon">
+                <v-icon size="20" color="#8b5cf6">mdi-arrow-down</v-icon>
+              </div>
+              <div class="arrow-line"></div>
+            </div>
+
             <div class="service-selector">
               <div class="selector-header">
                 <div class="selector-icon">
@@ -646,6 +695,84 @@
             </div>
           </div>
 
+          <div v-if="form.intermediateActionService === 'OpenAI'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">🤖 OpenAI Configuration</h4>
+                <p class="config-subtitle">Configure how OpenAI should generate text from your trigger data</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">💬 System Prompt (Optional)</label>
+                  <textarea
+                    v-model="form.intermediateActionConfig.systemPrompt"
+                    class="modern-textarea"
+                    placeholder="You are a helpful assistant..."
+                    rows="3"
+                  ></textarea>
+                  <small class="input-hint">Define the AI's role or behavior. This helps guide the response style.</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">✍️ Prompt</label>
+                  <textarea
+                    v-model="form.intermediateActionConfig.prompt"
+                    class="modern-textarea"
+                    placeholder="Generate a summary of the following data: {{changeType}} in {{sheetName}} at row {{rowNumber}}"
+                    rows="5"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables from your trigger:
+                    <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'GitHub'">&#123;&#123;repository&#125;&#125;, &#123;&#123;branch&#125;&#125;</span>
+                    <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                  </small>
+                  <div class="info-box" style="margin-top: 0.5rem;">
+                    <v-icon size="16" color="#8b5cf6">mdi-lightbulb-on</v-icon>
+                    <span>The generated text will be available as <code>&#123;&#123;openaiGeneratedText&#125;&#125;</code> in your action</span>
+                  </div>
+                </div>
+
+                <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="input-container">
+                    <label class="input-label">🌡️ Temperature</label>
+                    <input
+                      v-model.number="form.intermediateActionConfig.temperature"
+                      type="number"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      class="modern-input"
+                    />
+                    <small class="input-hint">Creativity level (0 = focused, 2 = creative). Default: 0.7</small>
+                  </div>
+
+                  <div class="input-container">
+                    <label class="input-label">📏 Max Tokens</label>
+                    <input
+                      v-model.number="form.intermediateActionConfig.maxTokens"
+                      type="number"
+                      min="1"
+                      max="4000"
+                      step="50"
+                      class="modern-input"
+                    />
+                    <small class="input-hint">Maximum length of generated text. Default: 500</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.triggerService === 'Telegram'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -763,7 +890,7 @@
                     placeholder="Reminder: {{eventTitle}}"
                     required
                   />
-                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125; to include the event name</small>
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125; to include the event name<span v-if="form.intermediateActionService === 'OpenAI'">, or &#123;&#123;openaiGeneratedText&#125;&#125; for AI-generated content</span></small>
                 </div>
 
                 <div class="input-container">
@@ -775,7 +902,7 @@
                     rows="4"
                     required
                   ></textarea>
-                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders<span v-if="form.intermediateActionService === 'OpenAI'">, or &#123;&#123;openaiGeneratedText&#125;&#125; for AI-generated content</span></small>
                 </div>
               </div>
             </div>
@@ -819,7 +946,9 @@
                     <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Spotify'">&#123;&#123;trackName&#125;&#125;, &#123;&#123;artistNames&#125;&#125;, &#123;&#123;albumName&#125;&#125;, &#123;&#123;trackUrl&#125;&#125;</span>
                     <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                    <span v-if="form.intermediateActionService === 'OpenAI'">, &#123;&#123;openaiGeneratedText&#125;&#125;</span>
                   </small>
                 </div>
 
@@ -887,6 +1016,7 @@
                   ></textarea>
                   <small class="input-hint">
                     Use template variables: &#123;&#123;areaName&#125;&#125;, &#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;, etc.
+                    <span v-if="form.intermediateActionService === 'OpenAI'"> Use &#123;&#123;openaiGeneratedText&#125;&#125; to include the AI-generated text.</span>
                     Telegram supports Markdown formatting (*bold*, _italic_)
                   </small>
                 </div>
@@ -991,7 +1121,6 @@
       </div>
     </div>
 
-    <!-- Guide Modal -->
     <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
@@ -1043,7 +1172,8 @@ const priorityServices = [
   'Timer',
   'Telegram',
   'Spotify',
-  'Twitter'
+  'Twitter',
+  'OpenAI'
 ]
 
 const services = ref<ServiceInfo[]>([])
@@ -1077,7 +1207,8 @@ const fetchServices = async () => {
       'Google Sheets': 'google-sheets.png',
       'Google Drive': 'google-drive.png',
       Timer: 'google-calendar.png',
-      Telegram: 'telegram.png'
+      Telegram: 'telegram.png',
+      OpenAI: 'openai.png'
     }
 
     fetchedServices.forEach(service => {
@@ -1124,7 +1255,8 @@ const getFallbackIcon = (serviceName: string) => {
     'google sheets': 'google-sheets.png',
     'google drive': 'google-drive.png',
     timer: 'google-calendar.png',
-    telegram: 'telegram.png'
+    telegram: 'telegram.png',
+    openai: 'openai.png'
   }
 
   const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
@@ -1165,8 +1297,15 @@ const form = reactive({
   description: '',
   triggerService: '' as string | null,
   actionService: '' as string | null,
+  intermediateActionService: '' as string | null,
   triggerConfig: {} as any,
   actionConfig: {} as any,
+  intermediateActionConfig: {
+    prompt: '',
+    systemPrompt: '',
+    temperature: 0.7,
+    maxTokens: 500
+  } as any,
 })
 
 const repositories = ref<GitHubRepository[]>([])
@@ -1303,6 +1442,11 @@ const isFormValid = computed(() => {
            form.actionConfig.message
   }
 
+  if (form.intermediateActionService === 'OpenAI') {
+    return hasBasicInfo &&
+           form.intermediateActionConfig.prompt?.trim() !== ''
+  }
+
   return hasBasicInfo
 })
 
@@ -1414,6 +1558,8 @@ const selectAction = (serviceId: string) => {
       ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
       : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing: {{trackName}} — {{artistNames}}\n🔗 {{trackUrl}}'
       : form.triggerService === 'Timer'
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
@@ -1429,6 +1575,8 @@ const selectAction = (serviceId: string) => {
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Telegram'
       ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing on Spotify: {{trackName}} — {{artistNames}}'
       : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
@@ -1487,6 +1635,10 @@ const getMissingFields = () => {
   if (form.actionService === 'Telegram') {
     if (!form.actionConfig.chatId) missing.push('Telegram Chat ID')
     if (!form.actionConfig.message) missing.push('Telegram Message')
+  }
+
+  if (form.intermediateActionService === 'OpenAI') {
+    if (!form.intermediateActionConfig.prompt?.trim()) missing.push('OpenAI Prompt')
   }
 
   return missing.join(', ')
@@ -1696,7 +1848,7 @@ const createArea = async () => {
         form.triggerConfig.notificationTypes
       )
     } else if (form.triggerService === 'Google Sheets') {
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1712,9 +1864,20 @@ const createArea = async () => {
         actionConfig: form.actionConfig
       }
 
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
+      }
+
       await areaService.createArea(areaData)
     } else if (form.triggerService === 'Weather') {
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1723,6 +1886,17 @@ const createArea = async () => {
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: form.triggerConfig,
         actionConfig: form.actionConfig
+      }
+
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
@@ -1737,7 +1911,7 @@ const createArea = async () => {
         triggerConfig.command = form.triggerConfig.command
       }
 
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1746,6 +1920,17 @@ const createArea = async () => {
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
+      }
+
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
@@ -1766,15 +1951,30 @@ const createArea = async () => {
         }
       }
 
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+        triggerType: form.triggerService === 'Google Calendar'
+          ? 'Event'
+          : form.triggerService === 'Spotify'
+          ? 'Playback'
+          : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
+      }
+
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
@@ -2764,7 +2964,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary) !important;
 }
 
-/* Configuration Section Styles */
+
 .config-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-primary);
@@ -2975,7 +3175,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
-/* Info box for Timer and other configs */
+
 .info-box {
   display: flex;
   align-items: center;
@@ -3108,3 +3308,9 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 </style>
+
+
+
+
+
+

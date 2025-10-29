@@ -34,6 +34,10 @@ func SeedData() {
 		{Name: "Google Calendar", Description: "Service de calendrier Google", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
+		{Name: "OpenAI", Description: "Service de génération de texte avec IA", IconURL: "https://openai.com/icon.png", IsActive: true},
+		{Name: "Telegram", Description: "Plateforme de messagerie instantanée", IconURL: "https://telegram.org/icon.png", IsActive: true},
+		{Name: "Timer", Description: "Déclencheur automatique basé sur un intervalle de temps", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
+		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -43,7 +47,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, sheets models.Service
+	var gmail, slack, github, weather, calendar, discord, sheets, telegram, timer, spotify models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -51,6 +55,9 @@ func SeedData() {
 	DB.Where("name = ?", "Google Calendar").First(&calendar)
 	DB.Where("name = ?", "Discord").First(&discord)
 	DB.Where("name = ?", "Google Sheets").First(&sheets)
+	DB.Where("name = ?", "Telegram").First(&telegram)
+	DB.Where("name = ?", "Timer").First(&timer)
+	DB.Where("name = ?", "Spotify").First(&spotify)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -59,6 +66,11 @@ func SeedData() {
 		{ServiceID: calendar.ID, Name: "Nouvel événement", Description: "Se déclenche quand un nouvel événement est créé", Parameters: `{"calendar": "", "event": ""}`},
 		{ServiceID: github.ID, Name: "Nouvelle issue", Description: "Se déclenche quand une nouvelle issue est créée", Parameters: `{"repository": "", "issue": ""}`},
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
+		{ServiceID: telegram.ID, Name: "Message reçu", Description: "Se déclenche quand un message Telegram est reçu", Parameters: `{"chatId": "", "triggerType": "message_received"}`},
+		{ServiceID: telegram.ID, Name: "Mot-clé détecté", Description: "Se déclenche quand un mot-clé spécifique est détecté", Parameters: `{"chatId": "", "triggerType": "keyword_match", "keyword": ""}`},
+		{ServiceID: telegram.ID, Name: "Commande reçue", Description: "Se déclenche quand une commande est reçue", Parameters: `{"chatId": "", "triggerType": "command_received", "command": ""}`},
+		{ServiceID: timer.ID, Name: "Intervalle de temps", Description: "Se déclenche automatiquement selon un intervalle configuré", Parameters: `{"interval": "1h"}`},
+		{ServiceID: spotify.ID, Name: "Nouvelle lecture Spotify", Description: "Se déclenche lorsqu'une nouvelle musique démarre sur Spotify", Parameters: `{}`},
 	}
 
 	for _, action := range actions {
@@ -74,6 +86,7 @@ func SeedData() {
 		{ServiceID: github.ID, Name: "Créer issue", Description: "Crée une nouvelle issue", Parameters: `{"repository": "", "title": "", "body": ""}`},
 		{ServiceID: gmail.ID, Name: "Envoyer email de notification", Description: "Envoie un email de notification", Parameters: `{"to": "", "subject": "", "body": ""}`},
 		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
+		{ServiceID: telegram.ID, Name: "Envoyer message Telegram", Description: "Envoie un message sur Telegram", Parameters: `{"chatId": "", "message": ""}`},
 	}
 
 	for _, reaction := range reactions {

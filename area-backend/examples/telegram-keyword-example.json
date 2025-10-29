@@ -1,0 +1,19 @@
+{
+  "name": "Telegram Keyword Trigger",
+  "description": "Send an email when a specific keyword is mentioned in Telegram",
+  "trigger_service": "Telegram",
+  "trigger_type": "keyword_match",
+  "trigger_config": {
+    "chatId": "YOUR_CHAT_ID_HERE",
+    "keyword": "urgent"
+  },
+  "action_service": "Gmail",
+  "action_type": "send_email",
+  "action_config": {
+    "toEmail": "your-email@example.com",
+    "subject": "Urgent message from Telegram",
+    "body": "Keyword detected in message: {{messageText}}\nFrom: {{firstName}} (@{{username}})\nChat ID: {{chatId}}"
+  }
+}
+
+

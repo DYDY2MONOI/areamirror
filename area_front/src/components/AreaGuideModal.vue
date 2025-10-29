@@ -1419,3 +1419,9 @@ const goToSlide = (index: number) => {
   }
 }
 </style>
+
+
+
+
+
+

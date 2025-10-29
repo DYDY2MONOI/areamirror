@@ -8,20 +8,24 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
 )
 
 type CreateAreaRequest struct {
-	Name           string      `json:"name" binding:"required"`
-	Description    string      `json:"description"`
-	TriggerService string      `json:"triggerService" binding:"required"`
-	TriggerType    string      `json:"triggerType" binding:"required"`
-	ActionService  string      `json:"actionService" binding:"required"`
-	ActionType     string      `json:"actionType" binding:"required"`
-	TriggerConfig  interface{} `json:"triggerConfig"`
-	ActionConfig   interface{} `json:"actionConfig"`
+	Name                      string      `json:"name" binding:"required"`
+	Description               string      `json:"description"`
+	TriggerService            string      `json:"triggerService" binding:"required"`
+	TriggerType               string      `json:"triggerType" binding:"required"`
+	ActionService             string      `json:"actionService" binding:"required"`
+	ActionType                string      `json:"actionType" binding:"required"`
+	TriggerConfig             interface{} `json:"triggerConfig"`
+	ActionConfig              interface{} `json:"actionConfig"`
+	IntermediateActionService string      `json:"intermediateActionService"`
+	IntermediateActionType    string      `json:"intermediateActionType"`
+	IntermediateActionConfig  interface{} `json:"intermediateActionConfig"`
 }
 
 func GetAreas(c *gin.Context) {
@@ -80,21 +84,32 @@ func CreateArea(c *gin.Context) {
 
 	triggerConfigJSON, _ := json.Marshal(req.TriggerConfig)
 	actionConfigJSON, _ := json.Marshal(req.ActionConfig)
+	
+	var intermediateActionConfigJSON datatypes.JSON
+	if req.IntermediateActionConfig != nil {
+		intermediateConfigBytes, _ := json.Marshal(req.IntermediateActionConfig)
+		intermediateActionConfigJSON = datatypes.JSON(intermediateConfigBytes)
+	} else {
+		intermediateActionConfigJSON = datatypes.JSON("{}")
+	}
 
 	area := models.Area{
-		UserID:         user.ID,
-		Name:           req.Name,
-		Description:    req.Description,
-		TriggerService: req.TriggerService,
-		TriggerType:    req.TriggerType,
-		ActionService:  req.ActionService,
-		ActionType:     req.ActionType,
-		IsActive:       true,
-		IsPublic:       true,
-		TriggerConfig:  datatypes.JSON(triggerConfigJSON),
-		ActionConfig:   datatypes.JSON(actionConfigJSON),
-		TriggerIconURL: getIconUrlForService(req.TriggerService),
-		ActionIconURL:  getIconUrlForService(req.ActionService),
+		UserID:                    user.ID,
+		Name:                      req.Name,
+		Description:               req.Description,
+		TriggerService:            req.TriggerService,
+		TriggerType:               req.TriggerType,
+		ActionService:             req.ActionService,
+		ActionType:                req.ActionType,
+		IsActive:                  true,
+		IsPublic:                  true,
+		TriggerConfig:             datatypes.JSON(triggerConfigJSON),
+		ActionConfig:              datatypes.JSON(actionConfigJSON),
+		TriggerIconURL:            getIconUrlForService(req.TriggerService),
+		ActionIconURL:             getIconUrlForService(req.ActionService),
+		IntermediateActionService: req.IntermediateActionService,
+		IntermediateActionType:    req.IntermediateActionType,
+		IntermediateActionConfig:  intermediateActionConfigJSON,
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -181,6 +196,14 @@ func UpdateArea(c *gin.Context) {
 		actionConfigBytes, _ := json.Marshal(req.ActionConfig)
 		actionConfigJSON = datatypes.JSON(actionConfigBytes)
 	}
+	
+	var intermediateActionConfigJSON datatypes.JSON
+	if req.IntermediateActionConfig != nil {
+		intermediateConfigBytes, _ := json.Marshal(req.IntermediateActionConfig)
+		intermediateActionConfigJSON = datatypes.JSON(intermediateConfigBytes)
+	} else {
+		intermediateActionConfigJSON = datatypes.JSON("{}")
+	}
 
 	updates := map[string]interface{}{
 		"name":            req.Name,
@@ -196,6 +219,11 @@ func UpdateArea(c *gin.Context) {
 	}
 	if req.ActionConfig != nil {
 		updates["action_config"] = actionConfigJSON
+	}
+	if req.IntermediateActionService != "" {
+		updates["intermediate_action_service"] = req.IntermediateActionService
+		updates["intermediate_action_type"] = req.IntermediateActionType
+		updates["intermediate_action_config"] = intermediateActionConfigJSON
 	}
 
 	if req.TriggerService != "" {
@@ -473,6 +501,118 @@ func TestDiscord(c *gin.Context) {
 		"message":    "Test Discord message sent successfully!",
 		"webhookUrl": webhookURL,
 	})
+}
+
+func TestSpotify(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.SpotifyID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Spotify account linked"})
+		return
+	}
+
+	spotifyService, err := services.NewSpotifyService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify service not available: " + err.Error()})
+		return
+	}
+
+	accountInfo := gin.H{
+		"linked": true,
+	}
+	if user.SpotifyID != nil {
+		accountInfo["spotify_id"] = *user.SpotifyID
+	}
+	if user.SpotifyEmail != nil {
+		accountInfo["email"] = *user.SpotifyEmail
+	}
+	if user.FirstName != "" {
+		accountInfo["first_name"] = user.FirstName
+	}
+	if user.LastName != "" {
+		accountInfo["last_name"] = user.LastName
+	}
+
+	nowPlaying, err := spotifyService.GetCurrentlyPlaying(uid)
+	if err != nil {
+		log.Printf("Spotify test failed for user %d: %v", uid, err)
+		if apiErr, ok := err.(*services.SpotifyAPIError); ok {
+			warning := apiErr.Message
+			if apiErr.RequiresReauth {
+				warning = "Spotify permissions missing. Please unlink then relink your Spotify account and accept playback permissions (user-read-currently-playing, user-read-playback-state)."
+			}
+
+			response := gin.H{
+				"message":        "Spotify account linked, but failed to fetch currently playing track",
+				"account":        accountInfo,
+				"warning":        warning,
+				"requiresReauth": apiErr.RequiresReauth,
+				"status":         apiErr.Status,
+			}
+
+			if apiErr.Raw != "" {
+				response["details"] = apiErr.Raw
+			}
+
+			c.JSON(http.StatusOK, response)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Spotify account linked, but failed to fetch currently playing track",
+				"account": accountInfo,
+				"warning": err.Error(),
+			})
+		}
+		return
+	}
+
+	response := gin.H{
+		"message": "Spotify connection successful",
+		"account": accountInfo,
+	}
+
+	if nowPlaying != nil {
+		startedAt := ""
+		if !nowPlaying.StartedAt.IsZero() {
+			startedAt = nowPlaying.StartedAt.UTC().Format(time.RFC3339)
+		}
+
+		response["nowPlaying"] = gin.H{
+			"trackId":       nowPlaying.TrackID,
+			"trackName":     nowPlaying.TrackName,
+			"artists":       nowPlaying.Artists,
+			"artistNames":   strings.Join(nowPlaying.Artists, ", "),
+			"albumName":     nowPlaying.AlbumName,
+			"trackUrl":      nowPlaying.TrackURL,
+			"previewUrl":    nowPlaying.PreviewURL,
+			"deviceName":    nowPlaying.DeviceName,
+			"isPlaying":     nowPlaying.IsPlaying,
+			"progressMs":    nowPlaying.ProgressMS,
+			"durationMs":    nowPlaying.DurationMS,
+			"coverImageUrl": nowPlaying.CoverImageURL,
+			"startedAt":     startedAt,
+		}
+	} else {
+		response["nowPlaying"] = nil
+		response["info"] = "No track currently playing on Spotify"
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func TestScheduler(c *gin.Context) {

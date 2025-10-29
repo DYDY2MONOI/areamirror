@@ -58,6 +58,7 @@ services:
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
       SPOTIFY_LINK_REDIRECT_URI: ${SPOTIFY_LINK_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
+      OPENAI_API_KEY: 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
     ports:
       - "8080:8080"
     depends_on:

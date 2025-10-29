@@ -1,0 +1,17 @@
+{
+  "name": "Telegram to Discord",
+  "description": "Send a Discord message when a Telegram message is received",
+  "trigger_service": "Telegram",
+  "trigger_type": "message_received",
+  "trigger_config": {
+    "chatId": "YOUR_CHAT_ID_HERE"
+  },
+  "action_service": "Discord",
+  "action_type": "send_message",
+  "action_config": {
+    "webhookUrl": "YOUR_DISCORD_WEBHOOK_URL",
+    "message": "New message from Telegram: {{messageText}} by {{username}}"
+  }
+}
+
+

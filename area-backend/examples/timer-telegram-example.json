@@ -1,0 +1,19 @@
+{
+  "name": "Test Timer → Telegram",
+  "description": "Envoie une notification Telegram toutes les 5 minutes",
+  "trigger_service": "Timer",
+  "trigger_type": "interval",
+  "trigger_config": {
+    "interval": "5m"
+  },
+  "action_service": "Telegram",
+  "action_type": "send_message",
+  "action_config": {
+    "chatId": "YOUR_CHAT_ID_HERE",
+    "message": "⏰ Rappel automatique\n\n📋 Area : {{areaName}}\n🕐 Déclenché le : {{triggerTime}}\n⏱️ Intervalle : {{interval}}"
+  },
+  "is_active": true,
+  "status": "enabled"
+}
+
+

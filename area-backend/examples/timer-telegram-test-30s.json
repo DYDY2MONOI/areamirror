@@ -1,0 +1,19 @@
+{
+  "name": "Test rapide 30s",
+  "description": "Test avec déclenchement toutes les 30 secondes",
+  "trigger_service": "Timer",
+  "trigger_type": "interval",
+  "trigger_config": {
+    "interval": "30s"
+  },
+  "action_service": "Telegram",
+  "action_type": "send_message",
+  "action_config": {
+    "chatId": "YOUR_CHAT_ID_HERE",
+    "message": "✅ Test réussi à {{triggerTime}}"
+  },
+  "is_active": true,
+  "status": "enabled"
+}
+
+
