@@ -33,6 +33,7 @@ func SeedData() {
 		{Name: "Weather", Description: "Service météorologique", IconURL: "https://weather.com/icon.png", IsActive: true},
 		{Name: "Google Calendar", Description: "Service de calendrier Google", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
+		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
 	}
 
@@ -43,13 +44,14 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, sheets models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive, sheets models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
 	DB.Where("name = ?", "Weather").First(&weather)
 	DB.Where("name = ?", "Google Calendar").First(&calendar)
 	DB.Where("name = ?", "Discord").First(&discord)
+	DB.Where("name = ?", "OneDrive").First(&onedrive)
 	DB.Where("name = ?", "Google Sheets").First(&sheets)
 
 	actions := []models.Action{
