@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -170,6 +171,118 @@ func init() {
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
 	}
+}
+
+func getRedirectURI(defaultEnv, mobileEnv, fallback string, isMobile bool) string {
+	if isMobile {
+		if mobile := os.Getenv(mobileEnv); mobile != "" {
+			return mobile
+		}
+	}
+
+	if standard := os.Getenv(defaultEnv); standard != "" {
+		return standard
+	}
+
+	return fallback
+}
+
+type mobileState struct {
+	isMobile bool
+	mode     string
+	payload  string
+}
+
+func parseMobileState(state string) mobileState {
+	result := mobileState{mode: "login"}
+	if state == "" {
+		return result
+	}
+
+	if !strings.HasPrefix(state, "mobile") {
+		return result
+	}
+
+	result.isMobile = true
+	parts := strings.Split(state, ":")
+	if len(parts) >= 2 {
+		if parts[1] == "link" {
+			result.mode = "link"
+			if len(parts) >= 3 {
+				result.payload = parts[2]
+			}
+		} else if parts[1] != "" {
+			result.payload = parts[1]
+		}
+	}
+
+	if len(parts) >= 3 && parts[1] != "link" {
+		result.payload = parts[2]
+	}
+
+	return result
+}
+
+func redirectToMobileWithTokens(c *gin.Context, provider string, tokenResponse OAuth2TokenResponse) {
+	scheme := os.Getenv("MOBILE_CALLBACK_SCHEME")
+	if scheme == "" {
+		scheme = "area"
+	}
+
+	host := os.Getenv("MOBILE_CALLBACK_HOST")
+	if host == "" {
+		host = "oauth2"
+	}
+
+	path := os.Getenv("MOBILE_CALLBACK_PATH")
+	if path == "" {
+		path = "/callback"
+	}
+
+	values := url.Values{}
+	values.Set("mode", "login")
+	values.Set("provider", provider)
+	values.Set("access_token", tokenResponse.AccessToken)
+	if tokenResponse.RefreshToken != "" {
+		values.Set("refresh_token", tokenResponse.RefreshToken)
+	}
+	values.Set("token_type", tokenResponse.TokenType)
+	expiresIn := tokenResponse.ExpiresIn
+	if expiresIn <= 0 {
+		expiresIn = 900
+	}
+	values.Set("expires_in", strconv.Itoa(expiresIn))
+
+	redirectURL := fmt.Sprintf("%s://%s%s?%s", scheme, host, path, values.Encode())
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+}
+
+func redirectToMobileWithAuthorizationCode(c *gin.Context, provider, code, codeVerifier string) {
+	scheme := os.Getenv("MOBILE_CALLBACK_SCHEME")
+	if scheme == "" {
+		scheme = "area"
+	}
+
+	host := os.Getenv("MOBILE_CALLBACK_HOST")
+	if host == "" {
+		host = "oauth2"
+	}
+
+	path := os.Getenv("MOBILE_CALLBACK_PATH")
+	if path == "" {
+		path = "/callback"
+	}
+
+	values := url.Values{}
+	values.Set("mode", "link")
+	values.Set("provider", provider)
+	values.Set("code", code)
+	if codeVerifier != "" {
+		values.Set("code_verifier", codeVerifier)
+	}
+
+	redirectURL := fmt.Sprintf("%s://%s%s?%s", scheme, host, path, values.Encode())
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
 func Register(c *gin.Context) {
@@ -913,7 +1026,8 @@ func LinkGoogleAccount(c *gin.Context) {
 		return
 	}
 
-	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret)
+	redirectURI := getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", false)
+	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1183,13 +1297,8 @@ func UnlinkGoogleAccount(c *gin.Context) {
 	})
 }
 
-func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (*GoogleTokenResponse, error) {
+func exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI string) (*GoogleTokenResponse, error) {
 	url := "https://oauth2.googleapis.com/token"
-
-	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
-	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/callback"
-	}
 
 	data := map[string]string{
 		"client_id":     clientID,
@@ -1562,7 +1671,8 @@ func LinkFacebookAccount(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeFacebookCodeForToken(req.Code, facebookClientID, facebookClientSecret)
+	redirectURI := getRedirectURI("FACEBOOK_REDIRECT_URI", "MOBILE_FACEBOOK_REDIRECT_URI", "http://localhost:3000/auth/facebook/callback", false)
+	accessToken, err := exchangeFacebookCodeForToken(req.Code, facebookClientID, facebookClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1631,13 +1741,8 @@ func UnlinkFacebookAccount(c *gin.Context) {
 	})
 }
 
-func exchangeFacebookCodeForToken(code, clientID, clientSecret string) (string, error) {
+func exchangeFacebookCodeForToken(code, clientID, clientSecret, redirectURI string) (string, error) {
 	url := "https://graph.facebook.com/v18.0/oauth/access_token"
-
-	redirectURI := os.Getenv("FACEBOOK_REDIRECT_URI")
-	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/auth/facebook/callback"
-	}
 
 	data := map[string]string{
 		"client_id":     clientID,
@@ -1772,6 +1877,14 @@ func GitHubDirectLogin(c *gin.Context) {
 		return
 	}
 
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "github", code, "")
+		return
+	}
+
 	githubClientID := os.Getenv("GITHUB_CLIENT_ID")
 	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
 
@@ -1824,7 +1937,7 @@ func GitHubDirectLogin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -1846,7 +1959,14 @@ func GitHubDirectLogin(c *gin.Context) {
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "github", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 func GoogleDirectLogin(c *gin.Context) {
@@ -1856,6 +1976,16 @@ func GoogleDirectLogin(c *gin.Context) {
 		return
 	}
 
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "google", code, "")
+		return
+	}
+
+	redirectURI := getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", stateInfo.isMobile)
+
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 
@@ -1864,7 +1994,7 @@ func GoogleDirectLogin(c *gin.Context) {
 		return
 	}
 
-	tokenResp, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret)
+	tokenResp, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1947,7 +2077,7 @@ func GoogleDirectLogin(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -1969,7 +2099,14 @@ func GoogleDirectLogin(c *gin.Context) {
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "google", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 func SpotifyDirectLogin(c *gin.Context) {
@@ -1981,11 +2118,15 @@ func SpotifyDirectLogin(c *gin.Context) {
 
 	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI")
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
 
-	if redirectURI == "" {
-		redirectURI = "http://127.0.0.1:3000/oauth2/spotify/callback"
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "spotify", code, "")
+		return
 	}
+
+	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "http://127.0.0.1:3000/oauth2/spotify/callback", stateInfo.isMobile)
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
@@ -2107,7 +2248,7 @@ func SpotifyDirectLogin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -2129,7 +2270,14 @@ func SpotifyDirectLogin(c *gin.Context) {
 			"facebook_id":     user.FacebookID,
 			"facebook_email":  user.FacebookEmail,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "spotify", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 func FacebookDirectLogin(c *gin.Context) {
@@ -2139,6 +2287,16 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "facebook", code, "")
+		return
+	}
+
+	redirectURI := getRedirectURI("FACEBOOK_REDIRECT_URI", "MOBILE_FACEBOOK_REDIRECT_URI", "http://localhost:3000/auth/facebook/callback", stateInfo.isMobile)
+
 	facebookClientID := os.Getenv("FACEBOOK_CLIENT_ID")
 	facebookClientSecret := os.Getenv("FACEBOOK_CLIENT_SECRET")
 
@@ -2147,7 +2305,7 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeFacebookCodeForToken(code, facebookClientID, facebookClientSecret)
+	accessToken, err := exchangeFacebookCodeForToken(code, facebookClientID, facebookClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -2189,7 +2347,7 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -2213,7 +2371,14 @@ func FacebookDirectLogin(c *gin.Context) {
 			"twitter_id":       user.TwitterID,
 			"twitter_username": user.TwitterUsername,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "facebook", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 // Twitter OAuth 2.0 helpers
@@ -2440,14 +2605,20 @@ func TwitterDirectLogin(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("http://127.0.0.1:3000/auth/twitter/callback?code=%s&state=link", code))
 		return
 	}
+	stateInfo := parseMobileState(state)
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "twitter", code, stateInfo.payload)
+		return
+	}
+
+	codeVerifier := ""
+	if stateInfo.isMobile && stateInfo.payload != "" {
+		codeVerifier = stateInfo.payload
+	}
 
 	twitterClientID := os.Getenv("TWITTER_CLIENT_ID")
 	twitterClientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
-	redirectURI := os.Getenv("TWITTER_REDIRECT_URI")
-
-	if redirectURI == "" {
-		redirectURI = "http://127.0.0.1:3000/oauth2/twitter/callback"
-	}
+	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", "http://127.0.0.1:3000/oauth2/twitter/callback", stateInfo.isMobile)
 
 	if twitterClientID == "" || twitterClientSecret == "" {
 		c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=twitter_not_configured")
@@ -2456,7 +2627,7 @@ func TwitterDirectLogin(c *gin.Context) {
 
 	// Note: Direct login doesn't support PKCE in this implementation
 	// For production, implement PKCE for direct login as well
-	tokenResp, err := exchangeTwitterCodeForToken(code, twitterClientID, twitterClientSecret, redirectURI, "")
+	tokenResp, err := exchangeTwitterCodeForToken(code, twitterClientID, twitterClientSecret, redirectURI, codeVerifier)
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=token_exchange_failed")
 		return
@@ -2495,6 +2666,37 @@ func TwitterDirectLogin(c *gin.Context) {
 	refreshToken, err := generateRefreshToken(user.ID)
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=refresh_token_failed")
+		return
+	}
+
+	if stateInfo.isMobile {
+		tokenResponse := OAuth2TokenResponse{
+			AccessToken:  accessTokenJWT,
+			RefreshToken: refreshToken,
+			TokenType:    "Bearer",
+			ExpiresIn:    900,
+			User: gin.H{
+				"id":               user.ID,
+				"email":            user.Email,
+				"first_name":       user.FirstName,
+				"last_name":        user.LastName,
+				"profile_image":    user.ProfileImage,
+				"role":             user.Role,
+				"is_active":        user.IsActive,
+				"twitter_id":       user.TwitterID,
+				"twitter_username": user.TwitterUsername,
+				"spotify_id":       user.SpotifyID,
+				"spotify_email":    user.SpotifyEmail,
+				"github_id":        user.GitHubID,
+				"github_username":  user.GitHubUsername,
+				"google_id":        user.GoogleID,
+				"google_email":     user.GoogleEmail,
+				"facebook_id":      user.FacebookID,
+				"facebook_email":   user.FacebookEmail,
+			},
+		}
+
+		redirectToMobileWithTokens(c, "twitter", tokenResponse)
 		return
 	}
 

@@ -25,6 +25,7 @@ type SchedulerService struct {
 	sheetsService   *GoogleSheetsService
 	driveService    *GoogleDriveService
 	telegramService *TelegramService
+	spotifyService  *SpotifyService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -40,6 +41,13 @@ type sheetRowChange struct {
 	ChangeType string
 	RowNumber  int
 	Values     []string
+}
+
+type spotifyTriggerConfig struct {
+	LastTrackID     string `json:"lastTrackId"`
+	LastProgressMs  int    `json:"lastProgressMs"`
+	HasProgress     bool   `json:"hasProgress"`
+	LastTriggeredAt string `json:"lastTriggeredAt"`
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -78,6 +86,11 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Google Drive service not available: %v", err)
 	}
 
+	spotifyService, err := NewSpotifyService()
+	if err != nil {
+		log.Printf("Warning: Spotify service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
@@ -86,6 +99,7 @@ func NewSchedulerService() (*SchedulerService, error) {
 		sheetsService:   sheetsService,
 		driveService:    driveService,
 		telegramService: telegramService,
+		spotifyService:  spotifyService,
 	}, nil
 }
 
@@ -108,6 +122,10 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 
 	if err := s.checkGoogleDriveTriggers(); err != nil {
 		log.Printf("Error checking Google Drive triggers: %v", err)
+	}
+
+	if err := s.checkSpotifyTriggers(); err != nil {
+		log.Printf("Error checking Spotify triggers: %v", err)
 	}
 
 	if err := s.checkTimerTriggers(); err != nil {
@@ -203,6 +221,105 @@ func (s *SchedulerService) checkGoogleDriveTriggers() error {
 
 	if err := s.checkTimerTriggers(); err != nil {
 		log.Printf("Error checking timer triggers: %v", err)
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkSpotifyTriggers() error {
+	if s.spotifyService == nil {
+		return nil
+	}
+
+	var areas []models.Area
+	if err := database.DB.Where("trigger_service = ? AND is_active = ?", "Spotify", true).Find(&areas).Error; err != nil {
+		return fmt.Errorf("failed to fetch spotify areas: %v", err)
+	}
+
+	for _, area := range areas {
+		nowPlaying, err := s.spotifyService.GetCurrentlyPlaying(area.UserID)
+		if err != nil {
+			if apiErr, ok := err.(*SpotifyAPIError); ok && apiErr.RequiresReauth {
+				log.Printf("Spotify permissions missing for user %d (area %s). User must relink Spotify.", area.UserID, area.Name)
+			} else {
+				log.Printf("Failed to fetch Spotify playback for area %s: %v", area.Name, err)
+			}
+			continue
+		}
+
+		if nowPlaying == nil || !nowPlaying.IsPlaying {
+			continue
+		}
+
+		var cfg spotifyTriggerConfig
+		if len(area.TriggerConfig) > 0 {
+			if err := json.Unmarshal(area.TriggerConfig, &cfg); err != nil {
+				log.Printf("Failed to parse Spotify trigger config for area %s: %v", area.Name, err)
+				cfg = spotifyTriggerConfig{}
+			}
+		}
+
+		progress := nowPlaying.ProgressMS
+		if progress < 0 {
+			progress = 0
+		}
+
+		shouldTrigger := false
+		if strings.TrimSpace(cfg.LastTrackID) == "" {
+			shouldTrigger = true
+		} else if cfg.LastTrackID != nowPlaying.TrackID {
+			shouldTrigger = true
+		} else if cfg.HasProgress && progress <= 5000 && cfg.LastProgressMs > 5000 {
+			shouldTrigger = true
+		}
+
+		cfg.LastTrackID = nowPlaying.TrackID
+		cfg.LastProgressMs = progress
+		cfg.HasProgress = true
+
+		if shouldTrigger {
+			artistNames := strings.Join(nowPlaying.Artists, ", ")
+			startedAt := ""
+			if !nowPlaying.StartedAt.IsZero() {
+				startedAt = nowPlaying.StartedAt.UTC().Format(time.RFC3339)
+			}
+
+			metadata := map[string]interface{}{
+				"trackId":       nowPlaying.TrackID,
+				"trackName":     nowPlaying.TrackName,
+				"artistNames":   artistNames,
+				"albumName":     nowPlaying.AlbumName,
+				"trackUrl":      nowPlaying.TrackURL,
+				"previewUrl":    nowPlaying.PreviewURL,
+				"deviceName":    nowPlaying.DeviceName,
+				"isPlaying":     nowPlaying.IsPlaying,
+				"progressMs":    nowPlaying.ProgressMS,
+				"durationMs":    nowPlaying.DurationMS,
+				"coverImageUrl": nowPlaying.CoverImageURL,
+				"eventTitle":    nowPlaying.TrackName,
+			}
+
+			if startedAt != "" {
+				metadata["startedAt"] = startedAt
+				metadata["eventTime"] = startedAt
+			}
+
+			if err := s.executeArea(area, metadata); err != nil {
+				log.Printf("Failed to execute Spotify area %s: %v", area.Name, err)
+			} else {
+				cfg.LastTriggeredAt = time.Now().UTC().Format(time.RFC3339)
+			}
+		}
+
+		cfgBytes, err := json.Marshal(cfg)
+		if err != nil {
+			log.Printf("Failed to marshal Spotify trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
+			log.Printf("Failed to persist Spotify trigger config for area %s: %v", area.Name, err)
+		}
 	}
 
 	return nil
@@ -750,6 +867,18 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"username":       "",
 		"firstName":      "",
 		"messageId":      "",
+		"trackId":        "",
+		"trackName":      "",
+		"artistNames":    "",
+		"albumName":      "",
+		"trackUrl":       "",
+		"previewUrl":     "",
+		"deviceName":     "",
+		"isPlaying":      "",
+		"progressMs":     "",
+		"durationMs":     "",
+		"coverImageUrl":  "",
+		"startedAt":      "",
 	}
 
 	if metadata == nil {
@@ -803,6 +932,46 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 	}
 	if messageID, ok := extractInt(metadata["messageId"]); ok {
 		vars["messageId"] = strconv.Itoa(messageID)
+	}
+	if trackID, ok := metadata["trackId"].(string); ok {
+		vars["trackId"] = trackID
+	}
+	if trackName, ok := metadata["trackName"].(string); ok {
+		vars["trackName"] = trackName
+		vars["eventTitle"] = trackName
+	}
+	if artistNames, ok := metadata["artistNames"].(string); ok {
+		vars["artistNames"] = artistNames
+	}
+	if albumName, ok := metadata["albumName"].(string); ok {
+		vars["albumName"] = albumName
+	}
+	if trackURL, ok := metadata["trackUrl"].(string); ok {
+		vars["trackUrl"] = trackURL
+	}
+	if previewURL, ok := metadata["previewUrl"].(string); ok {
+		vars["previewUrl"] = previewURL
+	}
+	if deviceName, ok := metadata["deviceName"].(string); ok {
+		vars["deviceName"] = deviceName
+	}
+	if coverURL, ok := metadata["coverImageUrl"].(string); ok {
+		vars["coverImageUrl"] = coverURL
+	}
+	if startedAt, ok := metadata["startedAt"].(string); ok {
+		vars["startedAt"] = startedAt
+		vars["eventTime"] = startedAt
+	}
+	if isPlayingBool, ok := metadata["isPlaying"].(bool); ok {
+		vars["isPlaying"] = strconv.FormatBool(isPlayingBool)
+	} else if isPlayingStr, ok := metadata["isPlaying"].(string); ok {
+		vars["isPlaying"] = isPlayingStr
+	}
+	if progressMs, ok := extractInt(metadata["progressMs"]); ok {
+		vars["progressMs"] = strconv.Itoa(progressMs)
+	}
+	if durationMs, ok := extractInt(metadata["durationMs"]); ok {
+		vars["durationMs"] = strconv.Itoa(durationMs)
 	}
 
 	return vars

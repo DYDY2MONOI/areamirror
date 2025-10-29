@@ -684,6 +684,59 @@
           </div>
         </div>
 
+        <div class="test-trigger-section" v-if="template?.triggerService === 'Spotify'">
+          <div class="test-trigger-info">
+            <h4>🎵 Tester la connexion Spotify</h4>
+            <p>Vérifiez le compte Spotify lié et récupérez le morceau en cours de lecture.</p>
+            <div v-if="spotifyTestResult" class="trigger-preview">
+              <strong>Compte Spotify :</strong>
+              {{ spotifyTestResult.account?.email || spotifyTestResult.account?.spotify_id || 'Compte inconnu' }}<br>
+              <span v-if="spotifyTestResult.account?.spotify_id">
+                <strong>ID :</strong> {{ spotifyTestResult.account.spotify_id }}
+              </span>
+              <span v-if="spotifyTestResult.account?.first_name || spotifyTestResult.account?.last_name">
+                <br />
+                <strong>Profil AREA :</strong>
+                {{ [spotifyTestResult.account?.first_name, spotifyTestResult.account?.last_name].filter(Boolean).join(' ') }}
+              </span>
+            </div>
+            <div v-if="spotifyTestResult?.nowPlaying" class="info-box">
+              <v-icon size="18" color="#22c55e">mdi-music-note</v-icon>
+              <span>
+                {{ spotifyTestResult.nowPlaying.trackName }}
+                <template v-if="spotifyTestResult.nowPlaying.artistNames">
+                  — {{ spotifyTestResult.nowPlaying.artistNames }}
+                </template>
+                <template v-if="spotifyTestResult.nowPlaying.albumName">
+                  ({{ spotifyTestResult.nowPlaying.albumName }})
+                </template>
+                <template v-if="spotifyTestResult.nowPlaying.trackUrl">
+                  · <a :href="spotifyTestResult.nowPlaying.trackUrl" target="_blank" rel="noopener">Ouvrir dans Spotify</a>
+                </template>
+              </span>
+            </div>
+            <div v-else-if="spotifyTestResult?.info" class="info-box">
+              <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+              <span>{{ spotifyTestResult.info }}</span>
+            </div>
+            <div v-if="spotifyTestResult?.warning" class="info-box">
+              <v-icon size="18" color="#f59e0b">mdi-alert</v-icon>
+              <span>{{ spotifyTestResult.warning }}</span>
+            </div>
+          </div>
+          <button
+            class="btn btn-test-trigger"
+            @click="testSpotifyConnection"
+            :disabled="isTestingSpotify"
+          >
+            <v-icon size="18">{{ isTestingSpotify ? 'mdi-loading' : 'mdi-music' }}</v-icon>
+            {{ isTestingSpotify ? 'Test en cours...' : 'Tester Spotify' }}
+          </button>
+          <div v-if="spotifyTestError" class="error-message">
+            ❌ {{ spotifyTestError }}
+          </div>
+        </div>
+
         <div class="test-trigger-section" v-if="template?.triggerService === 'Google Calendar'">
           <div class="test-trigger-info">
             <h4>🕐 Test Calendar Trigger</h4>
@@ -779,6 +832,7 @@ import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { areaService, type Area, type DiscordLog, type GoogleSheetsTestResponse } from '@/services/area'
 import { useAuth } from '@/composables/useAuth'
+import { API_BASE_URL } from '@/config/api'
 
 interface AreaTemplate {
   id: string
@@ -826,6 +880,9 @@ const logsError = ref<string | null>(null)
 const isTestingGoogleSheets = ref(false)
 const sheetsTestError = ref<string | null>(null)
 const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
+const isTestingSpotify = ref(false)
+const spotifyTestError = ref<string | null>(null)
+const spotifyTestResult = ref<any | null>(null)
 
 const loadDiscordLogs = async (areaId: string | undefined) => {
   if (!areaId) return
@@ -859,6 +916,10 @@ const formatLogTimestamp = (isoString: string | null | undefined) => {
 }
 
 watch(() => template.value, (newTemplate) => {
+  spotifyTestResult.value = null
+  spotifyTestError.value = null
+  isTestingSpotify.value = false
+
   if (newTemplate && !isEditingExisting.value) {
     console.log('Initializing form for new template:', newTemplate)
     console.log('Trigger service:', newTemplate.triggerService)
@@ -1198,31 +1259,26 @@ const resolveActionType = (service: string, actionName?: string) => {
 }
 
 const resolveTriggerType = (service: string, triggerName?: string) => {
-  if (service === 'Google Calendar') {
-    return 'Event'
+  switch (service) {
+    case 'Google Calendar':
+      return 'Event'
+    case 'Google Sheets':
+      return 'SpreadsheetChange'
+    case 'GitHub':
+      return 'Webhook'
+    case 'Weather':
+      return 'Weather'
+    case 'Spotify':
+      return 'Playback'
+    case 'OneDrive':
+      // Différencier les triggers OneDrive basés sur le nom
+      if (triggerName === 'Fichier modifié' || triggerName === 'ModifiedFile') {
+        return 'ModifiedFile'
+      }
+      return 'NewFile'
+    default:
+      return 'Trigger'
   }
-
-  if (service === 'Google Sheets') {
-    return 'SpreadsheetChange'
-  }
-
-  if (service === 'Weather') {
-    return 'Weather'
-  }
-
-  if (service === 'OneDrive') {
-    // Différencier les triggers OneDrive basés sur le nom
-    if (triggerName === 'Fichier modifié' || triggerName === 'ModifiedFile') {
-      return 'ModifiedFile'
-    }
-    return 'NewFile'
-  }
-
-  if (service === 'GitHub') {
-    return 'Webhook'
-  }
-
-  return 'Trigger' // Par défaut pour les autres services
 }
 
 const sendTestEmail = async () => {
@@ -1322,6 +1378,58 @@ const sendTestDiscord = async () => {
     alert('❌ Failed to send test Discord message: ' + errorMessage)
   } finally {
     isSendingDiscordTest.value = false
+  }
+}
+
+const testSpotifyConnection = async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    const errorMessage = 'Veuillez vous connecter avant de tester la connexion Spotify.'
+    spotifyTestError.value = errorMessage
+    alert('❌ ' + errorMessage)
+    return
+  }
+
+  isTestingSpotify.value = true
+  spotifyTestError.value = null
+  spotifyTestResult.value = null
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/test/spotify`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    const result = await response.json()
+    console.log('Spotify test response:', response.status, result)
+
+    if (!response.ok) {
+      throw new Error(result.error || `Server error: ${response.status}`)
+    }
+
+    spotifyTestResult.value = result
+
+    if (result.requiresReauth) {
+      const warningMessage = result.warning || 'Spotify requires additional permissions. Please unlink then relink your Spotify account and accept the playback scopes.'
+      alert('⚠️ ' + warningMessage)
+    } else if (result.warning) {
+      alert('⚠️ ' + result.warning)
+    } else {
+      const message = typeof result.message === 'string' && result.message.length
+        ? result.message
+        : 'Spotify connection verified!'
+      alert('✅ ' + message)
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify connection'
+    spotifyTestError.value = errorMessage
+    console.error('Error testing Spotify connection:', err)
+    alert('❌ Échec du test Spotify: ' + errorMessage)
+  } finally {
+    isTestingSpotify.value = false
   }
 }
 
