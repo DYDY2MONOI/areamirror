@@ -91,7 +91,8 @@ type GitHubUserResponse struct {
 }
 
 type GoogleLinkRequest struct {
-	Code string `json:"code" binding:"required"`
+	Code        string `json:"code" binding:"required"`
+	RedirectURI string `json:"redirect_uri"`
 }
 
 type GoogleTokenResponse struct {
@@ -1018,7 +1019,11 @@ func LinkGoogleAccount(c *gin.Context) {
 		return
 	}
 
-	redirectURI := getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", false)
+	redirectURI := strings.TrimSpace(req.RedirectURI)
+	if redirectURI == "" {
+		redirectURI = getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", false)
+	}
+
 	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
