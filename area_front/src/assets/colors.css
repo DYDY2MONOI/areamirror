@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme="dark"] {
   --color-bg-primary: #000000;
   --color-bg-secondary: #1a1a26;
   --color-bg-tertiary: #19191a;
@@ -40,7 +41,53 @@
   --color-scrollbar-thumb: linear-gradient(180deg, #5780e8, #8751d1);
   --color-scrollbar-thumb-hover: linear-gradient(180deg, #4a6fd8, #7a4bc4);
   --color-scrollbar-thumb-active: linear-gradient(180deg, #3d5cc8, #6d45b7);
+}
 
+[data-theme="light"] {
+  --color-bg-primary: #d1d5db;
+  --color-bg-secondary: #e5e7eb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-bg-card: rgba(255, 255, 255, 0.9);
+  --color-bg-card-hover: rgba(0, 0, 0, 0.05);
+  --color-bg-modal: rgba(255, 255, 255, 0.95);
+  --color-bg-modal-secondary: rgba(248, 249, 250, 0.95);
+
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+
+  --color-accent-primary: #5b6ee1;
+  --color-accent-secondary: #6c5a9a;
+  --color-accent-tertiary: #60a5fa;
+  --color-accent-light: #818cf8;
+
+  --color-border-primary: rgba(0, 0, 0, 0.1);
+  --color-border-secondary: rgba(0, 0, 0, 0.15);
+  --color-border-focus: rgba(91, 110, 225, 0.5);
+
+  --color-hover-bg: rgba(0, 0, 0, 0.05);
+  --color-focus-ring: rgba(91, 110, 225, 0.15);
+  --color-shadow-primary: rgba(0, 0, 0, 0.1);
+  --color-shadow-secondary: rgba(91, 110, 225, 0.1);
+
+  --color-area-red: linear-gradient(135deg, #ef4444, #f97316);
+  --color-area-green: linear-gradient(135deg, #10b981, #5780e8);
+  --color-area-blue: linear-gradient(135deg, #5b6ee1, #6c5a9a);
+  --color-area-purple: linear-gradient(135deg, #6c5a9a, #8b5cf6);
+  --color-area-orange: linear-gradient(135deg, #f97316, #fb923c);
+
+  --gradient-bg-primary: linear-gradient(135deg, #d1d5db 0%, #e5e7eb 50%, #f3f4f6 100%);
+  --gradient-bg-modal: linear-gradient(135deg, rgba(209, 213, 219, 0.9), rgba(229, 231, 235, 0.9));
+  --gradient-accent: linear-gradient(135deg, #5b6ee1, #6c5a9a);
+  --gradient-text: linear-gradient(135deg, #1a1a1a 0%, #4b5563 100%);
+
+  --color-scrollbar-track: rgba(0, 0, 0, 0.05);
+  --color-scrollbar-thumb: linear-gradient(180deg, #5b6ee1, #6c5a9a);
+  --color-scrollbar-thumb-hover: linear-gradient(180deg, #4f61ce, #5f5088);
+  --color-scrollbar-thumb-active: linear-gradient(180deg, #4454ba, #524676);
+}
+
+:root {
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
