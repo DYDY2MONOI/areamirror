@@ -1,20 +1,38 @@
 <template>
-  <button 
-    class="theme-toggle" 
+  <button
+    class="theme-toggle"
     @click="toggleTheme"
-    :title="currentTheme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'"
+    :title="label"
+    aria-label="Toggle theme"
   >
     <transition name="icon-fade" mode="out-in">
-      <v-icon v-if="currentTheme === 'dark'" key="dark" size="22">mdi-weather-sunny</v-icon>
-      <v-icon v-else key="light" size="22">mdi-weather-night</v-icon>
+      <template v-if="currentTheme === 'dark'">
+        <v-icon key="dark" size="22">mdi-weather-sunny</v-icon>
+      </template>
+      <template v-else-if="currentTheme === 'light'">
+        <v-icon key="light" size="22">mdi-weather-night</v-icon>
+      </template>
+      <template v-else>
+        <!-- When in high-contrast, show the base-theme icon that would be used when exiting HC -->
+        <v-icon key="hc" size="22">{{ prevNonHCTheme === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </template>
     </transition>
   </button>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 
-const { currentTheme, toggleTheme } = useTheme()
+const { currentTheme, prevNonHCTheme, toggleTheme } = useTheme()
+
+const label = computed(() => {
+  const t = currentTheme.value
+  if (t === 'dark') return 'Passer en mode clair'
+  if (t === 'light') return 'Passer en mode sombre'
+  // In high-contrast, we still allow flipping the base theme setting
+  return prevNonHCTheme.value === 'dark' ? 'Passer en mode clair (base)' : 'Passer en mode sombre (base)'
+})
 </script>
 
 <style scoped>

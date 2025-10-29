@@ -1,4 +1,4 @@
-e<template>
+<template>
   <div class="landing-page">
     <AnimatedBackground />
 
@@ -77,6 +77,7 @@ e<template>
 
         <v-list-item class="sidebar-theme-toggle">
           <ThemeToggle />
+          <HighContrastToggle />
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -287,6 +288,7 @@ import AppModal from '../components/AppModal.vue'
 import AnimatedBackground from '../components/AnimatedBackground.vue'
 import OnboardingTutorial from '../components/OnboardingTutorial.vue'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import HighContrastToggle from '../components/HighContrastToggle.vue'
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
