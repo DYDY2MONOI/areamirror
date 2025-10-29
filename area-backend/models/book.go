@@ -102,6 +102,10 @@ type Area struct {
 	ActionConfig  datatypes.JSON `json:"action_config" gorm:"type:jsonb;not null;default:'{}'"`
 	ActionIconURL string         `json:"action_icon_url" gorm:"type:text"`
 
+	IntermediateActionService string         `json:"intermediate_action_service" gorm:"type:text"`
+	IntermediateActionType    string         `json:"intermediate_action_type" gorm:"type:text"`
+	IntermediateActionConfig  datatypes.JSON `json:"intermediate_action_config" gorm:"type:jsonb;default:'{}'"`
+
 	ScheduleCron    string `json:"schedule_cron" gorm:"type:text"`
 	RateLimitPerMin *int   `json:"rate_limit_per_min" gorm:"check:rate_limit_per_min IS NULL OR rate_limit_per_min > 0"`
 	DedupWindowSec  *int   `json:"dedup_window_sec" gorm:"check:dedup_window_sec IS NULL OR dedup_window_sec >= 0"`

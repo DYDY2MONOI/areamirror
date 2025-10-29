@@ -23,6 +23,7 @@ type SchedulerService struct {
 	weatherService  *WeatherService
 	sheetsService   *GoogleSheetsService
 	telegramService *TelegramService
+	openaiService   *OpenAIService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -66,12 +67,18 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Telegram service not available: %v", err)
 	}
 
+	openaiService, err := NewOpenAIService()
+	if err != nil {
+		log.Printf("Warning: OpenAI service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
 		weatherService:  weatherService,
 		sheetsService:   sheetsService,
 		telegramService: telegramService,
+		openaiService:   openaiService,
 	}, nil
 }
 
@@ -369,6 +376,23 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 
 func (s *SchedulerService) executeArea(area models.Area, metadata map[string]interface{}) error {
 	log.Printf("Executing area: %s", area.Name)
+	log.Printf("IntermediateActionService: '%s'", area.IntermediateActionService)
+
+	if metadata == nil {
+		metadata = make(map[string]interface{})
+	}
+
+	if area.IntermediateActionService != "" && area.IntermediateActionService == "OpenAI" {
+		log.Printf("Executing OpenAI intermediate action for area: %s", area.Name)
+		if err := s.executeIntermediateAction(&area, metadata); err != nil {
+			log.Printf("WARNING: Failed to execute intermediate action: %v", err)
+			log.Printf("Continuing with action execution even though OpenAI failed")
+			metadata["openaiGeneratedText"] = "[Erreur OpenAI: " + err.Error() + "]"
+		}
+		log.Printf("OpenAI intermediate action completed for area: %s", area.Name)
+	} else {
+		log.Printf("Skipping intermediate action (empty or not OpenAI): '%s'", area.IntermediateActionService)
+	}
 
 	var actionConfig map[string]interface{}
 	if err := json.Unmarshal(area.ActionConfig, &actionConfig); err != nil {
@@ -391,6 +415,59 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 // ExecuteAreaPublic is a public wrapper for executeArea
 func (s *SchedulerService) ExecuteAreaPublic(area models.Area, metadata map[string]interface{}) error {
 	return s.executeArea(area, metadata)
+}
+
+func (s *SchedulerService) executeIntermediateAction(area *models.Area, metadata map[string]interface{}) error {
+	switch area.IntermediateActionService {
+	case "OpenAI":
+		return s.executeOpenAIAction(area, metadata)
+	default:
+		return fmt.Errorf("unsupported intermediate action service: %s", area.IntermediateActionService)
+	}
+}
+
+func (s *SchedulerService) executeOpenAIAction(area *models.Area, metadata map[string]interface{}) error {
+	if s.openaiService == nil {
+		return fmt.Errorf("OpenAI service not available")
+	}
+
+	var intermediateConfig map[string]interface{}
+	if err := json.Unmarshal(area.IntermediateActionConfig, &intermediateConfig); err != nil {
+		return fmt.Errorf("failed to parse intermediate action config: %v", err)
+	}
+
+	prompt := getString(intermediateConfig["prompt"])
+	if prompt == "" {
+		return fmt.Errorf("prompt not found in intermediate action config")
+	}
+
+	systemPrompt := getString(intermediateConfig["systemPrompt"])
+	temperature := 0.7
+	if temp, ok := intermediateConfig["temperature"].(float64); ok {
+		temperature = temp
+	}
+	maxTokens := 500
+	if tokens, ok := intermediateConfig["maxTokens"].(float64); ok {
+		maxTokens = int(tokens)
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+	prompt = applyTemplateVariables(prompt, templateVars)
+	if systemPrompt != "" {
+		systemPrompt = applyTemplateVariables(systemPrompt, templateVars)
+	}
+
+	generatedText, err := s.openaiService.GenerateText(prompt, systemPrompt, temperature, maxTokens)
+	if err != nil {
+		return fmt.Errorf("failed to generate text with OpenAI: %w", err)
+	}
+
+	metadata["openaiGeneratedText"] = generatedText
+	log.Printf("OpenAI generated text (length: %d): %s", len(generatedText), generatedText)
+	if len(generatedText) == 0 {
+		log.Printf("WARNING: OpenAI generated empty text!")
+	}
+	return nil
 }
 
 func (s *SchedulerService) executeGmailAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
@@ -592,6 +669,7 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"username":       "",
 		"firstName":      "",
 		"messageId":      "",
+		"openaiGeneratedText": "",
 	}
 
 	if metadata == nil {
@@ -646,6 +724,9 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 	}
 	if messageID, ok := extractInt(metadata["messageId"]); ok {
 		vars["messageId"] = strconv.Itoa(messageID)
+	}
+	if openaiText, ok := metadata["openaiGeneratedText"].(string); ok {
+		vars["openaiGeneratedText"] = openaiText
 	}
 
 	return vars

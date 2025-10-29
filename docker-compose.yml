@@ -52,6 +52,7 @@ services:
       FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
       GOOGLE_SHEETS_API_KEY: AIzaSyAG2M7Hv6TGS92z7-0Y-huE8a8J0iEdVhY
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     ports:
       - "8080:8080"
     depends_on:
