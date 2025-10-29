@@ -60,6 +60,8 @@ func SeedData() {
 		{ServiceID: weather.ID, Name: "Température élevée", Description: "Se déclenche si température > seuil", Parameters: `{"city": "", "temperature": 30}`},
 		{ServiceID: calendar.ID, Name: "Nouvel événement", Description: "Se déclenche quand un nouvel événement est créé", Parameters: `{"calendar": "", "event": ""}`},
 		{ServiceID: github.ID, Name: "Nouvelle issue", Description: "Se déclenche quand une nouvelle issue est créée", Parameters: `{"repository": "", "issue": ""}`},
+		{ServiceID: onedrive.ID, Name: "Nouveau fichier", Description: "Se déclenche quand un nouveau fichier est ajouté", Parameters: `{"folder": "", "fileName": ""}`},
+		{ServiceID: onedrive.ID, Name: "Fichier modifié", Description: "Se déclenche quand un fichier est modifié", Parameters: `{"folder": "", "fileName": ""}`},
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
 	}
 
@@ -76,6 +78,8 @@ func SeedData() {
 		{ServiceID: github.ID, Name: "Créer issue", Description: "Crée une nouvelle issue", Parameters: `{"repository": "", "title": "", "body": ""}`},
 		{ServiceID: gmail.ID, Name: "Envoyer email de notification", Description: "Envoie un email de notification", Parameters: `{"to": "", "subject": "", "body": ""}`},
 		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
+		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
+		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
 	}
 
 	for _, reaction := range reactions {
