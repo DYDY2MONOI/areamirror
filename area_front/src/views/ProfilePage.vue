@@ -366,7 +366,7 @@ const requireAuth = (action: () => void) => {
   action()
 }
 
-const formatDate = (dateString?: string) => {
+const formatDate = (dateString?: string | null) => {
   if (!dateString) return 'Unknown'
   const date = new Date(dateString)
   return date.toLocaleDateString('en-US', {
@@ -469,7 +469,7 @@ const linkService = async (serviceId: string) => {
       // Generate PKCE parameters for Twitter OAuth 2.0
       const codeVerifier = generateCodeVerifier()
       const codeChallenge = await generateCodeChallenge(codeVerifier)
-      
+
       // Store code_verifier in sessionStorage for later use
       sessionStorage.setItem('twitter_code_verifier', codeVerifier)
 
