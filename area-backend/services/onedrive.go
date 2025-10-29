@@ -178,3 +178,168 @@ func (o *OneDriveService) ListFiles(accessToken, folderID string) (*OneDriveList
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("list files failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var listResp OneDriveListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("failed to decode list response: %w", err)
+	}
+
+	return &listResp, nil
+}
+
+func (o *OneDriveService) UploadFile(accessToken, fileName string, content []byte) (*OneDriveUploadResponse, error) {
+	apiURL := fmt.Sprintf("%s/me/drive/root:/%s:/content", graphAPIBaseURL, url.PathEscape(fileName))
+
+	req, err := http.NewRequest("PUT", apiURL, bytes.NewReader(content))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create upload request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/octet-stream")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var uploadResp OneDriveUploadResponse
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResp); err != nil {
+		return nil, fmt.Errorf("failed to decode upload response: %w", err)
+	}
+
+	return &uploadResp, nil
+}
+
+func (o *OneDriveService) DownloadFile(accessToken, fileID string) ([]byte, error) {
+	apiURL := fmt.Sprintf("%s/me/drive/items/%s/content", graphAPIBaseURL, fileID)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create download request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("download failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file content: %w", err)
+	}
+
+	return content, nil
+}
+
+func (o *OneDriveService) DeleteFile(accessToken, fileID string) error {
+	apiURL := fmt.Sprintf("%s/me/drive/items/%s", graphAPIBaseURL, fileID)
+
+	req, err := http.NewRequest("DELETE", apiURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create delete request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to delete file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+func (o *OneDriveService) CreateFolder(accessToken, folderName string) (*OneDriveFile, error) {
+	apiURL := graphAPIBaseURL + "/me/drive/root/children"
+
+	payload := map[string]interface{}{
+		"name":                              folderName,
+		"folder":                            map[string]interface{}{},
+		"@microsoft.graph.conflictBehavior": "rename",
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal folder payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonPayload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create folder request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create folder: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("create folder failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var folder OneDriveFile
+	if err := json.NewDecoder(resp.Body).Decode(&folder); err != nil {
+		return nil, fmt.Errorf("failed to decode folder response: %w", err)
+	}
+
+	return &folder, nil
+}
+
+func (o *OneDriveService) GetUserInfo(accessToken string) (map[string]interface{}, error) {
+	apiURL := graphAPIBaseURL + "/me"
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user info request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("get user info failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var userInfo map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode user info: %w", err)
+	}
+
+	return userInfo, nil
+}
