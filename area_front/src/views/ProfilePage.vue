@@ -447,7 +447,6 @@ const linkService = async (serviceId: string) => {
 
       window.location.href = facebookAuthUrl
     } else if (serviceId === 'onedrive') {
-      // OneDrive utilise directement l'URL du backend qui gère l'OAuth
       const response = await fetch(service.authUrl!)
       const data = await response.json()
 
