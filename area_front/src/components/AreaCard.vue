@@ -257,7 +257,7 @@ const getIconUrl = (iconName: string) => {
 
 <style scoped>
 .card-col {
-  max-width: 320px;
+  max-width: 400px;
   cursor: pointer;
   transition: transform 0.2s ease;
 }

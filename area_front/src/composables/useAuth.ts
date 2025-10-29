@@ -152,6 +152,13 @@ export function useAuth() {
       return result
     } catch (error) {
       console.error('OneDrive link error:', error)
+  const linkSpotifyAccount = async (code: string) => {
+    try {
+      const result = await authService.linkSpotifyAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Spotify link error:', error)
       throw error
     }
   }
@@ -162,6 +169,33 @@ export function useAuth() {
       await refreshProfile()
     } catch (error) {
       console.error('OneDrive unlink error:', error)
+  const unlinkSpotifyAccount = async () => {
+    try {
+      await authService.unlinkSpotifyAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Spotify unlink error:', error)
+      throw error
+    }
+  }
+
+  const linkTwitterAccount = async (code: string, codeVerifier: string) => {
+    try {
+      const result = await authService.linkTwitterAccount(code, codeVerifier)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Twitter link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkTwitterAccount = async () => {
+    try {
+      await authService.unlinkTwitterAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Twitter unlink error:', error)
       throw error
     }
   }
@@ -209,6 +243,10 @@ export function useAuth() {
     unlinkFacebookAccount,
     linkOneDriveAccount,
     unlinkOneDriveAccount,
+    linkSpotifyAccount,
+    unlinkSpotifyAccount,
+    linkTwitterAccount,
+    unlinkTwitterAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,

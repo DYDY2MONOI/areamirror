@@ -34,6 +34,7 @@ func SeedData() {
 		{Name: "Google Calendar", Description: "Service de calendrier Google", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
 		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
+		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -44,6 +45,7 @@ func SeedData() {
 	}
 
 	var gmail, slack, github, weather, calendar, discord, onedrive models.Service
+	var gmail, slack, github, weather, calendar, discord, sheets models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -51,6 +53,7 @@ func SeedData() {
 	DB.Where("name = ?", "Google Calendar").First(&calendar)
 	DB.Where("name = ?", "Discord").First(&discord)
 	DB.Where("name = ?", "OneDrive").First(&onedrive)
+	DB.Where("name = ?", "Google Sheets").First(&sheets)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -60,6 +63,7 @@ func SeedData() {
 		{ServiceID: github.ID, Name: "Nouvelle issue", Description: "Se déclenche quand une nouvelle issue est créée", Parameters: `{"repository": "", "issue": ""}`},
 		{ServiceID: onedrive.ID, Name: "Nouveau fichier", Description: "Se déclenche quand un nouveau fichier est ajouté", Parameters: `{"folder": "", "fileName": ""}`},
 		{ServiceID: onedrive.ID, Name: "Fichier modifié", Description: "Se déclenche quand un fichier est modifié", Parameters: `{"folder": "", "fileName": ""}`},
+		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
 	}
 
 	for _, action := range actions {

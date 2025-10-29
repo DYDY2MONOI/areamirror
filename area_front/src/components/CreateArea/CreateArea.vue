@@ -7,9 +7,14 @@
             <h1 class="card-title">Create New Area</h1>
             <p class="card-subtitle">Connect your favorite services with intelligent automation</p>
           </div>
-          <button class="close-button" @click="$emit('close')">
-            <v-icon size="24" color="white">mdi-close</v-icon>
-          </button>
+          <div class="header-actions">
+            <button class="info-button" @click="showGuide = true" title="Show Guide">
+              <v-icon size="20" color="white">mdi-information</v-icon>
+            </button>
+            <button class="close-button" @click="$emit('close')">
+              <v-icon size="24" color="white">mdi-close</v-icon>
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-content">
@@ -79,38 +84,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.triggerService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 8)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectTrigger(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllTriggerServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.triggerService)?.icon || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.triggerService" class="service-grid">
+                    <div
+                      v-for="item in appItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectTrigger(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
-                      <span class="service-type">Trigger Service</span>
+                    <div class="service-card more-services" @click="showAllTriggerServices = true" v-if="services.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.triggerService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.triggerService || ''] || getFallbackIcon(form.triggerService || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
+                        <span class="service-type">Trigger Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.triggerService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -136,38 +153,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.actionService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 8)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectAction(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllReactionServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.actionService" class="service-grid">
+                    <div
+                      v-for="item in appItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectAction(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
-                      <span class="service-type">Action Service</span>
+                    <div class="service-card more-services" @click="showAllReactionServices = true" v-if="services.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.actionService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.actionService || ''] || getFallbackIcon(form.actionService || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                        <span class="service-type">Action Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.actionService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -448,6 +477,259 @@
             </div>
           </div>
 
+          <div v-if="form.triggerService === 'Google Drive'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-drive.png')" alt="Google Drive" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📁 Google Drive Trigger</h4>
+                <p class="config-subtitle">Trigger when a new file appears in a folder</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">🗂️ Folder ID</label>
+                  <input
+                    v-model="form.triggerConfig.folderId"
+                    class="modern-input"
+                    placeholder="e.g., 1A2B3C4D..."
+                    required
+                  />
+                  <small class="input-hint">Copy the ID from the Drive folder URL (between /folders/ and the end)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">🔖 Email Subject (Gmail action)</label>
+                  <input
+                    v-if="form.actionService === 'Gmail'"
+                    v-model="form.actionConfig.subject"
+                    class="modern-input"
+                    placeholder="New Drive file: {{fileName}}"
+                  />
+                  <small v-if="form.actionService === 'Gmail'" class="input-hint" v-pre>You can use {{fileName}}, {{mimeType}}, {{webViewLink}}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'Google Sheets'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-sheets.png')" alt="Google Sheets" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📊 Google Sheets Trigger</h4>
+                <p class="config-subtitle">Surveillez une plage de votre feuille et déclenchez des actions sur chaque modification</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="sheets-config-grid">
+                <div class="input-container">
+                  <label class="input-label">🆔 Spreadsheet ID</label>
+                  <input
+                    v-model="form.triggerConfig.spreadsheetId"
+                    class="modern-input"
+                    placeholder="1A2B3C4D..."
+                    required
+                  />
+                  <small class="input-hint">Copiez l'identifiant présent dans l'URL de votre feuille (entre /d/ et /edit)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📄 Nom de la feuille (optionnel)</label>
+                  <input
+                    v-model="form.triggerConfig.sheetName"
+                    class="modern-input"
+                    placeholder="Feuille1"
+                  />
+                  <small class="input-hint">Utilisé uniquement pour vos logs et messages</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📍 Plage A1</label>
+                  <input
+                    v-model="form.triggerConfig.range"
+                    class="modern-input"
+                    placeholder="Feuille1!A1:D"
+                    required
+                  />
+                  <small class="input-hint">Définissez la plage à surveiller (format A1). Limitez-la pour de meilleures performances.</small>
+                </div>
+
+                <label class="sheets-checkbox">
+                  <input
+                    v-model="form.triggerConfig.hasHeader"
+                    type="checkbox"
+                  />
+                  <span>La première ligne contient des en-têtes</span>
+                </label>
+              </div>
+
+              <div class="sheets-test-actions">
+                <button
+                  type="button"
+                  class="test-google-sheets-btn"
+                  @click="testGoogleSheets"
+                  :disabled="!canTestGoogleSheets || isTestingGoogleSheets"
+                >
+                  <v-icon size="18">{{ isTestingGoogleSheets ? 'mdi-loading' : 'mdi-table-arrow-down' }}</v-icon>
+                  {{ isTestingGoogleSheets ? 'Test en cours...' : 'Tester la connexion' }}
+                </button>
+                <div v-if="sheetsTestError" class="error-message">
+                  ❌ {{ sheetsTestError }}
+                </div>
+                <div v-else-if="sheetsTestResult" class="sheets-test-result">
+                  <div class="sheets-test-summary">
+                    <v-icon size="16" color="#22c55e">mdi-check-circle</v-icon>
+                    <span>{{ sheetsTestResult.rowCount }} lignes récupérées</span>
+                  </div>
+                  <div v-if="sheetsTestResult.previewRows.length" class="sheets-test-preview">
+                    <table>
+                      <tbody>
+                        <tr v-for="(row, rowIndex) in sheetsTestResult.previewRows" :key="rowIndex">
+                          <td v-for="(cell, cellIndex) in row" :key="cellIndex">
+                            {{ cell }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <small class="input-hint">Aperçu limité aux 5 premières lignes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'Timer'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('google-calendar.png')" alt="Timer" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">⏰ Timer Trigger</h4>
+                <p class="config-subtitle">Configure the interval for automatic execution</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">⏱️ Time Interval</label>
+                  <select v-model="form.triggerConfig.interval" class="modern-select" required>
+                    <option value="">Select an interval...</option>
+                    <option value="30s">Every 30 seconds (testing)</option>
+                    <option value="1m">Every 1 minute</option>
+                    <option value="5m">Every 5 minutes</option>
+                    <option value="15m">Every 15 minutes</option>
+                    <option value="30m">Every 30 minutes</option>
+                    <option value="1h">Every 1 hour</option>
+                    <option value="2h">Every 2 hours</option>
+                    <option value="6h">Every 6 hours</option>
+                    <option value="12h">Every 12 hours</option>
+                    <option value="24h">Every 24 hours (daily)</option>
+                    <option value="168h">Every 7 days (weekly)</option>
+                  </select>
+                  <small class="input-hint">Choose how often this area should trigger automatically</small>
+                </div>
+
+                <div v-if="form.triggerConfig.interval" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>Your area will run automatically every {{ form.triggerConfig.interval }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.triggerService === 'Telegram'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">💬 Telegram Trigger</h4>
+                <p class="config-subtitle">Configure which Telegram messages should trigger this area</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">📱 Chat ID</label>
+                  <input
+                    v-model="form.triggerConfig.chatId"
+                    class="modern-input"
+                    placeholder="123456789"
+                    required
+                  />
+                  <small class="input-hint">Your Telegram chat ID. Send a message to your bot and visit the Telegram API to get it.</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">🎯 Trigger Type</label>
+                  <select v-model="form.triggerConfig.triggerType" class="modern-select" required>
+                    <option value="">Select trigger type...</option>
+                    <option value="message_received">Any Message Received</option>
+                    <option value="keyword_match">Keyword Match</option>
+                    <option value="command_received">Command Received</option>
+                  </select>
+                  <small class="input-hint">Choose when this area should trigger</small>
+                </div>
+
+                <div v-if="form.triggerConfig.triggerType === 'keyword_match'" class="input-container">
+                  <label class="input-label">🔑 Keyword</label>
+                  <input
+                    v-model="form.triggerConfig.keyword"
+                    class="modern-input"
+                    placeholder="urgent"
+                    required
+                  />
+                  <small class="input-hint">Messages containing this keyword will trigger the area</small>
+                </div>
+
+                <div v-if="form.triggerConfig.triggerType === 'command_received'" class="input-container">
+                  <label class="input-label">⚡ Command</label>
+                  <input
+                    v-model="form.triggerConfig.command"
+                    class="modern-input"
+                    placeholder="/start"
+                    required
+                  />
+                  <small class="input-hint">This specific command will trigger the area (e.g., /start, /help)</small>
+                </div>
+
+                <div v-if="form.triggerConfig.chatId" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>
+                      <span v-if="form.triggerConfig.triggerType === 'message_received'">
+                        Any message sent to this chat will trigger the area
+                      </span>
+                      <span v-else-if="form.triggerConfig.triggerType === 'keyword_match'">
+                        Only messages containing "{{ form.triggerConfig.keyword }}" will trigger
+                      </span>
+                      <span v-else-if="form.triggerConfig.triggerType === 'command_received'">
+                        Only the command "{{ form.triggerConfig.command }}" will trigger
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-container">
+                  <div class="info-box warning">
+                    <v-icon size="18" color="#f59e0b">mdi-alert</v-icon>
+                    <span>Make sure you have set up the Telegram webhook pointing to your backend!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.actionService === 'Gmail'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -494,6 +776,119 @@
                     required
                   ></textarea>
                   <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.actionService === 'Discord'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('discord.png')" alt="Discord" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">💬 Discord Action</h4>
+                <p class="config-subtitle">Configure the Discord message to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">🔗 Discord Webhook URL</label>
+                  <input
+                    v-model="form.actionConfig.webhookUrl"
+                    class="modern-input"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    required
+                  />
+                  <small class="input-hint">Your Discord webhook URL (Server Settings → Integrations → Webhooks)</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">💬 Message</label>
+                  <textarea
+                    v-model="form.actionConfig.message"
+                    class="modern-textarea"
+                    placeholder="Message to send to Discord"
+                    rows="4"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables:
+                    <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                  </small>
+                </div>
+
+                <div v-if="form.actionConfig.message" class="input-container">
+                  <div class="info-box">
+                    <v-icon size="18" color="#3b82f6">mdi-information</v-icon>
+                    <span>This message will be posted to your Discord channel via webhook</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.actionService === 'Telegram'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">📱 Telegram Action</h4>
+                <p class="config-subtitle">Configure the Telegram message to be sent</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">💬 Chat ID</label>
+                  <input
+                    v-model="form.actionConfig.chatId"
+                    type="text"
+                    class="modern-input"
+                    placeholder="8481009224"
+                    required
+                  />
+                  <small class="input-hint">
+                    Your Telegram chat ID.
+                    <a href="https://t.me/userinfobot" target="_blank" class="helper-link">
+                      Get it from @userinfobot
+                    </a>
+                    (send /start to the bot)
+                  </small>
+                  <div class="help-box">
+                    <v-icon size="16" color="#22c55e">mdi-help-circle</v-icon>
+                    <div class="help-content">
+                      <strong>How to find your Chat ID:</strong>
+                      <ol>
+                        <li>Open Telegram and search for <strong>@userinfobot</strong></li>
+                        <li>Click on it and send <code>/start</code></li>
+                        <li>The bot will reply with your ID (ex: 987654321)</li>
+                        <li>Copy and paste it here</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">📝 Message</label>
+                  <textarea
+                    v-model="form.actionConfig.message"
+                    class="modern-textarea"
+                    placeholder="🤖 Notification from {{areaName}}&#10;⏰ Triggered at {{triggerTime}}"
+                    rows="5"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables: &#123;&#123;areaName&#125;&#125;, &#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;, etc.
+                    Telegram supports Markdown formatting (*bold*, _italic_)
+                  </small>
                 </div>
               </div>
             </div>
@@ -595,19 +990,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Guide Modal -->
+    <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import appsJson from '../../assets/apps.json'
-import { areaService } from '../../services/area'
+import { API_BASE_URL } from '../../config/api'
+import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
-import { API_BASE_URL } from '../../config/api'
+import AreaGuideModal from '../AreaGuideModal.vue'
 
-type AppDef = { name: string; icon: string }
-const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
+type ServiceInfo = {
+  name: string
+  actions: { name: string; description: string }[]
+  reactions: { name: string; description: string }[]
+}
 
 interface AreaTemplate {
   id: string
@@ -631,9 +1032,133 @@ const ICONS_DIR = 'app-icons'
 const getIconUrl = (file: string) =>
   new URL(`../../assets/${ICONS_DIR}/${file}`, import.meta.url).href
 
-const appItems = computed(() =>
-  apps.map(a => ({ title: a.name, value: a.name, icon: getIconUrl(a.icon) }))
-)
+const priorityServices = [
+  'Google Calendar',
+  'Gmail',
+  'Weather',
+  'Discord',
+  'Google Drive',
+  'Google Sheets',
+  'GitHub',
+  'Timer',
+  'Telegram',
+  'Spotify',
+  'Twitter'
+]
+
+const services = ref<ServiceInfo[]>([])
+const serviceIcons = ref<Record<string, string>>({})
+const isLoadingServices = ref(false)
+const servicesError = ref<string | null>(null)
+
+const fetchServices = async () => {
+  isLoadingServices.value = true
+  servicesError.value = null
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/about.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch services: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const fetchedServices = (data?.server?.services || []) as ServiceInfo[]
+
+    services.value = fetchedServices
+
+    const icons: Record<string, string> = {}
+    const defaultIcons: Record<string, string> = {
+      Gmail: 'gmail.png',
+      Slack: 'slack.png',
+      GitHub: 'github.png',
+      Weather: 'weather.png',
+      'Google Calendar': 'google-calendar.png',
+      Discord: 'discord.png',
+      'Google Sheets': 'google-sheets.png',
+      'Google Drive': 'google-drive.png',
+      Timer: 'google-calendar.png',
+      Telegram: 'telegram.png'
+    }
+
+    fetchedServices.forEach(service => {
+      const key = service.name
+      const normalized = key.toLowerCase()
+      const matchedDefault = Object.keys(defaultIcons).find(name => name.toLowerCase() === normalized)
+      if (matchedDefault) {
+        icons[key] = getIconUrl(defaultIcons[matchedDefault])
+      } else {
+        const sanitized = key.toLowerCase().replace(/\s+/g, '-')
+        icons[key] = getIconUrl(`${sanitized}.png`)
+      }
+    })
+
+    serviceIcons.value = icons
+  } catch (err) {
+    servicesError.value = err instanceof Error ? err.message : 'Failed to load services'
+  } finally {
+    isLoadingServices.value = false
+  }
+}
+
+onMounted(() => {
+  fetchServices()
+})
+
+const getFallbackIcon = (serviceName: string) => {
+  if (!serviceName) {
+    return getIconUrl('gmail.png')
+  }
+
+  const normalized = serviceName.toLowerCase()
+  if (serviceIcons.value[serviceName]) {
+    return serviceIcons.value[serviceName]
+  }
+
+  const defaultIcons: Record<string, string> = {
+    gmail: 'gmail.png',
+    slack: 'slack.png',
+    github: 'github.png',
+    weather: 'weather.png',
+    'google calendar': 'google-calendar.png',
+    discord: 'discord.png',
+    'google sheets': 'google-sheets.png',
+    'google drive': 'google-drive.png',
+    timer: 'google-calendar.png',
+    telegram: 'telegram.png'
+  }
+
+  const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
+  if (matchedDefault) {
+    return getIconUrl(defaultIcons[matchedDefault])
+  }
+
+  const sanitized = normalized.replace(/\s+/g, '-')
+  return getIconUrl(`${sanitized}.png`)
+}
+
+const appItems = computed(() => {
+  if (services.value.length === 0) {
+    return []
+  }
+
+  const sortedServices = [...services.value].sort((a, b) => {
+    const aPriority = priorityServices.indexOf(a.name)
+    const bPriority = priorityServices.indexOf(b.name)
+
+    if (aPriority === -1 && bPriority === -1) {
+      return a.name.localeCompare(b.name)
+    }
+    if (aPriority === -1) return 1
+    if (bPriority === -1) return -1
+    return aPriority - bPriority
+  })
+
+  return sortedServices.map(service => ({
+    title: service.name,
+    value: service.name,
+    icon: serviceIcons.value[service.name] || getFallbackIcon(service.name)
+  }))
+})
 
 const form = reactive({
   areaName: '',
@@ -646,6 +1171,10 @@ const form = reactive({
 
 const repositories = ref<GitHubRepository[]>([])
 const isLoadingRepositories = ref(false)
+const isTestingGoogleSheets = ref(false)
+const sheetsTestError = ref<string | null>(null)
+const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
+const showGuide = ref(false)
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
     form.areaName = newTemplate.title
@@ -676,6 +1205,20 @@ watch(() => props.template, (newTemplate) => {
         city: '',
         temperature: 30,
         condition: ''
+      }
+    } else if (newTemplate.triggerService === 'Google Sheets') {
+      form.triggerConfig = {
+        spreadsheetId: '',
+        sheetName: '',
+        range: 'Sheet1!A1:D',
+        hasHeader: true
+      }
+    } else if (newTemplate.triggerService === 'Telegram') {
+      form.triggerConfig = {
+        chatId: '',
+        triggerType: 'message_received',
+        keyword: '',
+        command: ''
       }
     }
 
@@ -713,10 +1256,51 @@ const isFormValid = computed(() => {
            form.actionConfig.subject
   }
 
+  if (form.triggerService === 'Google Drive') {
+    return hasBasicInfo && form.triggerConfig.folderId
+  }
+
   if (form.triggerService === 'Weather') {
     return hasBasicInfo &&
            form.triggerConfig.city &&
            form.triggerConfig.temperature !== undefined
+  }
+
+  if (form.triggerService === 'Google Sheets') {
+    return hasBasicInfo &&
+           form.triggerConfig.spreadsheetId &&
+           form.triggerConfig.range
+  }
+
+  if (form.triggerService === 'Timer') {
+    return hasBasicInfo &&
+           form.triggerConfig.interval
+  }
+
+  if (form.triggerService === 'Telegram') {
+    const hasBasicTelegramConfig = hasBasicInfo &&
+           form.triggerConfig.chatId &&
+           form.triggerConfig.triggerType
+
+    if (form.triggerConfig.triggerType === 'keyword_match') {
+      return hasBasicTelegramConfig && form.triggerConfig.keyword
+    }
+    if (form.triggerConfig.triggerType === 'command_received') {
+      return hasBasicTelegramConfig && form.triggerConfig.command
+    }
+    return hasBasicTelegramConfig
+  }
+
+  if (form.actionService === 'Discord') {
+    return hasBasicInfo &&
+           form.actionConfig.webhookUrl &&
+           form.actionConfig.message
+  }
+
+  if (form.actionService === 'Telegram') {
+    return hasBasicInfo &&
+           form.actionConfig.chatId &&
+           form.actionConfig.message
   }
 
   return hasBasicInfo
@@ -725,10 +1309,35 @@ const isFormValid = computed(() => {
 const showAllTriggerServices = ref(false)
 const showAllReactionServices = ref(false)
 
+const canTestGoogleSheets = computed(() => {
+  if (form.triggerService !== 'Google Sheets') {
+    return false
+  }
+
+  const spreadsheetId = (form.triggerConfig?.spreadsheetId || '').toString().trim()
+  const range = (form.triggerConfig?.range || '').toString().trim()
+
+  return !!spreadsheetId && !!range
+})
+
+watch(
+  () => form.triggerService === 'Google Sheets'
+    ? [form.triggerConfig?.spreadsheetId, form.triggerConfig?.range, form.triggerConfig?.sheetName, form.triggerConfig?.hasHeader]
+    : null,
+  () => {
+    if (form.triggerService === 'Google Sheets') {
+      sheetsTestResult.value = null
+      sheetsTestError.value = null
+    }
+  }
+)
+
 
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
   showAllTriggerServices.value = false
+  sheetsTestResult.value = null
+  sheetsTestError.value = null
 
   if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
@@ -748,6 +1357,30 @@ const selectTrigger = (serviceId: string) => {
       city: '',
       temperature: 30,
       condition: ''
+    }
+  } else if (serviceId === 'Google Sheets') {
+    form.triggerConfig = {
+      spreadsheetId: '',
+      sheetName: '',
+      range: 'Sheet1!A1:D',
+      hasHeader: true
+    }
+  } else if (serviceId === 'Google Drive') {
+    form.triggerConfig = {
+      folderId: '',
+      knownFileIds: {},
+      lastChecked: null
+    }
+  } else if (serviceId === 'Timer') {
+    form.triggerConfig = {
+      interval: '5m'
+    }
+  } else if (serviceId === 'Telegram') {
+    form.triggerConfig = {
+      chatId: '',
+      triggerType: 'message_received',
+      keyword: '',
+      command: ''
     }
   } else {
     form.triggerConfig = {}
@@ -776,6 +1409,34 @@ const selectAction = (serviceId: string) => {
         body: 'Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}'
       }
     }
+  } else if (serviceId === 'Discord') {
+    const defaultMessage = form.triggerService === 'Telegram'
+      ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Google Sheets'
+      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Timer'
+      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      : 'Automation triggered for {{areaName}}'
+
+    form.actionConfig = {
+      webhookUrl: '',
+      message: defaultMessage
+    }
+  } else if (serviceId === 'Telegram') {
+    const defaultMessage = form.triggerService === 'Timer'
+      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      : form.triggerService === 'Google Sheets'
+      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Telegram'
+      ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
+
+    form.actionConfig = {
+      chatId: '',
+      message: defaultMessage
+    }
+  } else {
+    form.actionConfig = {}
   }
 }
 
@@ -797,9 +1458,35 @@ const getMissingFields = () => {
     if (!form.triggerConfig.notificationTypes?.length) missing.push('Event Types')
   }
 
+  if (form.triggerService === 'Google Sheets') {
+    if (!form.triggerConfig.spreadsheetId) missing.push('Spreadsheet ID')
+    if (!form.triggerConfig.range) missing.push('Range')
+  }
+
+  if (form.triggerService === 'Telegram') {
+    if (!form.triggerConfig.chatId) missing.push('Chat ID')
+    if (!form.triggerConfig.triggerType) missing.push('Trigger Type')
+    if (form.triggerConfig.triggerType === 'keyword_match' && !form.triggerConfig.keyword) {
+      missing.push('Keyword')
+    }
+    if (form.triggerConfig.triggerType === 'command_received' && !form.triggerConfig.command) {
+      missing.push('Command')
+    }
+  }
+
   if (form.actionService === 'Gmail') {
     if (!form.actionConfig.toEmail) missing.push('Email Address')
     if (!form.actionConfig.subject) missing.push('Email Subject')
+  }
+
+  if (form.actionService === 'Discord') {
+    if (!form.actionConfig.webhookUrl) missing.push('Discord Webhook URL')
+    if (!form.actionConfig.message) missing.push('Discord Message')
+  }
+
+  if (form.actionService === 'Telegram') {
+    if (!form.actionConfig.chatId) missing.push('Telegram Chat ID')
+    if (!form.actionConfig.message) missing.push('Telegram Message')
   }
 
   return missing.join(', ')
@@ -952,6 +1639,49 @@ const testWeatherTrigger = async () => {
   }
 }
 
+const testGoogleSheets = async () => {
+  if (!canTestGoogleSheets.value) {
+    alert('Please fill in the Spreadsheet ID and range first')
+    return
+  }
+
+  isTestingGoogleSheets.value = true
+  sheetsTestError.value = null
+
+  try {
+    const result = await areaService.testGoogleSheets({
+      spreadsheetId: (form.triggerConfig?.spreadsheetId || '').toString().trim(),
+      range: (form.triggerConfig?.range || '').toString().trim(),
+    })
+
+    sheetsTestResult.value = result
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to test Google Sheets'
+    sheetsTestError.value = message
+    sheetsTestResult.value = null
+    console.error('Error testing Google Sheets trigger:', err)
+  } finally {
+    isTestingGoogleSheets.value = false
+  }
+}
+
+const formatDateTimeWithTimezone = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+
+  const timezoneOffset = -date.getTimezoneOffset()
+  const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
+  const offsetMinutes = Math.abs(timezoneOffset) % 60
+  const offsetSign = timezoneOffset >= 0 ? '+' : '-'
+  const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
+}
+
 const createArea = async () => {
   if (!isFormValid.value) return
 
@@ -965,6 +1695,24 @@ const createArea = async () => {
         form.actionConfig.toEmail,
         form.triggerConfig.notificationTypes
       )
+    } else if (form.triggerService === 'Google Sheets') {
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: 'SpreadsheetChange',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: {
+          spreadsheetId: form.triggerConfig.spreadsheetId,
+          sheetName: form.triggerConfig.sheetName,
+          range: form.triggerConfig.range,
+          hasHeader: !!form.triggerConfig.hasHeader
+        },
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
     } else if (form.triggerService === 'Weather') {
       const areaData = {
         name: form.areaName,
@@ -978,7 +1726,46 @@ const createArea = async () => {
       }
 
       await areaService.createArea(areaData)
+    } else if (form.triggerService === 'Telegram') {
+      const triggerConfig: any = {
+        chatId: form.triggerConfig.chatId
+      }
+
+      if (form.triggerConfig.triggerType === 'keyword_match') {
+        triggerConfig.keyword = form.triggerConfig.keyword
+      } else if (form.triggerConfig.triggerType === 'command_received') {
+        triggerConfig.command = form.triggerConfig.command
+      }
+
+      const areaData = {
+        name: form.areaName,
+        description: form.description,
+        triggerService: form.triggerService!,
+        triggerType: form.triggerConfig.triggerType || 'message_received',
+        actionService: form.actionService!,
+        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        triggerConfig: triggerConfig,
+        actionConfig: form.actionConfig
+      }
+
+      await areaService.createArea(areaData)
     } else {
+      let triggerConfig = { ...form.triggerConfig }
+
+      if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
+        const eventDateTime = new Date(form.triggerConfig.eventTime)
+        const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
+
+        const [datePart, timePart] = formattedDateTime.split('T')
+
+        triggerConfig = {
+          eventDate: datePart,
+          eventTime: formattedDateTime,
+          eventTitle: form.triggerConfig.eventTitle || '',
+          calendarId: form.triggerConfig.calendarId || 'primary'
+        }
+      }
+
       const areaData = {
         name: form.areaName,
         description: form.description,
@@ -986,7 +1773,7 @@ const createArea = async () => {
         triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-        triggerConfig: form.triggerConfig,
+        triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
       }
 
@@ -1042,6 +1829,31 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.info-button {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-button:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .close-button {
@@ -1236,7 +2048,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 
 .modern-select {
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-primary);
   border-radius: 12px;
+  padding: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+}
+
+.modern-select:focus {
+  border-color: var(--color-accent-primary);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .selected-service {
@@ -1494,6 +2320,111 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   font-size: 0.75rem;
 }
 
+.sheets-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.sheets-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s ease;
+}
+
+.sheets-checkbox:hover {
+  border-color: var(--color-border-focus);
+}
+
+.sheets-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+}
+
+.sheets-checkbox span {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.sheets-test-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.test-google-sheets-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0ea5e9;
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  align-self: flex-start;
+}
+
+.test-google-sheets-btn:hover:not(:disabled) {
+  background: rgba(14, 165, 233, 0.16);
+  transform: translateY(-1px);
+}
+
+.test-google-sheets-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sheets-test-result {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sheets-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.sheets-test-preview td {
+  border: 1px solid var(--color-border-primary);
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .create-area-container {
     padding: 1rem;
@@ -1567,7 +2498,6 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   }
 }
 
-/* Service Selection Styles */
 .service-selection {
   width: 100%;
 }
@@ -1964,7 +2894,78 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
-/* GitHub-specific styles */
+/* Info box for Timer and other configs */
+.info-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.info-box.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.help-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.help-content {
+  flex: 1;
+}
+
+.help-content strong {
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.help-content ol {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.help-content li {
+  margin-bottom: 0.25rem;
+}
+
+.help-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #22c55e;
+  font-size: 0.85rem;
+}
+
+.helper-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.helper-link:hover {
+  color: #60a5fa;
+}
+
 .checkbox-group {
   display: flex;
   flex-direction: column;

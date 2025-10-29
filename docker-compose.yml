@@ -41,7 +41,9 @@ services:
       GITHUB_CLIENT_SECRET: d20831e34517a30903d8166a67d7aee11969be99
       GOOGLE_CLIENT_ID: 635456942993-cl4hm8rvh0pcslhjfko23cbgh18o4cdq.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: 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
-
+      TWITTER_CLIENT_ID: bk1hWG93bjJwOGRqbXh6ZjJpRkQ6MTpjaQ
+      TWITTER_CLIENT_SECRET: gXhuaScVi00A8cE768QOL5_fky251mFl9pV_VDLJQGbtkX2qqc
+      TWITTER_REDIRECT_URI: https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback
       GOOGLE_REDIRECT_URI: http://localhost:3000/callback
       GITHUB_REDIRECT_URI: http://localhost:3000/oauth2/github/callback
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
@@ -53,6 +55,12 @@ services:
       ONEDRIVE_CLIENT_ID: eb184c65-e987-4463-876f-7a08d1615ee7
       ONEDRIVE_CLIENT_SECRET: MNo8Q~Fx3oflFKDTQrygPBTnGPFzwYabaP4bJbuO
       ONEDRIVE_REDIRECT_URI: http://localhost:8080/onedrive/callback
+      GOOGLE_SHEETS_API_KEY: AIzaSyAG2M7Hv6TGS92z7-0Y-huE8a8J0iEdVhY
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
+      SPOTIFY_LINK_REDIRECT_URI: ${SPOTIFY_LINK_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
     ports:
       - "8080:8080"
     depends_on:

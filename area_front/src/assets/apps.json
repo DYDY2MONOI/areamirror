@@ -132,6 +132,14 @@
     "icon": "google-sheets.png"
   },
   {
+    "name": "Timer",
+    "icon": "google-calendar.png"
+  },
+  {
+    "name": "Telegram",
+    "icon": "telegram.png"
+  },
+  {
     "name": "Google Docs",
     "icon": "google-docs.png"
   },

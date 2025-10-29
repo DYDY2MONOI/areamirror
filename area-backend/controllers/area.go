@@ -127,6 +127,8 @@ func getIconUrlForService(service string) string {
 		return "youtube.png"
 	case "Spotify":
 		return "spotify.png"
+	case "Google Sheets":
+		return "google-sheets.png"
 	case "Telegram":
 		return "telegram.png"
 	case "Twitch":
@@ -184,9 +186,9 @@ func UpdateArea(c *gin.Context) {
 		"name":            req.Name,
 		"description":     req.Description,
 		"trigger_service": req.TriggerService,
-		"trigger_type":   req.TriggerType,
-		"action_service": req.ActionService,
-		"action_type":    req.ActionType,
+		"trigger_type":    req.TriggerType,
+		"action_service":  req.ActionService,
+		"action_type":     req.ActionType,
 	}
 
 	if req.TriggerConfig != nil {
@@ -259,51 +261,13 @@ func ToggleArea(c *gin.Context) {
 func GetPopularAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func GetRecommendedAreas(c *gin.Context) {
 	var areas []models.Area
 	database.DB.Where("is_public = ? AND is_active = ?", true, true).Offset(4).Limit(4).Find(&areas)
-
-	var templates []gin.H
-	for _, area := range areas {
-		template := gin.H{
-			"id":             area.ID,
-			"title":          area.Name,
-			"subtitle":       getSubtitleForArea(area),
-			"description":    area.Description,
-			"icon":           getIconForService(area.TriggerService),
-			"gradientClass":  getGradientClassForArea(area),
-			"triggerService": area.TriggerService,
-			"actionService":  area.ActionService,
-			"triggerIconUrl": area.TriggerIconURL,
-			"actionIconUrl":  area.ActionIconURL,
-			"isActive":       area.IsActive,
-		}
-		templates = append(templates, template)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": templates})
+	c.JSON(http.StatusOK, gin.H{"data": areas})
 }
 
 func getSubtitleForArea(area models.Area) string {
@@ -314,6 +278,8 @@ func getSubtitleForArea(area models.Area) string {
 		return "Development alerts"
 	case "Gmail":
 		return "Email automation"
+	case "Google Sheets":
+		return "Spreadsheet automation"
 	default:
 		return "Automation"
 	}
@@ -341,6 +307,8 @@ func getIconForService(service string) string {
 		return "mdi-youtube"
 	case "Spotify":
 		return "mdi-music"
+	case "Google Sheets":
+		return "mdi-google-spreadsheet"
 	case "Telegram":
 		return "mdi-telegram"
 	case "Twitch":
@@ -375,6 +343,8 @@ func getGradientClassForArea(area models.Area) string {
 	case "YouTube":
 		return "gradient-red"
 	case "Spotify":
+		return "gradient-green"
+	case "Google Sheets":
 		return "gradient-green"
 	case "Telegram":
 		return "gradient-blue"
@@ -426,6 +396,43 @@ func TestEmail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test email sent successfully!",
 		"to":      req.To,
+	})
+}
+
+type GoogleSheetsTestRequest struct {
+	SpreadsheetID string `json:"spreadsheetId" binding:"required"`
+	Range         string `json:"range" binding:"required"`
+}
+
+func TestGoogleSheets(c *gin.Context) {
+	var req GoogleSheetsTestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sheetsService, err := services.NewGoogleSheetsService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Google Sheets service not available: " + err.Error()})
+		return
+	}
+
+	rows, err := sheetsService.FetchValues(req.SpreadsheetID, req.Range)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sheet values: " + err.Error()})
+		return
+	}
+
+	const previewLimit = 5
+	preview := rows
+	if len(rows) > previewLimit {
+		preview = rows[:previewLimit]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Google Sheets connection successful",
+		"rowCount":    len(rows),
+		"previewRows": preview,
 	})
 }
 

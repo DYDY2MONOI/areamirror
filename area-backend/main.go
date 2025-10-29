@@ -21,7 +21,7 @@ func main() {
 
 	database.InitDB()
 
-	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Action{}, &models.Reaction{}, &models.Area{}, &models.Role{}, &models.UserRole{}, &models.RefreshToken{}, &models.OAuth2Token{}, &models.DiscordMessageLog{})
 
 	database.SeedData()
 
@@ -34,6 +34,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	r.GET("/about.json", controllers.AboutJSON)
+
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
@@ -44,7 +46,9 @@ func main() {
 
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
+	r.GET("/oauth2/spotify/callback", controllers.SpotifyDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
+	r.GET("/oauth2/twitter/callback", controllers.TwitterDirectLogin)
 
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
 	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
@@ -60,6 +64,10 @@ func main() {
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
 	r.POST("/profile/onedrive/link", controllers.AuthMiddleware(), controllers.LinkOneDriveAccount)
 	r.DELETE("/profile/onedrive/unlink", controllers.AuthMiddleware(), controllers.UnlinkOneDriveAccount)
+	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
+	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
+	r.POST("/profile/twitter/link", controllers.AuthMiddleware(), controllers.LinkTwitterAccount)
+	r.DELETE("/profile/twitter/unlink", controllers.AuthMiddleware(), controllers.UnlinkTwitterAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
@@ -112,6 +120,7 @@ func main() {
 
 	r.GET("/areas", controllers.AuthMiddleware(), controllers.GetAreas)
 	r.GET("/areas/:id", controllers.GetArea)
+	r.GET("/areas/:id/discord-logs", controllers.AuthMiddleware(), controllers.GetAreaDiscordLogs)
 	r.GET("/test-area/:id", controllers.GetArea)
 	r.POST("/areas", controllers.AuthMiddleware(), controllers.CreateArea)
 	r.PUT("/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
@@ -128,6 +137,7 @@ func main() {
 
 	githubWebhookController := controllers.NewGitHubWebhookController()
 	r.POST("/webhooks/github", githubWebhookController.HandleWebhook)
+	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
 	r.StaticFile("/test-onedrive.html", "./test-onedrive.html")
@@ -140,6 +150,7 @@ func main() {
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
+	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
 	r.POST("/test/weather", controllers.TestWeatherTrigger)
 	r.GET("/weather", controllers.GetWeatherData)
 	r.POST("/test/scheduler/:id", controllers.TestScheduler)

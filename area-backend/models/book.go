@@ -36,6 +36,10 @@ type User struct {
 	OneDriveEmail      *string    `json:"onedrive_email" gorm:"column:one_drive_email"`
 	OneDriveToken      *string    `json:"-" gorm:"column:one_drive_token;type:text"`
 	OneDriveRefresh    *string    `json:"-" gorm:"column:one_drive_refresh;type:text"`
+	SpotifyID          *string    `json:"spotify_id" gorm:"uniqueIndex"`
+	SpotifyEmail       *string    `json:"spotify_email"`
+	TwitterID          *string    `json:"twitter_id" gorm:"uniqueIndex"`
+	TwitterUsername    *string    `json:"twitter_username"`
 	Role               string     `json:"role" gorm:"default:'member'"`
 	IsActive           bool       `json:"is_active" gorm:"default:true"`
 
