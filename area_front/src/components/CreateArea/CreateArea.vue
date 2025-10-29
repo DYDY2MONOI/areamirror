@@ -819,6 +819,7 @@
                     <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Spotify'">&#123;&#123;trackName&#125;&#125;, &#123;&#123;artistNames&#125;&#125;, &#123;&#123;albumName&#125;&#125;, &#123;&#123;trackUrl&#125;&#125;</span>
                     <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
                   </small>
                 </div>
@@ -991,7 +992,6 @@
       </div>
     </div>
 
-    <!-- Guide Modal -->
     <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
@@ -1414,6 +1414,8 @@ const selectAction = (serviceId: string) => {
       ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
       : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing: {{trackName}} — {{artistNames}}\n🔗 {{trackUrl}}'
       : form.triggerService === 'Timer'
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
@@ -1429,6 +1431,8 @@ const selectAction = (serviceId: string) => {
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Telegram'
       ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing on Spotify: {{trackName}} — {{artistNames}}'
       : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
@@ -1770,7 +1774,11 @@ const createArea = async () => {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: form.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+        triggerType: form.triggerService === 'Google Calendar'
+          ? 'Event'
+          : form.triggerService === 'Spotify'
+          ? 'Playback'
+          : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: triggerConfig,
@@ -1819,9 +1827,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   position: relative;
 }
 
+[data-theme="light"] .main-card {
+  background: #e5e7eb;
+  border: 3px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
 .card-header {
   padding: 2rem 2rem 1rem 2rem;
   border-bottom: 1px solid var(--color-border-primary);
+}
+
+[data-theme="light"] .card-header {
+  border-bottom: 3px solid rgba(0, 0, 0, 0.3);
 }
 
 .header-content {
@@ -1868,9 +1888,24 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   justify-content: center;
 }
 
+[data-theme="light"] .close-button {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .close-button :deep(.v-icon) {
+  color: #1a1a1a !important;
+}
+
 .close-button:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .close-button:hover {
+  background: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .icon-container {
@@ -1898,6 +1933,12 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
+}
+
+[data-theme="light"] .card-title {
+  color: #8b5cf6;
+  text-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+  font-weight: 800;
 }
 
 .card-subtitle {
@@ -1969,11 +2010,25 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   outline: none;
 }
 
+[data-theme="light"] .modern-input,
+[data-theme="light"] .modern-textarea {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-input:focus,
 .modern-textarea:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-input:focus,
+[data-theme="light"] .modern-textarea:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .modern-input::placeholder,
@@ -2002,9 +2057,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .service-selector {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .service-selector:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .service-selector:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .selector-header {
@@ -2059,10 +2125,22 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   width: 100%;
 }
 
+[data-theme="light"] .modern-select {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-select:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-select:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .selected-service {
@@ -2694,7 +2772,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary) !important;
 }
 
-/* Configuration Section Styles */
+
 .config-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-primary);
@@ -2704,9 +2782,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .config-section {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .config-section:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .config-section:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .config-header {
@@ -2894,7 +2983,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
-/* Info box for Timer and other configs */
+
 .info-box {
   display: flex;
   align-items: center;
@@ -3027,3 +3116,9 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 </style>
+
+
+
+
+
+

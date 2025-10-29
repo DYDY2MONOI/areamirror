@@ -55,6 +55,14 @@ struct ProfileView: View {
                                 )
                                 
                                 ProfileMenuItem(
+                                    icon: "link",
+                                    title: "Connected Accounts",
+                                    action: {
+                                        showEditProfile = true
+                                    }
+                                )
+                                
+                                ProfileMenuItem(
                                     icon: "bell",
                                     title: "Notifications",
                                     action: {

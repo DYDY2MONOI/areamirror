@@ -155,42 +155,32 @@ struct LoginButton: View {
     }
 }
 
-struct SocialLoginButtons: View {
-    let onGoogleLogin: () -> Void
-    let onAppleLogin: () -> Void
-    
+struct OAuthLoginButtons: View {
+    let providers: [OAuthProvider]
+    let onProviderSelected: (OAuthProvider) -> Void
+
     var body: some View {
         VStack(spacing: 12) {
-            Button(action: onGoogleLogin) {
-                HStack(spacing: 12) {
-                    Image(systemName: "globe")
-                        .font(.system(size: 18))
-                        .foregroundColor(.red)
-                    
-                    Text("GOOGLE")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
+            ForEach(providers.filter { $0.isEnabled }) { provider in
+                Button(action: {
+                    onProviderSelected(provider)
+                }) {
+                    HStack(spacing: 12) {
+                        Image(provider.iconName)
+                            .resizable()
+                            .renderingMode(.template)
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.white)
+
+                        Text(provider.name.uppercased())
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(provider.color)
+                    .cornerRadius(12)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.white)
-                .cornerRadius(12)
-            }
-            
-            Button(action: onAppleLogin) {
-                HStack(spacing: 12) {
-                    Image(systemName: "applelogo")
-                        .font(.system(size: 18))
-                        .foregroundColor(.black)
-                    
-                    Text("APPLE")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.white)
-                .cornerRadius(12)
             }
         }
         .padding(.horizontal, 24)

@@ -20,9 +20,13 @@ class AreaService: ObservableObject {
     @Published var errorMessage: String?
     
     private init() {}
+
+    private func authorizationHeader() -> String? {
+        AuthService.shared.authorizationHeader()
+    }
     
     func fetchUserAreas() async {
-        guard let token = AuthService.shared.getAuthToken() else {
+        guard let authorization = authorizationHeader() else {
             self.errorMessage = "No authentication token"
             return
         }
@@ -38,7 +42,7 @@ class AreaService: ObservableObject {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(authorization, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
@@ -190,7 +194,7 @@ class AreaService: ObservableObject {
 
     func createArea(payload: CreateOrUpdateAreaRequest) async throws -> Area {
         print("➕ AreaService.createArea called")
-        guard let token = AuthService.shared.getAuthToken() else {
+        guard let authorization = authorizationHeader() else {
             print("❌ No auth token for create")
             throw AreaServiceError.unauthorized
         }
@@ -201,7 +205,7 @@ class AreaService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(authorization, forHTTPHeaderField: "Authorization")
         let encoder = JSONEncoder()
         let bodyData = try encoder.encode(payload)
         #if DEBUG
@@ -229,7 +233,7 @@ class AreaService: ObservableObject {
 
     func updateArea(areaId: String, payload: CreateOrUpdateAreaRequest) async throws -> Area {
         print("🔄 AreaService.updateArea called with ID: \(areaId)")
-        guard let token = AuthService.shared.getAuthToken() else {
+        guard let authorization = authorizationHeader() else {
             print("❌ No auth token")
             throw AreaServiceError.unauthorized
         }
@@ -241,7 +245,7 @@ class AreaService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(authorization, forHTTPHeaderField: "Authorization")
         
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted

@@ -72,6 +72,12 @@
             ></v-list-item>
           </template>
         </v-tooltip>
+
+        <v-divider class="my-2"></v-divider>
+
+        <v-list-item class="sidebar-theme-toggle">
+          <ThemeToggle />
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -190,6 +196,68 @@
             <h4 class="description-title">Description</h4>
             <p class="description-text">{{ selectedArea?.description }}</p>
           </div>
+          <h2 class="logout-modal-title">Sign Out</h2>
+          <p class="logout-modal-subtitle">Are you sure you want to sign out of your account?</p>
+        </div>
+
+        <div class="logout-modal-actions">
+          <button
+            class="logout-action-btn logout-cancel-btn"
+            @click="showLogoutDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="logout-action-btn logout-confirm-btn"
+            @click="confirmLogout"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showDeleteDialog" class="logout-modal-overlay" @click="showDeleteDialog = false">
+    <div class="logout-modal-container" @click.stop>
+      <div class="logout-modal-content">
+        <div class="logout-modal-header">
+                      <div class="logout-icon-wrapper">
+              <div class="logout-icon-bg delete-icon-bg">
+                <v-icon size="24" color="#ef4444">mdi-delete-outline</v-icon>
+              </div>
+            </div>
+          <h2 class="logout-modal-title">Delete Area</h2>
+          <p class="logout-modal-subtitle">Are you sure you want to delete "{{ areaToDelete?.name || 'this area' }}"? This action cannot be undone.</p>
+        </div>
+
+        <div class="logout-modal-actions">
+          <button
+            class="logout-action-btn logout-cancel-btn"
+            @click="showDeleteDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="logout-action-btn delete-confirm-btn"
+            @click="confirmDelete"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
+    <div class="custom-modal-content area-modal" @click.stop>
+      <div class="area-modal-header">
+        <div class="area-icon-container">
+          <v-icon :size="48" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
+        </div>
+        <h3 class="area-modal-title">{{ selectedArea?.title }}</h3>
+        <p class="area-modal-subtitle">{{ selectedArea?.subtitle }}</p>
+      </div>
 
           <div class="area-workflow">
             <h4 class="workflow-title">How it works</h4>
@@ -238,6 +306,9 @@
       </div>
     </div>
   </div>
+
+  <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
+
 </template>
 
 <script setup lang="ts">
@@ -252,6 +323,8 @@ import SectionHeader from '../components/SectionHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
 import AppModal from '../components/AppModal.vue'
 import AnimatedBackground from '../components/AnimatedBackground.vue'
+import OnboardingTutorial from '../components/OnboardingTutorial.vue'
+import ThemeToggle from '../components/ThemeToggle.vue'
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
@@ -272,8 +345,11 @@ interface AreaTemplate {
 
 const showCreateModal = ref(false)
 const showLogoutDialog = ref(false)
+const showDeleteDialog = ref(false)
+const areaToDelete = ref<Area | null>(null)
 const showAreaModal = ref(false)
 const selectedArea = ref<AreaTemplate | null>(null)
+const showOnboarding = ref(false)
 const searchQuery = ref('')
 const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth >= 1280 : true)
 
@@ -328,17 +404,51 @@ const filteredAreas = computed(() => {
 
 
 
-onMounted(() => {
+onMounted(async () => {
   const onResize = () => {
     isDesktop.value = window.innerWidth >= 1280
   }
   window.addEventListener('resize', onResize)
-  refreshProfile()
-    .then(() => {
-      if (currentUser.value && currentUser.value.id) {
-        return fetchUserAreas(currentUser.value.id)
-      }
+  
+  await refreshProfile()
+  await fetchPopularAreas()
+  await fetchRecommendedAreas()
+  if (currentUser.value?.id) {
+    await fetchUserAreas(currentUser.value.id)
+  }
+  
+  const isNewUser = localStorage.getItem('area_new_user') === 'true'
+  
+  console.log('🔍 Onboarding Check:', {
+    isNewUser,
+    currentUser: currentUser.value,
+    userId: currentUser.value?.id
+  })
+  
+  if (isNewUser && currentUser.value) {
+    const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
+    const tutorialCompleted = localStorage.getItem(tutorialKey) === 'true'
+    
+    console.log('📚 Tutorial Status:', {
+      tutorialKey,
+      tutorialCompleted,
+      willShowTutorial: !tutorialCompleted
     })
+    
+    if (!tutorialCompleted) {
+      setTimeout(() => {
+        console.log('🎉 Affichage du tutoriel!')
+        showOnboarding.value = true
+        localStorage.removeItem('area_new_user')
+      }, 1000)
+    } else {
+      console.log('✅ Tutoriel déjà complété pour cet utilisateur')
+      localStorage.removeItem('area_new_user')
+    }
+  } else {
+    console.log('❌ Conditions non remplies pour afficher le tutoriel')
+  }
+  
   window.addEventListener('beforeunload', () => {
     window.removeEventListener('resize', onResize)
   })
@@ -394,17 +504,34 @@ const handleAreaClick = (area: AreaTemplate | Area) => {
   })
 }
 
-const handleDeleteArea = async (area: AreaTemplate | Area) => {
-  requireAuth(async () => {
-    const areaName = 'name' in area ? area.name : area.title
-    if (confirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`)) {
-      try {
-        await deleteArea(area.id)
-      } catch (error) {
-        alert(`Failed to delete area: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-    }
+const closeOnboarding = () => {
+  showOnboarding.value = false
+  if (currentUser.value) {
+    const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
+    localStorage.setItem(tutorialKey, 'true')
+  }
+  localStorage.removeItem('area_new_user')
+}
+
+const handleDeleteArea = (area: AreaTemplate | Area) => {
+  requireAuth(() => {
+    areaToDelete.value = area as Area
+    showDeleteDialog.value = true
   })
+}
+
+const confirmDelete = async () => {
+  if (!areaToDelete.value) return
+  
+  try {
+    await deleteArea(areaToDelete.value.id)
+    showDeleteDialog.value = false
+    areaToDelete.value = null
+  } catch (error) {
+    showDeleteDialog.value = false
+    areaToDelete.value = null
+    console.error('Failed to delete area:', error)
+  }
 }
 
 const createAreaFromTemplate = () => {
@@ -979,5 +1106,11 @@ body.modal-open {
   overflow: hidden !important;
 }
 </style>
+
+
+
+
+
+
 
 
