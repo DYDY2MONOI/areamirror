@@ -486,7 +486,7 @@ class AuthService: ObservableObject {
             throw AuthServiceError.invalidProvider
         }
 
-        try await sendLinkRequest(providerID: provider.id, code: linkResult.authorizationCode, codeVerifier: linkResult.codeVerifier)
+        try await sendLinkRequest(provider: provider, code: linkResult.authorizationCode, codeVerifier: linkResult.codeVerifier)
         fetchProfile()
     }
 
@@ -700,13 +700,17 @@ func linkedDetail(for providerID: String) -> String? {
 }
 
 @MainActor
-private func sendLinkRequest(providerID: String, code: String, codeVerifier: String?) async throws {
-    guard let endpoint = linkEndpoint(for: providerID) else {
+private func sendLinkRequest(provider: OAuthProvider, code: String, codeVerifier: String?) async throws {
+    guard let endpoint = linkEndpoint(for: provider.id) else {
         throw AuthServiceError.invalidProvider
     }
 
-    var payload: [String: Any] = ["code": code]
-    if providerID == "twitter" {
+    var payload: [String: Any] = [
+        "code": code,
+        "redirect_uri": provider.redirectURI
+    ]
+
+    if provider.id == "twitter" {
         guard let verifier = codeVerifier, !verifier.isEmpty else {
             throw AuthServiceError.custom("Missing verification data for Twitter linking.")
         }
