@@ -24,6 +24,11 @@ struct EditProfileView: View {
     @State private var isChangingPassword = false
     @State private var selectedImage: UIImage?
     @State private var profileImage: UIImage?
+    @State private var linkingProviderID: String?
+    @State private var linkFeedbackMessage: String?
+    @State private var showLinkFeedback = false
+    
+    private let oauthProviders = OAuthProvider.availableProviders
     
     let onDismiss: () -> Void
     
@@ -392,6 +397,18 @@ struct EditProfileView: View {
                         }
                         .padding(.horizontal, 24)
                         
+                        Divider()
+                            .background(Color.gray.opacity(0.3))
+                            .padding(.vertical, 20)
+                        
+                        LinkedAccountsSection(
+                            providers: oauthProviders,
+                            authService: authService,
+                            linkingProviderID: $linkingProviderID,
+                            onLink: { provider in linkProvider(provider) },
+                            onUnlink: { provider in unlinkProvider(provider) }
+                        )
+                        
                         Button(action: {
                             saveProfile()
                         }) {
@@ -445,12 +462,53 @@ struct EditProfileView: View {
         } message: {
             Text(authService.errorMessage ?? "An error occurred")
         }
+        .alert("Linked Accounts", isPresented: $showLinkFeedback) {
+            Button("OK") {
+                showLinkFeedback = false
+            }
+        } message: {
+            Text(linkFeedbackMessage ?? "")
+        }
         .alert("Success", isPresented: $showSuccessAlert) {
             Button("OK") {
                 onDismiss()
             }
         } message: {
             Text("Profile updated successfully!")
+        }
+    }
+    
+    private func linkProvider(_ provider: OAuthProvider) {
+        linkingProviderID = provider.id
+        linkFeedbackMessage = nil
+        Task { @MainActor in
+            defer { linkingProviderID = nil }
+            do {
+                try await authService.linkAccount(provider)
+                authService.errorMessage = nil
+                linkFeedbackMessage = "\(provider.name) account linked successfully."
+                showLinkFeedback = true
+            } catch {
+                authService.errorMessage = error.localizedDescription
+                showAlert = true
+            }
+        }
+    }
+    
+    private func unlinkProvider(_ provider: OAuthProvider) {
+        linkingProviderID = provider.id
+        linkFeedbackMessage = nil
+        Task { @MainActor in
+            defer { linkingProviderID = nil }
+            do {
+                try await authService.unlinkAccount(provider)
+                authService.errorMessage = nil
+                linkFeedbackMessage = "\(provider.name) account unlinked."
+                showLinkFeedback = true
+            } catch {
+                authService.errorMessage = error.localizedDescription
+                showAlert = true
+            }
         }
     }
     
@@ -536,6 +594,107 @@ struct EditProfileView: View {
     
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+struct LinkedAccountsSection: View {
+    let providers: [OAuthProvider]
+    @ObservedObject var authService: AuthService
+    @Binding var linkingProviderID: String?
+    let onLink: (OAuthProvider) -> Void
+    let onUnlink: (OAuthProvider) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Connected Accounts")
+                .font(AppTextStyles.subtitle)
+                .foregroundColor(.white)
+
+            Text("Link services to use their actions and reactions in your areas. Manage access anytime.")
+                .font(AppTextStyles.caption)
+                .foregroundColor(.gray)
+
+            ForEach(providers) { provider in
+                LinkedAccountRow(
+                    provider: provider,
+                    isLinked: authService.isProviderLinked(provider.id),
+                    detail: authService.linkedDetail(for: provider.id),
+                    isProcessing: linkingProviderID == provider.id,
+                    onLink: { onLink(provider) },
+                    onUnlink: { onUnlink(provider) }
+                )
+            }
+        }
+    }
+}
+
+struct LinkedAccountRow: View {
+    let provider: OAuthProvider
+    let isLinked: Bool
+    let detail: String?
+    let isProcessing: Bool
+    let onLink: () -> Void
+    let onUnlink: () -> Void
+
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(provider.color.opacity(0.25))
+                    .frame(width: 46, height: 46)
+
+                Circle()
+                    .fill(provider.color)
+                    .frame(width: 32, height: 32)
+
+                Image(provider.iconName)
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .frame(width: 20, height: 20)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(provider.name)
+                    .font(AppTextStyles.body)
+                    .foregroundColor(.white)
+
+                let statusText = isLinked ? (detail ?? "Linked") : "Not linked"
+                Text(statusText)
+                    .font(AppTextStyles.caption)
+                    .foregroundColor(isLinked ? .green : .gray)
+            }
+
+            Spacer()
+
+            if isProcessing {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+            } else {
+                Button(action: {
+                    isLinked ? onUnlink() : onLink()
+                }) {
+                    Text(isLinked ? "Unlink" : "Link")
+                        .font(AppTextStyles.caption)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 8)
+                        .background(isLinked ? Color.red.opacity(0.2) : provider.color)
+                        .foregroundColor(isLinked ? .red : .white)
+                        .cornerRadius(20)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppColors.darkBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 }
 
