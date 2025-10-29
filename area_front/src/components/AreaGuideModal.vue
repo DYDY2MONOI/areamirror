@@ -710,7 +710,6 @@ const goToSlide = (index: number) => {
   opacity: 0;
 }
 
-/* Slide RIGHT */
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: transform 0.4s ease, opacity 0.4s ease;
@@ -1247,7 +1246,6 @@ const goToSlide = (index: number) => {
   }
 }
 
-/* Explanation Section pour Triggers et Actions */
 .explanation-section {
   display: flex;
   gap: 1rem;
@@ -1313,7 +1311,6 @@ const goToSlide = (index: number) => {
   justify-content: center;
 }
 
-/* Variables Template Section */
 .variables-explanation {
   width: 100%;
 }
