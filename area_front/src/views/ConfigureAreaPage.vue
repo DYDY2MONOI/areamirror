@@ -337,6 +337,43 @@
           </div>
         </div>
 
+        <div v-if="template && template.triggerService === 'OneDrive'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">☁️ OneDrive File Trigger</h4>
+              <p class="config-subtitle">Choose which file event should trigger this area</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-group">
+              <label class="form-label">📁 Trigger Type</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input
+                    v-model="template.triggerName"
+                    type="radio"
+                    value="New File"
+                  />
+                  <p class="config-subtitle"> New File</p>
+                </label>
+                <label class="radio-item">
+                  <input
+                    v-model="template.triggerName"
+                    type="radio"
+                    value="Fichier modifié"
+                  />
+                  <p class="config-subtitle"> Modified File</p>
+                </label>
+              </div>
+              <small class="form-hint">Choose a type of file for this AREA</small>
+            </div>
+          </div>
+        </div>
+
         <div v-if="template && template.actionService === 'Gmail'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -424,6 +461,79 @@
                   required
                 ></textarea>
                 <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125; as placeholders</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="template && template.actionService === 'OneDrive'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">☁️ OneDrive Action</h4>
+              <p class="config-subtitle">Choose what to do on OneDrive</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-group">
+              <label class="form-label">⚡ Action Type</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input
+                    v-model="template.actionName"
+                    type="radio"
+                    value="Upload File"
+                  />
+                  <p class="config-subtitle"> Upload File </p>
+                </label>
+                <label class="radio-item">
+                  <input
+                    v-model="template.actionName"
+                    type="radio"
+                    value="Create Folder"
+                  />
+                  <p class="config-subtitle">📁 Create Folder</p>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="template.actionName === 'Upload File'" class="form-grid">
+              <div class="form-group">
+                <label class="form-label">📄 File Name</label>
+                <input
+                  v-model="form.actionConfig.fileName"
+                  type="text"
+                  class="form-input"
+                  placeholder="my-file.txt"
+                />
+                <small class="form-hint">Name of the file to upload. Use &#123;&#123;fileName&#125;&#125; for trigger file name.</small>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">📝 File Content</label>
+                <textarea
+                  v-model="form.actionConfig.content"
+                  class="form-textarea"
+                  placeholder="File content from &#123;&#123;fileName&#125;&#125;"
+                  rows="4"
+                ></textarea>
+                <small class="form-hint">Content of the file. Use &#123;&#123;fileName&#125;&#125;, &#123;&#123;areaName&#125;&#125; as placeholders</small>
+              </div>
+            </div>
+
+            <div v-if="template.actionName === 'Create Folder'" class="form-grid">
+              <div class="form-group">
+                <label class="form-label">📁 Folder Name</label>
+                <input
+                  v-model="form.actionConfig.folderName"
+                  type="text"
+                  class="form-input"
+                  placeholder="My Folder"
+                />
+                <small class="form-hint">Name of the folder to create. Use &#123;&#123;fileName&#125;&#125;, &#123;&#123;areaName&#125;&#125; as placeholders</small>
               </div>
             </div>
           </div>
@@ -678,7 +788,9 @@ interface AreaTemplate {
   icon: string
   gradientClass: string
   triggerService: string
+  triggerName?: string
   actionService: string
+  actionName?: string
   isActive: boolean
 }
 
@@ -781,6 +893,12 @@ watch(() => template.value, (newTemplate) => {
         temperature: 30,
         condition: ''
       }
+    } else if (newTemplate.triggerService === 'OneDrive') {
+      // Initialize default trigger name for OneDrive
+      if (!newTemplate.triggerName) {
+        newTemplate.triggerName = 'New File'
+      }
+      form.triggerConfig = {}
     } else {
       form.triggerConfig = {}
     }
@@ -800,6 +918,17 @@ watch(() => template.value, (newTemplate) => {
       form.actionConfig = {
         webhookUrl: '',
         message: defaultMessage
+      }
+      discordTestError.value = null
+    } else if (newTemplate.actionService === 'OneDrive') {
+      // Initialize default action name for OneDrive
+      if (!newTemplate.actionName) {
+        newTemplate.actionName = 'Upload File'
+      }
+      form.actionConfig = {
+        fileName: '',
+        content: '',
+        folderName: ''
       }
       discordTestError.value = null
     } else {
@@ -1046,22 +1175,18 @@ const getTodayDate = () => {
   return new Date().toISOString().split('T')[0]
 }
 
-const resolveTriggerType = (service: string) => {
-  switch (service) {
-    case 'Google Calendar':
-      return 'Event'
-    case 'Google Sheets':
-      return 'SpreadsheetChange'
-    case 'GitHub':
-      return 'Webhook'
-    case 'Weather':
-      return 'Weather'
-    default:
-      return 'Trigger'
+const resolveActionType = (service: string, actionName?: string) => {
+  if (service === 'OneDrive') {
+    // Différencier les actions OneDrive basées sur le nom
+    if (actionName === 'Upload File' || actionName === 'UploadFile') {
+      return 'UploadFile'
+    }
+    if (actionName === 'Create Folder' || actionName === 'CreateFolder') {
+      return 'CreateFolder'
+    }
+    return 'UploadFile' // Par défaut
   }
-}
 
-const resolveActionType = (service: string) => {
   switch (service) {
     case 'Gmail':
       return 'SendEmail'
@@ -1070,6 +1195,34 @@ const resolveActionType = (service: string) => {
     default:
       return 'Action'
   }
+}
+
+const resolveTriggerType = (service: string, triggerName?: string) => {
+  if (service === 'Google Calendar') {
+    return 'Event'
+  }
+
+  if (service === 'Google Sheets') {
+    return 'SpreadsheetChange'
+  }
+
+  if (service === 'Weather') {
+    return 'Weather'
+  }
+
+  if (service === 'OneDrive') {
+    // Différencier les triggers OneDrive basés sur le nom
+    if (triggerName === 'Fichier modifié' || triggerName === 'ModifiedFile') {
+      return 'ModifiedFile'
+    }
+    return 'NewFile'
+  }
+
+  if (service === 'GitHub') {
+    return 'Webhook'
+  }
+
+  return 'Trigger' // Par défaut pour les autres services
 }
 
 const sendTestEmail = async () => {
@@ -1385,9 +1538,9 @@ const createArea = async () => {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
       triggerService: template.value.triggerService || 'Unknown',
-      triggerType: resolveTriggerType(template.value.triggerService || 'Unknown'),
+      triggerType: resolveTriggerType(template.value.triggerService || 'Unknown', template.value.triggerName),
       actionService: template.value.actionService || 'Unknown',
-      actionType: resolveActionType(template.value.actionService || 'Unknown'),
+      actionType: resolveActionType(template.value.actionService || 'Unknown', template.value.actionName),
       triggerConfig: triggerConfig,
       actionConfig: form.actionConfig
     }
