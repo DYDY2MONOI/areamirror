@@ -34,6 +34,7 @@ func SeedData() {
 		{Name: "Google Calendar", Description: "Service de calendrier Google", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
+		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -43,7 +44,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, sheets models.Service
+	var gmail, slack, github, weather, calendar, discord, sheets, spotify models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -51,6 +52,7 @@ func SeedData() {
 	DB.Where("name = ?", "Google Calendar").First(&calendar)
 	DB.Where("name = ?", "Discord").First(&discord)
 	DB.Where("name = ?", "Google Sheets").First(&sheets)
+	DB.Where("name = ?", "Spotify").First(&spotify)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -59,6 +61,7 @@ func SeedData() {
 		{ServiceID: calendar.ID, Name: "Nouvel événement", Description: "Se déclenche quand un nouvel événement est créé", Parameters: `{"calendar": "", "event": ""}`},
 		{ServiceID: github.ID, Name: "Nouvelle issue", Description: "Se déclenche quand une nouvelle issue est créée", Parameters: `{"repository": "", "issue": ""}`},
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
+		{ServiceID: spotify.ID, Name: "Nouvelle lecture Spotify", Description: "Se déclenche lorsqu'une nouvelle musique démarre sur Spotify", Parameters: `{}`},
 	}
 
 	for _, action := range actions {
