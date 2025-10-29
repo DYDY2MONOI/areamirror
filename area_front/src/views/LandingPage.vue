@@ -1,4 +1,4 @@
-<template>
+e<template>
   <div class="landing-page">
     <AnimatedBackground />
 
