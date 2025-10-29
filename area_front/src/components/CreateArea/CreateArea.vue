@@ -47,24 +47,6 @@
           </div>
         </div>
 
-        <div v-if="form.triggerService && form.actionService" class="form-section">
-          <div class="section-label">
-            <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
-            <span class="label-text">Configuration</span>
-          </div>
-
-          <div class="config-actions">
-            <button class="config-btn" @click="configureServices">
-              <v-icon size="18">mdi-cog</v-icon>
-              Configure Services
-            </button>
-            <button class="test-btn" @click="testConnection">
-              <v-icon size="18">mdi-flash</v-icon>
-              Test Connection
-            </button>
-          </div>
-        </div>
-
         <div class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-link-variant</v-icon>
@@ -97,7 +79,7 @@
                 <div v-else>
                   <div v-if="!form.triggerService" class="service-grid">
                     <div
-                      v-for="item in appItems.slice(0, 15)"
+                      v-for="item in triggerItems.slice(0, 15)"
                       :key="item.value"
                       class="service-card"
                       @click="selectTrigger(item.value)"
@@ -107,7 +89,7 @@
                       </div>
                       <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-card more-services" @click="showAllTriggerServices = true" v-if="services.length > 15">
+                    <div class="service-card more-services" @click="showAllTriggerServices = true" v-if="triggerItems.length > 15">
                       <div class="service-card-icon">
                         <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
                       </div>
@@ -215,7 +197,7 @@
                 <div v-else>
                   <div v-if="!form.actionService" class="service-grid">
                     <div
-                      v-for="item in appItems.slice(0, 15)"
+                      v-for="item in actionItems.slice(0, 15)"
                       :key="item.value"
                       class="service-card"
                       @click="selectAction(item.value)"
@@ -225,7 +207,7 @@
                       </div>
                       <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-card more-services" @click="showAllReactionServices = true" v-if="services.length > 15">
+                    <div class="service-card more-services" @click="showAllReactionServices = true" v-if="actionItems.length > 15">
                       <div class="service-card-icon">
                         <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
                       </div>
@@ -1172,7 +1154,10 @@ const priorityServices = [
   'Timer',
   'Telegram',
   'Spotify',
-  'Twitter',
+  'Twitter'
+]
+
+const intermediateServices = [
   'OpenAI'
 ]
 
@@ -1290,6 +1275,14 @@ const appItems = computed(() => {
     value: service.name,
     icon: serviceIcons.value[service.name] || getFallbackIcon(service.name)
   }))
+})
+
+const triggerItems = computed(() => {
+  return appItems.value.filter(item => item.value !== 'OpenAI')
+})
+
+const actionItems = computed(() => {
+  return appItems.value.filter(item => item.value !== 'OpenAI')
 })
 
 const form = reactive({
@@ -1734,16 +1727,6 @@ const sendTestEmail = async () => {
   } finally {
     isSendingTest.value = false
   }
-}
-
-const configureServices = () => {
-  console.log('Configure services clicked')
-  alert('Configure Services functionality will be implemented')
-}
-
-const testConnection = () => {
-  console.log('Test connection clicked')
-  alert('Test Connection functionality will be implemented')
 }
 
 const testWeatherTrigger = async () => {
