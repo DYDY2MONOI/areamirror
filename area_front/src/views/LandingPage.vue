@@ -181,6 +181,37 @@
       </div>
     </div>
 
+    <div v-if="showDeleteDialog" class="logout-modal-overlay" @click="showDeleteDialog = false">
+      <div class="logout-modal-container" @click.stop>
+        <div class="logout-modal-content">
+          <div class="logout-modal-header">
+            <div class="logout-icon-wrapper">
+              <div class="logout-icon-bg delete-icon-bg">
+                <v-icon size="24" color="#ef4444">mdi-delete-outline</v-icon>
+              </div>
+            </div>
+            <h2 class="logout-modal-title">Delete Area</h2>
+            <p class="logout-modal-subtitle">Are you sure you want to delete "{{ areaToDelete?.name || 'this area' }}"? This action cannot be undone.</p>
+          </div>
+
+          <div class="logout-modal-actions">
+            <button
+              class="logout-action-btn logout-cancel-btn"
+              @click="showDeleteDialog = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="logout-action-btn delete-confirm-btn"
+              @click="confirmDelete"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
       <div class="custom-modal-content area-modal" @click.stop>
         <div class="area-modal-header">
@@ -191,97 +222,28 @@
           <p class="area-modal-subtitle">{{ selectedArea?.subtitle }}</p>
         </div>
 
-        <div class="area-modal-content">
-          <div class="area-description">
-            <h4 class="description-title">Description</h4>
-            <p class="description-text">{{ selectedArea?.description }}</p>
-          </div>
-          <h2 class="logout-modal-title">Sign Out</h2>
-          <p class="logout-modal-subtitle">Are you sure you want to sign out of your account?</p>
-        </div>
-
-        <div class="logout-modal-actions">
-          <button
-            class="logout-action-btn logout-cancel-btn"
-            @click="showLogoutDialog = false"
-          >
-            Cancel
-          </button>
-          <button
-            class="logout-action-btn logout-confirm-btn"
-            @click="confirmLogout"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="showDeleteDialog" class="logout-modal-overlay" @click="showDeleteDialog = false">
-    <div class="logout-modal-container" @click.stop>
-      <div class="logout-modal-content">
-        <div class="logout-modal-header">
-                      <div class="logout-icon-wrapper">
-              <div class="logout-icon-bg delete-icon-bg">
-                <v-icon size="24" color="#ef4444">mdi-delete-outline</v-icon>
+        <div class="area-workflow">
+          <h4 class="workflow-title">How it works</h4>
+          <div class="workflow-steps">
+            <div class="workflow-step">
+              <div class="step-icon trigger-icon">
+                <v-icon size="20" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
+              </div>
+              <div class="step-content">
+                <div class="step-label">Trigger</div>
+                <div class="step-service">{{ selectedArea?.triggerService }}</div>
               </div>
             </div>
-          <h2 class="logout-modal-title">Delete Area</h2>
-          <p class="logout-modal-subtitle">Are you sure you want to delete "{{ areaToDelete?.name || 'this area' }}"? This action cannot be undone.</p>
-        </div>
-
-        <div class="logout-modal-actions">
-          <button
-            class="logout-action-btn logout-cancel-btn"
-            @click="showDeleteDialog = false"
-          >
-            Cancel
-          </button>
-          <button
-            class="logout-action-btn delete-confirm-btn"
-            @click="confirmDelete"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="showAreaModal && selectedArea" class="custom-modal-overlay" @click="showAreaModal = false">
-    <div class="custom-modal-content area-modal" @click.stop>
-      <div class="area-modal-header">
-        <div class="area-icon-container">
-          <v-icon :size="48" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
-        </div>
-        <h3 class="area-modal-title">{{ selectedArea?.title }}</h3>
-        <p class="area-modal-subtitle">{{ selectedArea?.subtitle }}</p>
-      </div>
-
-          <div class="area-workflow">
-            <h4 class="workflow-title">How it works</h4>
-            <div class="workflow-steps">
-              <div class="workflow-step">
-                <div class="step-icon trigger-icon">
-                  <v-icon size="20" color="white">{{ getTriggerIcon(selectedArea?.triggerService) }}</v-icon>
-                </div>
-                <div class="step-content">
-                  <div class="step-label">Trigger</div>
-                  <div class="step-service">{{ selectedArea?.triggerService }}</div>
-                </div>
+            <div class="workflow-arrow">
+              <v-icon size="24" color="#9ca3af">mdi-arrow-right</v-icon>
+            </div>
+            <div class="workflow-step">
+              <div class="step-icon action-icon">
+                <v-icon size="20" color="white">{{ getActionIcon(selectedArea?.actionService) }}</v-icon>
               </div>
-              <div class="workflow-arrow">
-                <v-icon size="24" color="#9ca3af">mdi-arrow-right</v-icon>
-              </div>
-              <div class="workflow-step">
-                <div class="step-icon action-icon">
-                  <v-icon size="20" color="white">{{ getActionIcon(selectedArea?.actionService) }}</v-icon>
-                </div>
-                <div class="step-content">
-                  <div class="step-label">Action</div>
-                  <div class="step-service">{{ selectedArea?.actionService }}</div>
-                </div>
+              <div class="step-content">
+                <div class="step-label">Action</div>
+                <div class="step-service">{{ selectedArea?.actionService }}</div>
               </div>
             </div>
           </div>
@@ -305,10 +267,10 @@
         </div>
       </div>
     </div>
+
+    <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
+
   </div>
-
-  <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
-
 </template>
 
 <script setup lang="ts">
@@ -354,7 +316,7 @@ const searchQuery = ref('')
 const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth >= 1280 : true)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
-const { areas, fetchUserAreas, deleteArea } = useAreas()
+const { areas, fetchUserAreas, fetchPopularAreas, fetchRecommendedAreas, deleteArea } = useAreas()
 const router = useRouter()
 
 const searchSuggestions = ['Gmail', 'Discord', 'Spotify', 'GitHub']
@@ -401,40 +363,37 @@ const filteredAreas = computed(() => {
   })
 })
 
-
-
-
 onMounted(async () => {
   const onResize = () => {
     isDesktop.value = window.innerWidth >= 1280
   }
   window.addEventListener('resize', onResize)
-  
+
   await refreshProfile()
   await fetchPopularAreas()
   await fetchRecommendedAreas()
   if (currentUser.value?.id) {
     await fetchUserAreas(currentUser.value.id)
   }
-  
+
   const isNewUser = localStorage.getItem('area_new_user') === 'true'
-  
+
   console.log('🔍 Onboarding Check:', {
     isNewUser,
     currentUser: currentUser.value,
     userId: currentUser.value?.id
   })
-  
+
   if (isNewUser && currentUser.value) {
     const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
     const tutorialCompleted = localStorage.getItem(tutorialKey) === 'true'
-    
+
     console.log('📚 Tutorial Status:', {
       tutorialKey,
       tutorialCompleted,
       willShowTutorial: !tutorialCompleted
     })
-    
+
     if (!tutorialCompleted) {
       setTimeout(() => {
         console.log('🎉 Affichage du tutoriel!')
@@ -448,12 +407,11 @@ onMounted(async () => {
   } else {
     console.log('❌ Conditions non remplies pour afficher le tutoriel')
   }
-  
+
   window.addEventListener('beforeunload', () => {
     window.removeEventListener('resize', onResize)
   })
 })
-
 
 watch(isAuthenticated, (newValue) => {
   if (newValue && currentUser.value?.id) {
@@ -473,8 +431,6 @@ const requireAuth = (action: () => void) => {
   action()
 }
 
-
-
 const openProfileOrLogin = () => {
   if (isAuthenticated.value) {
     router.push('/profile')
@@ -482,7 +438,6 @@ const openProfileOrLogin = () => {
     router.push('/login')
   }
 }
-
 
 const confirmLogout = async () => {
   try {
@@ -522,7 +477,7 @@ const handleDeleteArea = (area: AreaTemplate | Area) => {
 
 const confirmDelete = async () => {
   if (!areaToDelete.value) return
-  
+
   try {
     await deleteArea(areaToDelete.value.id)
     showDeleteDialog.value = false
