@@ -1,6 +1,10 @@
 [
   {
-    "name": "Google Calendar",
+    "name": "Date Timer",
+    "icon": "google-calendar.png"
+  },
+  {
+    "name": "Google Agenda",
     "icon": "google-calendar.png"
   },
   {

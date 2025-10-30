@@ -25,6 +25,7 @@ type SchedulerService struct {
 	driveService    *GoogleDriveService
 	telegramService *TelegramService
 	spotifyService  *SpotifyService
+	agendaService  *GoogleAgendaService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -85,6 +86,11 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Spotify service not available: %v", err)
 	}
 
+	agendaService, err := NewGoogleAgendaService()
+	if err != nil {
+		log.Printf("Warning: Google Agenda service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
@@ -93,6 +99,7 @@ func NewSchedulerService() (*SchedulerService, error) {
 		driveService:    driveService,
 		telegramService: telegramService,
 		spotifyService:  spotifyService,
+		agendaService:   agendaService,
 	}, nil
 }
 
@@ -115,6 +122,10 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 
 	if err := s.checkSpotifyTriggers(); err != nil {
 		log.Printf("Error checking Spotify triggers: %v", err)
+	}
+
+	if err := s.checkGoogleAgendaTriggers(); err != nil {
+		log.Printf("Error checking Google Agenda triggers: %v", err)
 	}
 
 	if err := s.checkTimerTriggers(); err != nil {
@@ -366,6 +377,42 @@ func (s *SchedulerService) checkWeatherTriggers() error {
 	return nil
 }
 
+func (s *SchedulerService) checkGoogleAgendaTriggers() error {
+	if s.agendaService == nil {
+		return nil
+	}
+
+	var areas []models.Area
+
+	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Agenda", true).Find(&areas).Error
+	if err != nil {
+		return fmt.Errorf("failed to fetch Google Agenda areas: %v", err)
+	}
+
+	log.Printf("Checking Google Agenda triggers: found %d active Google Agenda areas", len(areas))
+
+	for _, area := range areas {
+		var triggerConfig map[string]interface{}
+		if err := json.Unmarshal(area.TriggerConfig, &triggerConfig); err != nil {
+			log.Printf("Failed to parse trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if s.shouldTriggerAgendaArea(area, triggerConfig) {
+			metadata := map[string]interface{}{
+				"triggerTime": time.Now().Format("2006-01-02 15:04:05"),
+				"agendaName":  area.Name,
+			}
+
+			if err := s.executeArea(area, metadata); err != nil {
+				log.Printf("Failed to execute Google Agenda area %s: %v", area.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *SchedulerService) checkTimerTriggers() error {
 	var areas []models.Area
 
@@ -540,6 +587,62 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 
 	if result.Triggered {
 		log.Printf("Weather trigger activated for area %s: %s", area.Name, result.Message)
+		return true
+	}
+
+	return false
+}
+
+func (s *SchedulerService) shouldTriggerAgendaArea(area models.Area, triggerConfig map[string]interface{}) bool {
+	if s.agendaService == nil {
+		log.Printf("Google Agenda service not available for area %s", area.Name)
+		return false
+	}
+
+	if area.LastRunAt != nil {
+		timeSinceLastRun := time.Since(*area.LastRunAt)
+		if timeSinceLastRun < 5*time.Minute {
+			log.Printf("Google Agenda area %s already executed recently, skipping", area.Name)
+			return false
+		}
+	}
+
+	calendarID, ok := triggerConfig["calendarId"].(string)
+	if !ok || calendarID == "" {
+		calendarID = "primary"
+	}
+
+	eventTitle, ok := triggerConfig["eventTitle"].(string)
+	if !ok {
+		eventTitle = ""
+	}
+
+	timeBefore, ok := triggerConfig["timeBefore"].(string)
+	if !ok {
+		timeBefore = "15m"
+	}
+
+	eventStatus, ok := triggerConfig["eventStatus"].(string)
+	if !ok {
+		eventStatus = ""
+	}
+
+	agendaConfig := AgendaTriggerConfig{
+		CalendarID:    calendarID,
+		EventTitle:    eventTitle,
+		TimeBefore:    timeBefore,
+		EventStatus:   eventStatus,
+		CheckInterval: "5m",
+	}
+
+	events, err := s.agendaService.CheckForUpcomingEvents(strconv.Itoa(int(area.UserID)), agendaConfig)
+	if err != nil {
+		log.Printf("Failed to check Google Agenda trigger for area %s: %v", area.Name, err)
+		return false
+	}
+
+	if len(events) > 0 {
+		log.Printf("Google Agenda trigger activated for area %s: found %d upcoming events", area.Name, len(events))
 		return true
 	}
 

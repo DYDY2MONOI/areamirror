@@ -63,7 +63,7 @@
             <span class="label-text">Configuration</span>
           </div>
 
-          <div v-if="template?.triggerService === 'Google Calendar'" class="config-section">
+          <div v-if="template?.triggerService === 'Date Timer'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
                 <v-icon size="24" color="white">mdi-calendar</v-icon>
@@ -183,7 +183,7 @@
           </button>
 
           <button
-            v-if="template?.triggerService === 'Google Calendar' && template?.actionService === 'Gmail'"
+            v-if="template?.triggerService === 'Date Timer' && template?.actionService === 'Gmail'"
             class="action-btn test-email-btn"
             @click="sendTestEmail"
             :disabled="!canSendTestEmail || isSendingTest"
@@ -227,7 +227,7 @@ const form = reactive({
 
 watch(() => props.template, (newTemplate) => {
   if (newTemplate) {
-    if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
+    if (newTemplate.triggerService === 'Date Timer' && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
         eventTitle: '',
@@ -251,7 +251,7 @@ watch(() => props.template, (newTemplate) => {
 const isFormValid = computed(() => {
   if (!props.template) return false
 
-  if (props.template.triggerService === 'Google Calendar' && props.template.actionService === 'Gmail') {
+  if (props.template.triggerService === 'Date Timer' && props.template.actionService === 'Gmail') {
     return form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
@@ -323,7 +323,7 @@ const createArea = async () => {
       name: props.template.title,
       description: props.template.description,
       triggerService: props.template.triggerService,
-      triggerType: props.template.triggerService === 'Google Calendar' ? 'Event' : 'Webhook',
+      triggerType: props.template.triggerService === 'Date Timer' ? 'Event' : 'Webhook',
       actionService: props.template.actionService,
       actionType: props.template.actionService === 'Gmail' ? 'SendEmail' : 'Action',
       triggerConfig: form.triggerConfig,
@@ -342,7 +342,7 @@ const createArea = async () => {
 
 const getTriggerIcon = (service: string) => {
   switch (service) {
-    case "Google Calendar": return "mdi-calendar"
+    case "Date Timer": return "mdi-calendar"
     case "GitHub": return "mdi-github"
     case "Gmail": return "mdi-email-outline"
     case "Discord": return "mdi-discord"

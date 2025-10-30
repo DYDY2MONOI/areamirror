@@ -743,7 +743,7 @@ const goToAllAreas = () => {
 
 const getTriggerIcon = (service: string) => {
   switch (service) {
-    case "Google Calendar":
+    case "Date Timer":
       return "mdi-calendar"
     case "GitHub":
       return "mdi-github"
