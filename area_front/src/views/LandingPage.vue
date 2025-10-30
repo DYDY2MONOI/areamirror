@@ -815,7 +815,7 @@ watch(showCreateModal, (isOpen) => {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   width: 100%;
   box-sizing: border-box;
@@ -1289,6 +1289,10 @@ watch(showCreateModal, (isOpen) => {
   .floating-card {
     width: 50px;
     height: 50px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
