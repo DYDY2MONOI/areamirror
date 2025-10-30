@@ -53,6 +53,13 @@ func main() {
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
 	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
 	r.GET("/mobile/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
+	r.GET("/mobile/user/me/areas", controllers.AuthMiddleware(), controllers.GetUserAreas)
+	r.GET("/mobile/areas/popular", controllers.GetPopularAreas)
+	r.GET("/mobile/areas/recommended", controllers.GetRecommendedAreas)
+	r.POST("/mobile/areas", controllers.AuthMiddleware(), controllers.CreateArea)
+	r.PUT("/mobile/areas/:id", controllers.AuthMiddleware(), controllers.UpdateArea)
+	r.DELETE("/mobile/areas/:id", controllers.AuthMiddleware(), controllers.DeleteArea)
+	r.PATCH("/mobile/areas/:id/toggle", controllers.AuthMiddleware(), controllers.ToggleArea)
 
 	r.PUT("/profile", controllers.AuthMiddleware(), controllers.UpdateProfile)
 	r.POST("/profile/image", controllers.AuthMiddleware(), controllers.UploadProfileImage)
