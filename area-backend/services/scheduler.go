@@ -21,12 +21,11 @@ type SchedulerService struct {
 	emailService    *EmailService
 	discordService  *DiscordService
 	weatherService  *WeatherService
-	onedriveService *OneDriveService
 	sheetsService   *GoogleSheetsService
 	driveService    *GoogleDriveService
 	telegramService *TelegramService
+	openaiService   *OpenAIService
 	spotifyService  *SpotifyService
-	agendaService   *GoogleAgendaService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -67,11 +66,6 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Weather service not available: %v", err)
 	}
 
-	onedriveService, err := NewOneDriveService()
-	if err != nil {
-		log.Printf("Warning: OneDrive service not available: %v", err)
-	}
-
 	sheetsService, err := NewGoogleSheetsService()
 	if err != nil {
 		log.Printf("Warning: Google Sheets service not available: %v", err)
@@ -87,26 +81,25 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Google Drive service not available: %v", err)
 	}
 
+	openaiService, err := NewOpenAIService()
+	if err != nil {
+		log.Printf("Warning: OpenAI service not available: %v", err)
+	}
+
 	spotifyService, err := NewSpotifyService()
 	if err != nil {
 		log.Printf("Warning: Spotify service not available: %v", err)
-	}
-
-	agendaService, err := NewGoogleAgendaService()
-	if err != nil {
-		log.Printf("Warning: Google Agenda service not available: %v", err)
 	}
 
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
 		weatherService:  weatherService,
-		onedriveService: onedriveService,
 		sheetsService:   sheetsService,
 		driveService:    driveService,
 		telegramService: telegramService,
+		openaiService:   openaiService,
 		spotifyService:  spotifyService,
-		agendaService:   agendaService,
 	}, nil
 }
 
@@ -119,10 +112,6 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking weather triggers: %v", err)
 	}
 
-	if err := s.checkOneDriveTriggers(); err != nil {
-		log.Printf("Error checking OneDrive triggers: %v", err)
-	}
-
 	if err := s.checkGoogleSheetsTriggers(); err != nil {
 		log.Printf("Error checking Google Sheets triggers: %v", err)
 	}
@@ -133,10 +122,6 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 
 	if err := s.checkSpotifyTriggers(); err != nil {
 		log.Printf("Error checking Spotify triggers: %v", err)
-	}
-
-	if err := s.checkGoogleAgendaTriggers(); err != nil {
-		log.Printf("Error checking Google Agenda triggers: %v", err)
 	}
 
 	if err := s.checkTimerTriggers(); err != nil {
@@ -388,71 +373,6 @@ func (s *SchedulerService) checkWeatherTriggers() error {
 	return nil
 }
 
-func (s *SchedulerService) checkOneDriveTriggers() error {
-	var areas []models.Area
-
-	err := database.DB.Preload("User").Where("trigger_service = ? AND is_active = ?", "OneDrive", true).Find(&areas).Error
-	if err != nil {
-		return fmt.Errorf("failed to fetch OneDrive areas: %v", err)
-	}
-
-	for _, area := range areas {
-		if area.User.ID == 0 || area.User.OneDriveToken == nil || *area.User.OneDriveToken == "" {
-			log.Printf("Skipping area %s: no user or token", area.Name)
-			continue
-		}
-
-		if area.LastRunAt != nil {
-			timeSinceLastRun := time.Since(*area.LastRunAt)
-			if timeSinceLastRun < 1*time.Minute {
-				log.Printf("Skipping area %s: executed recently", area.Name)
-				continue
-			}
-		}
-
-		triggerType := area.TriggerType
-		if triggerType == "" || triggerType == "Webhook" {
-			triggerType = "NewFile"
-		}
-
-		filesResp, err := s.onedriveService.ListFiles(*area.User.OneDriveToken, "")
-		if err != nil {
-			log.Printf("Failed to list OneDrive files for area %s: %v", area.Name, err)
-			continue
-		}
-
-		for _, file := range filesResp.Value {
-			shouldTrigger := false
-
-			if triggerType == "NewFile" || triggerType == "new_file" {
-				if time.Since(file.CreatedDateTime) < 1*time.Minute {
-					log.Printf("New file detected in OneDrive: %s (created: %v)", file.Name, file.CreatedDateTime)
-					shouldTrigger = true
-				}
-			} else if triggerType == "ModifiedFile" || triggerType == "modified_file" {
-				if time.Since(file.ModifiedDateTime) < 1*time.Minute && time.Since(file.CreatedDateTime) > 1*time.Minute {
-					log.Printf("Modified file detected in OneDrive: %s (modified: %v)", file.Name, file.ModifiedDateTime)
-					shouldTrigger = true
-				}
-			}
-
-			if shouldTrigger {
-				metadata := map[string]interface{}{
-					"fileName": file.Name,
-					"fileId":   file.ID,
-					"fileUrl":  file.WebURL,
-				}
-				if err := s.executeArea(area, metadata); err != nil {
-					log.Printf("Failed to execute area %s: %v", area.Name, err)
-				}
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 func (s *SchedulerService) checkTimerTriggers() error {
 	var areas []models.Area
 
@@ -591,14 +511,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 		return false
 	}
 
-	if area.LastRunAt != nil {
-		timeSinceLastRun := time.Since(*area.LastRunAt)
-		if timeSinceLastRun < 10*time.Minute {
-			log.Printf("Weather area %s already executed recently, skipping", area.Name)
-			return false
-		}
-	}
-
 	city, ok := triggerConfig["city"].(string)
 	if !ok || city == "" {
 		log.Printf("City not specified for weather area %s", area.Name)
@@ -641,62 +553,6 @@ func (s *SchedulerService) shouldTriggerWeatherArea(area models.Area, triggerCon
 	return false
 }
 
-func (s *SchedulerService) shouldTriggerAgendaArea(area models.Area, triggerConfig map[string]interface{}) bool {
-	if s.agendaService == nil {
-		log.Printf("Google Agenda service not available for area %s", area.Name)
-		return false
-	}
-
-	if area.LastRunAt != nil {
-		timeSinceLastRun := time.Since(*area.LastRunAt)
-		if timeSinceLastRun < 5*time.Minute {
-			log.Printf("Google Agenda area %s already executed recently, skipping", area.Name)
-			return false
-		}
-	}
-
-	calendarID, ok := triggerConfig["calendarId"].(string)
-	if !ok || calendarID == "" {
-		calendarID = "primary"
-	}
-
-	eventTitle, ok := triggerConfig["eventTitle"].(string)
-	if !ok {
-		eventTitle = ""
-	}
-
-	timeBefore, ok := triggerConfig["timeBefore"].(string)
-	if !ok {
-		timeBefore = "15m"
-	}
-
-	eventStatus, ok := triggerConfig["eventStatus"].(string)
-	if !ok {
-		eventStatus = ""
-	}
-
-	agendaConfig := AgendaTriggerConfig{
-		CalendarID:    calendarID,
-		EventTitle:    eventTitle,
-		TimeBefore:    timeBefore,
-		EventStatus:   eventStatus,
-		CheckInterval: "5m",
-	}
-
-	events, err := s.agendaService.CheckForUpcomingEvents(strconv.Itoa(int(area.UserID)), agendaConfig)
-	if err != nil {
-		log.Printf("Failed to check Google Agenda trigger for area %s: %v", area.Name, err)
-		return false
-	}
-
-	if len(events) > 0 {
-		log.Printf("Google Agenda trigger activated for area %s: found %d upcoming events", area.Name, len(events))
-		return true
-	}
-
-	return false
-}
-
 func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfig map[string]interface{}, now time.Time) bool {
 	intervalStr, ok := triggerConfig["interval"].(string)
 	if !ok || intervalStr == "" {
@@ -710,6 +566,23 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 
 func (s *SchedulerService) executeArea(area models.Area, metadata map[string]interface{}) error {
 	log.Printf("Executing area: %s", area.Name)
+	log.Printf("IntermediateActionService: '%s'", area.IntermediateActionService)
+
+	if metadata == nil {
+		metadata = make(map[string]interface{})
+	}
+
+	if area.IntermediateActionService != "" && area.IntermediateActionService == "OpenAI" {
+		log.Printf("Executing OpenAI intermediate action for area: %s", area.Name)
+		if err := s.executeIntermediateAction(&area, metadata); err != nil {
+			log.Printf("WARNING: Failed to execute intermediate action: %v", err)
+			log.Printf("Continuing with action execution even though OpenAI failed")
+			metadata["openaiGeneratedText"] = "[Erreur OpenAI: " + err.Error() + "]"
+		}
+		log.Printf("OpenAI intermediate action completed for area: %s", area.Name)
+	} else {
+		log.Printf("Skipping intermediate action (empty or not OpenAI): '%s'", area.IntermediateActionService)
+	}
 
 	var actionConfig map[string]interface{}
 	if err := json.Unmarshal(area.ActionConfig, &actionConfig); err != nil {
@@ -721,8 +594,6 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 		return s.executeGmailAction(&area, actionConfig, metadata)
 	case "Discord":
 		return s.executeDiscordAction(&area, actionConfig, metadata)
-	case "OneDrive":
-		return s.executeOneDriveAction(area, actionConfig)
 	case "Telegram":
 		return s.executeTelegramAction(&area, actionConfig, metadata)
 	default:
@@ -733,6 +604,59 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 
 func (s *SchedulerService) ExecuteAreaPublic(area models.Area, metadata map[string]interface{}) error {
 	return s.executeArea(area, metadata)
+}
+
+func (s *SchedulerService) executeIntermediateAction(area *models.Area, metadata map[string]interface{}) error {
+	switch area.IntermediateActionService {
+	case "OpenAI":
+		return s.executeOpenAIAction(area, metadata)
+	default:
+		return fmt.Errorf("unsupported intermediate action service: %s", area.IntermediateActionService)
+	}
+}
+
+func (s *SchedulerService) executeOpenAIAction(area *models.Area, metadata map[string]interface{}) error {
+	if s.openaiService == nil {
+		return fmt.Errorf("OpenAI service not available")
+	}
+
+	var intermediateConfig map[string]interface{}
+	if err := json.Unmarshal(area.IntermediateActionConfig, &intermediateConfig); err != nil {
+		return fmt.Errorf("failed to parse intermediate action config: %v", err)
+	}
+
+	prompt := getString(intermediateConfig["prompt"])
+	if prompt == "" {
+		return fmt.Errorf("prompt not found in intermediate action config")
+	}
+
+	systemPrompt := getString(intermediateConfig["systemPrompt"])
+	temperature := 0.7
+	if temp, ok := intermediateConfig["temperature"].(float64); ok {
+		temperature = temp
+	}
+	maxTokens := 500
+	if tokens, ok := intermediateConfig["maxTokens"].(float64); ok {
+		maxTokens = int(tokens)
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+	prompt = applyTemplateVariables(prompt, templateVars)
+	if systemPrompt != "" {
+		systemPrompt = applyTemplateVariables(systemPrompt, templateVars)
+	}
+
+	generatedText, err := s.openaiService.GenerateText(prompt, systemPrompt, temperature, maxTokens)
+	if err != nil {
+		return fmt.Errorf("failed to generate text with OpenAI: %w", err)
+	}
+
+	metadata["openaiGeneratedText"] = generatedText
+	log.Printf("OpenAI generated text (length: %d): %s", len(generatedText), generatedText)
+	if len(generatedText) == 0 {
+		log.Printf("WARNING: OpenAI generated empty text!")
+	}
+	return nil
 }
 
 func (s *SchedulerService) executeGmailAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
@@ -837,7 +761,10 @@ func (s *SchedulerService) executeTelegramAction(area *models.Area, actionConfig
 	}
 
 	templateVars := buildTemplateVars(area, metadata)
+	log.Printf("Template vars for Telegram: openaiGeneratedText='%s'", templateVars["openaiGeneratedText"])
+	log.Printf("Message before template replacement: '%s'", message)
 	message = applyTemplateVariables(message, templateVars)
+	log.Printf("Message after template replacement: '%s'", message)
 
 	if err := s.telegramService.SendMessage(chatID, message); err != nil {
 		s.recordAreaFailure(area, fmt.Errorf("failed to send telegram message: %w", err))
@@ -934,6 +861,7 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"username":       "",
 		"firstName":      "",
 		"messageId":      "",
+		"openaiGeneratedText": "",
 		"trackId":        "",
 		"trackName":      "",
 		"artistNames":    "",
@@ -1039,6 +967,10 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 	}
 	if durationMs, ok := extractInt(metadata["durationMs"]); ok {
 		vars["durationMs"] = strconv.Itoa(durationMs)
+	}
+
+	if openaiText, ok := metadata["openaiGeneratedText"].(string); ok {
+		vars["openaiGeneratedText"] = openaiText
 	}
 
 	return vars
@@ -1224,106 +1156,6 @@ func extractInt(value interface{}) (int, bool) {
 	}
 }
 
-func (s *SchedulerService) executeOneDriveAction(area models.Area, actionConfig map[string]interface{}) error {
-	if s.onedriveService == nil {
-		return fmt.Errorf("OneDrive service not available")
-	}
-
-	var user models.User
-	if err := database.DB.First(&user, area.UserID).Error; err != nil {
-		return fmt.Errorf("user not found: %v", err)
-	}
-
-	if user.OneDriveToken == nil || *user.OneDriveToken == "" {
-		return fmt.Errorf("OneDrive not linked for this user")
-	}
-
-	switch area.ActionType {
-	case "UploadFile", "upload":
-		return s.executeOneDriveUpload(area, actionConfig, *user.OneDriveToken)
-	case "CreateFolder", "createFolder":
-		return s.executeOneDriveCreateFolder(area, actionConfig, *user.OneDriveToken)
-	default:
-		return fmt.Errorf("unsupported OneDrive action type: %s", area.ActionType)
-	}
-}
-
-func (s *SchedulerService) executeOneDriveUpload(area models.Area, actionConfig map[string]interface{}, accessToken string) error {
-	fileName, ok := actionConfig["fileName"].(string)
-	if !ok || fileName == "" {
-		fileName = fmt.Sprintf("area_%s_%s.txt", area.Name, time.Now().Format("20060102_150405"))
-	}
-
-	content, ok := actionConfig["content"].(string)
-	if !ok || content == "" {
-		content = fmt.Sprintf("File created by AREA: %s at %s", area.Name, time.Now().Format("2006-01-02 15:04:05"))
-	}
-
-	templateVars := map[string]string{
-		"eventTitle": "Scheduled Event",
-		"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
-		"areaName":   area.Name,
-	}
-
-	for key, value := range templateVars {
-		fileName = strings.ReplaceAll(fileName, "{{"+key+"}}", value)
-		content = strings.ReplaceAll(content, "{{"+key+"}}", value)
-	}
-
-	_, err := s.onedriveService.UploadFile(accessToken, fileName, []byte(content))
-	if err != nil {
-		return fmt.Errorf("failed to upload file to OneDrive: %v", err)
-	}
-
-	log.Printf("File uploaded to OneDrive successfully for AREA: %s", area.Name)
-
-	area.LastRunAt = &time.Time{}
-	*area.LastRunAt = time.Now()
-	area.RunCount++
-	area.LastRunStatus = "success"
-
-	if err := database.DB.Save(&area).Error; err != nil {
-		log.Printf("Failed to update area status: %v", err)
-	}
-
-	return nil
-}
-
-func (s *SchedulerService) executeOneDriveCreateFolder(area models.Area, actionConfig map[string]interface{}, accessToken string) error {
-	folderName, ok := actionConfig["folderName"].(string)
-	if !ok || folderName == "" {
-		folderName = fmt.Sprintf("AREA_%s", time.Now().Format("20060102_150405"))
-	}
-
-	templateVars := map[string]string{
-		"eventTitle": "Scheduled Event",
-		"eventTime":  time.Now().Format("2006-01-02 15:04:05"),
-		"areaName":   area.Name,
-	}
-
-	for key, value := range templateVars {
-		folderName = strings.ReplaceAll(folderName, "{{"+key+"}}", value)
-	}
-
-	_, err := s.onedriveService.CreateFolder(accessToken, folderName)
-	if err != nil {
-		return fmt.Errorf("failed to create folder on OneDrive: %v", err)
-	}
-
-	log.Printf("Folder created on OneDrive successfully for AREA: %s", area.Name)
-
-	area.LastRunAt = &time.Time{}
-	*area.LastRunAt = time.Now()
-	area.RunCount++
-	area.LastRunStatus = "success"
-
-	if err := database.DB.Save(&area).Error; err != nil {
-		log.Printf("Failed to update area status: %v", err)
-	}
-
-	return nil
-}
-
 func (s *SchedulerService) StartScheduler(ctx context.Context) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -1360,40 +1192,4 @@ func (s *SchedulerService) TestScheduler(areaID string) error {
 	database.DB.Save(&area)
 
 	return s.executeArea(area, nil)
-}
-
-func (s *SchedulerService) checkGoogleAgendaTriggers() error {
-	if s.agendaService == nil {
-		return nil
-	}
-
-	var areas []models.Area
-
-	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Agenda", true).Find(&areas).Error
-	if err != nil {
-		return fmt.Errorf("failed to fetch Google Agenda areas: %v", err)
-	}
-
-	log.Printf("Checking Google Agenda triggers: found %d active Google Agenda areas", len(areas))
-
-	for _, area := range areas {
-		var triggerConfig map[string]interface{}
-		if err := json.Unmarshal(area.TriggerConfig, &triggerConfig); err != nil {
-			log.Printf("Failed to parse trigger config for area %s: %v", area.Name, err)
-			continue
-		}
-
-		if s.shouldTriggerAgendaArea(area, triggerConfig) {
-			metadata := map[string]interface{}{
-				"triggerTime": time.Now().Format("2006-01-02 15:04:05"),
-				"agendaName":  area.Name,
-			}
-
-			if err := s.executeArea(area, metadata); err != nil {
-				log.Printf("Failed to execute Google Agenda area %s: %v", area.Name, err)
-			}
-		}
-	}
-
-	return nil
 }
