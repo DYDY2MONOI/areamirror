@@ -25,6 +25,7 @@ export interface User {
   spotify_email?: string | null
   twitter_id?: string | null
   twitter_username?: string | null
+  onedrive_id?: string | null
   profile_image?: string | null
 }
 

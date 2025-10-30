@@ -1130,6 +1130,113 @@ watch(showCreateModal, (isOpen) => {
 }
 .daltonism-action-btn.cancel:hover { background: var(--color-hover-bg, var(--overlay-hover)); }
 
+.logout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-bg-modal, rgba(0, 0, 0, 0.6));
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: modalOverlayFadeIn 0.3s ease-out;
+}
+
+.logout-modal-container {
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.logout-modal-content {
+  background: var(--color-bg-card, var(--bg-card));
+  border: 1px solid var(--color-border-primary, var(--border-primary));
+  border-radius: 20px;
+  overflow: hidden;
+  animation: modalContentSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logout-modal-header {
+  padding: 24px;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.logout-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.logout-icon-bg {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.delete-icon-bg {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.logout-modal-title {
+  color: var(--color-text-primary);
+  margin: 8px 0 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.logout-modal-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.logout-modal-actions {
+  padding: 16px 24px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.logout-action-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-colors);
+  border: 1px solid var(--color-border-primary, var(--border-primary));
+  background: var(--color-bg-card, var(--bg-card));
+  color: var(--color-text-primary, var(--text-primary));
+  font-size: 0.95rem;
+}
+
+.logout-cancel-btn:hover {
+  background: var(--color-hover-bg, var(--overlay-hover));
+}
+
+.delete-confirm-btn {
+  background: #ef4444 !important;
+  color: white !important;
+  border-color: #dc2626 !important;
+}
+
+.delete-confirm-btn:hover {
+  background: #dc2626 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(5deg); }
