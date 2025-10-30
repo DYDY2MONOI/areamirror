@@ -141,12 +141,10 @@ func (s *GoogleCalendarService) CheckForUpcomingEvents(userID string, config Cal
 	now := time.Now()
 
 	for _, event := range events {
-		// Check if event title matches filter (if specified)
 		if config.EventTitle != "" && event.Title != config.EventTitle {
 			continue
 		}
 
-		// Check if event is starting within the specified time window
 		timeBefore, err := parseDuration(config.TimeBefore)
 		if err != nil {
 			log.Printf("Failed to parse timeBefore duration: %v", err)

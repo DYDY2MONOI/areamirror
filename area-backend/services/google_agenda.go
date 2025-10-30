@@ -101,7 +101,6 @@ func (s *GoogleAgendaService) GetUpcomingEvents(userID string, calendarID string
 	if err != nil {
 		log.Printf("Calendar API error for calendar ID '%s': %v", calendarID, err)
 
-		// If the specified calendar fails and it's not "primary", try "primary" as fallback
 		if calendarID != "primary" {
 			log.Printf("Trying fallback to 'primary' calendar")
 			events, err = client.Events.List("primary").
