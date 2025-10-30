@@ -81,7 +81,8 @@ onMounted(async () => {
 
     message.value = 'Linking Google account...'
     
-    await authService.linkGoogleAccount(code)
+    const redirectUri = `${window.location.origin}${router.currentRoute.value.path}`
+    await authService.linkGoogleAccount(code, redirectUri)
     
     success.value = true
     loading.value = false

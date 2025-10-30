@@ -34,6 +34,36 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+func buildUserResponse(user models.User) gin.H {
+	return gin.H{
+		"id":               user.ID,
+		"email":            user.Email,
+		"first_name":       user.FirstName,
+		"last_name":        user.LastName,
+		"created_at":       user.CreatedAt,
+		"updated_at":       user.UpdatedAt,
+		"phone":            user.Phone,
+		"birthday":         user.Birthday,
+		"gender":           user.Gender,
+		"country":          user.Country,
+		"lang":             user.Lang,
+		"login_provider":   user.LoginProvider,
+		"profile_image":    user.ProfileImage,
+		"role":             user.Role,
+		"is_active":        user.IsActive,
+		"github_id":        user.GitHubID,
+		"github_username":  user.GitHubUsername,
+		"google_id":        user.GoogleID,
+		"google_email":     user.GoogleEmail,
+		"facebook_id":      user.FacebookID,
+		"facebook_email":   user.FacebookEmail,
+		"spotify_id":       user.SpotifyID,
+		"spotify_email":    user.SpotifyEmail,
+		"twitter_id":       user.TwitterID,
+		"twitter_username": user.TwitterUsername,
+	}
+}
+
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -423,19 +453,7 @@ func OAuth2Login(c *gin.Context) {
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    900,
-		User: gin.H{
-			"id":               user.ID,
-			"email":            user.Email,
-			"first_name":       user.FirstName,
-			"last_name":        user.LastName,
-			"profile_image":    user.ProfileImage,
-			"role":             user.Role,
-			"is_active":        user.IsActive,
-			"spotify_id":       user.SpotifyID,
-			"spotify_email":    user.SpotifyEmail,
-			"twitter_id":       user.TwitterID,
-			"twitter_username": user.TwitterUsername,
-		},
+		User:         buildUserResponse(user),
 	})
 }
 
@@ -491,33 +509,7 @@ func GetMe(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{
-			"id":               user.ID,
-			"email":            user.Email,
-			"first_name":       user.FirstName,
-			"last_name":        user.LastName,
-			"created_at":       user.CreatedAt,
-			"updated_at":       user.UpdatedAt,
-			"phone":            user.Phone,
-			"birthday":         user.Birthday,
-			"gender":           user.Gender,
-			"country":          user.Country,
-			"lang":             user.Lang,
-			"login_provider":   user.LoginProvider,
-			"profile_image":    user.ProfileImage,
-			"role":             user.Role,
-			"is_active":        user.IsActive,
-			"github_id":        user.GitHubID,
-			"github_username":  user.GitHubUsername,
-			"google_id":        user.GoogleID,
-			"google_email":     user.GoogleEmail,
-			"facebook_id":      user.FacebookID,
-			"facebook_email":   user.FacebookEmail,
-			"spotify_id":       user.SpotifyID,
-			"spotify_email":    user.SpotifyEmail,
-			"twitter_id":       user.TwitterID,
-			"twitter_username": user.TwitterUsername,
-		},
+		"user": buildUserResponse(user),
 	})
 }
 
@@ -535,33 +527,7 @@ func GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": gin.H{
-			"id":               user.ID,
-			"email":            user.Email,
-			"first_name":       user.FirstName,
-			"last_name":        user.LastName,
-			"created_at":       user.CreatedAt,
-			"updated_at":       user.UpdatedAt,
-			"phone":            user.Phone,
-			"birthday":         user.Birthday,
-			"gender":           user.Gender,
-			"country":          user.Country,
-			"lang":             user.Lang,
-			"login_provider":   user.LoginProvider,
-			"profile_image":    user.ProfileImage,
-			"role":             user.Role,
-			"is_active":        user.IsActive,
-			"github_id":        user.GitHubID,
-			"github_username":  user.GitHubUsername,
-			"google_id":        user.GoogleID,
-			"google_email":     user.GoogleEmail,
-			"facebook_id":      user.FacebookID,
-			"facebook_email":   user.FacebookEmail,
-			"spotify_id":       user.SpotifyID,
-			"spotify_email":    user.SpotifyEmail,
-			"twitter_id":       user.TwitterID,
-			"twitter_username": user.TwitterUsername,
-		},
+		"user": buildUserResponse(user),
 	})
 }
 
@@ -891,6 +857,7 @@ func LinkGitHubAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":         "GitHub account linked successfully",
 		"github_username": user.GitHubUsername,
+		"user":            buildUserResponse(user),
 	})
 }
 
@@ -922,6 +889,7 @@ func UnlinkGitHubAccount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "GitHub account unlinked successfully",
+		"user":    buildUserResponse(user),
 	})
 }
 
@@ -1043,7 +1011,7 @@ func LinkGoogleAccount(c *gin.Context) {
 	}
 
 	var existingUser models.User
-	if err := database.DB.Where("google_id = ?", googleUser.ID).First(&existingUser).Error; err == nil {
+	if err := database.DB.Where("google_id = ? AND id <> ?", googleUser.ID, user.ID).First(&existingUser).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "This Google account is already linked to another user"})
 		return
 	}
@@ -1099,6 +1067,7 @@ func LinkGoogleAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "Google account linked successfully",
 		"google_email": user.GoogleEmail,
+		"user":         buildUserResponse(user),
 	})
 }
 
@@ -1291,6 +1260,7 @@ func UnlinkGoogleAccount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Google account unlinked successfully",
+		"user":    buildUserResponse(user),
 	})
 }
 

@@ -311,10 +311,15 @@ class AuthService {
     await this.fetchProfile()
   }
 
-  async linkGoogleAccount(code: string): Promise<{ google_email: string }> {
+  async linkGoogleAccount(code: string, redirectUri?: string): Promise<{ google_email?: string; message?: string; user?: User }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
+    }
+
+    const payload: Record<string, unknown> = { code }
+    if (redirectUri) {
+      payload.redirect_uri = redirectUri
     }
 
     const response = await fetch(`${API_BASE_URL}/profile/google/link`, {
@@ -323,7 +328,7 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ code })
+      body: JSON.stringify(payload)
     })
 
     if (!response.ok) {
@@ -332,7 +337,13 @@ class AuthService {
     }
 
     const data = await response.json()
-    await this.fetchProfile()
+
+    if (data.user) {
+      this.user = data.user
+      this.storeUser(data.user)
+    } else {
+      await this.fetchProfile()
+    }
     return data
   }
 

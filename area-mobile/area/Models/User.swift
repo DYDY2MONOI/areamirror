@@ -141,3 +141,13 @@ struct ProfileUpdateRequest: Codable {
 struct ProfileResponse: Codable {
     let user: User
 }
+
+struct LinkAccountResponse: Codable {
+    let message: String?
+    let user: User?
+
+    enum CodingKeys: String, CodingKey {
+        case message
+        case user
+    }
+}
