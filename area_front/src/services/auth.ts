@@ -1,33 +1,32 @@
 export interface User {
   id: number
   email: string
-  first_name?: string
-  last_name?: string
-  created_at?: string
-  updated_at?: string
-  phone?: string
-  birthday?: string
-  gender?: string
-  country?: string
-  lang?: string
-  login_provider?: string
-  role?: string
+  first_name?: string | null
+  last_name?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  phone?: string | null
+  birthday?: string | null
+  gender?: string | null
+  country?: string | null
+  lang?: string | null
+  login_provider?: string | null
+  role?: string | null
   is_active?: boolean
-  github_id?: string
-  github_username?: string
-  google_id?: string
-  google_email?: string
-  facebook_id?: string
-  facebook_email?: string
-  onedrive_id?: string
-  onedrive_email?: string
-  discord_id?: string
-  discord_username?: string
-  spotify_id?: string
-  spotify_email?: string
-  twitter_id?: string
-  twitter_username?: string
-  profile_image?: string
+  github_id?: string | null
+  github_username?: string | null
+  google_id?: string | null
+  google_email?: string | null
+  facebook_id?: string | null
+  facebook_email?: string | null
+  discord_id?: string | null
+  discord_username?: string | null
+  spotify_id?: string | null
+  spotify_email?: string | null
+  twitter_id?: string | null
+  twitter_username?: string | null
+  onedrive_id?: string | null
+  profile_image?: string | null
 }
 
 export interface AuthResponse {
