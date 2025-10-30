@@ -5,6 +5,8 @@
   --color-text-secondary: #9ca3af;
   --color-text-muted: #6b7280;
   --color-bg-primary: #000000;
+
+  --daltonism-filter-strength: 1;
 }
 
 [data-theme="dark"] {
@@ -138,6 +140,26 @@
 
   --overlay-hover: #ffffff12;
   --overlay-active: #ffffff24;
+}
+
+#app[data-daltonism="protanopia"] {
+  filter: saturate(0.8) hue-rotate(-10deg) contrast(1.05);
+}
+
+#app[data-daltonism="deuteranopia"] {
+  filter: saturate(0.8) hue-rotate(10deg) contrast(1.05);
+}
+
+#app[data-daltonism="tritanopia"] {
+  filter: saturate(0.8) hue-rotate(170deg) contrast(1.05);
+}
+
+#app[data-daltonism="monochrome"] {
+  filter: grayscale(1) contrast(1.1);
+}
+
+img, video, canvas {
+  filter: none !important;
 }
 
 body {

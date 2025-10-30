@@ -13,7 +13,6 @@
         <v-icon key="light" size="22">mdi-weather-night</v-icon>
       </template>
       <template v-else>
-        <!-- When in high-contrast, show the base-theme icon that would be used when exiting HC -->
         <v-icon key="hc" size="22">{{ prevNonHCTheme === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </template>
     </transition>
@@ -30,7 +29,6 @@ const label = computed(() => {
   const t = currentTheme.value
   if (t === 'dark') return 'Passer en mode clair'
   if (t === 'light') return 'Passer en mode sombre'
-  // In high-contrast, we still allow flipping the base theme setting
   return prevNonHCTheme.value === 'dark' ? 'Passer en mode clair (base)' : 'Passer en mode sombre (base)'
 })
 </script>

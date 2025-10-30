@@ -75,10 +75,10 @@
 
         <v-divider class="my-2"></v-divider>
 
-        <v-list-item class="sidebar-theme-toggle">
+        <div class="sidebar-theme-toggle">
           <ThemeToggle />
-          <HighContrastToggle />
-        </v-list-item>
+          <HighContrastToggle @open="openDaltonismModal" />
+        </div>
       </v-list>
     </v-navigation-drawer>
 
@@ -271,6 +271,45 @@
 
     <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
 
+    <!-- Daltonism Modal -->
+    <div v-if="showDaltonismModal" class="daltonism-modal-overlay" @click="onDaltonismCancel">
+      <div class="daltonism-modal-container" @click.stop>
+        <div class="daltonism-modal-content">
+          <div class="daltonism-modal-header">
+            <div class="daltonism-icon-wrapper">
+              <div class="daltonism-icon-bg">
+                <v-icon size="24" color="white">mdi-eye</v-icon>
+              </div>
+            </div>
+            <h2 class="daltonism-modal-title">Daltonism modes</h2>
+            <p class="daltonism-modal-subtitle">Choose a color-vision-friendly filter</p>
+          </div>
+
+          <div class="daltonism-options">
+            <button
+              v-for="opt in daltonismOptions"
+              :key="opt.value"
+              class="daltonism-option"
+              :class="{ active: currentDaltonismMode === opt.value }"
+              @click="onDaltonismSelect(opt.value)"
+            >
+              <div class="option-left">
+                <div class="option-radio" :class="{ checked: currentDaltonismMode === opt.value }">
+                  <div class="dot" />
+                </div>
+                <span class="option-title">{{ opt.title }}</span>
+              </div>
+              <v-icon size="18" v-if="currentDaltonismMode === opt.value">mdi-check</v-icon>
+            </button>
+          </div>
+
+          <div class="daltonism-modal-actions">
+            <button class="daltonism-action-btn cancel" @click="onDaltonismCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -294,6 +333,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
 import { useRouter } from 'vue-router'
 import { type Area } from '@/services/area'
+import { useTheme, type DaltonismMode } from '@/composables/useTheme'
 
 interface AreaTemplate {
   id: string
@@ -364,6 +404,37 @@ const filteredAreas = computed(() => {
     )
   })
 })
+
+const showDaltonismModal = ref(false)
+const previousDaltonismMode = ref<DaltonismMode>('none')
+const { daltonismMode: currentDaltonismMode } = useTheme()
+const { setDaltonismMode } = useTheme()
+
+const daltonismOptions = [
+  { title: 'No filter', value: 'none' as DaltonismMode },
+  { title: 'Protanopia', value: 'protanopia' as DaltonismMode },
+  { title: 'Deuteranopia', value: 'deuteranopia' as DaltonismMode },
+  { title: 'Tritanopia', value: 'tritanopia' as DaltonismMode },
+  { title: 'Monochrome', value: 'monochrome' as DaltonismMode },
+]
+
+const openDaltonismModal = () => {
+  previousDaltonismMode.value = currentDaltonismMode.value
+  showDaltonismModal.value = true
+  document.body.classList.add('modal-open')
+}
+
+const onDaltonismCancel = () => {
+  setDaltonismMode(previousDaltonismMode.value)
+  showDaltonismModal.value = false
+  document.body.classList.remove('modal-open')
+}
+
+const onDaltonismSelect = (mode: DaltonismMode) => {
+  setDaltonismMode(mode)
+  showDaltonismModal.value = false
+  document.body.classList.remove('modal-open')
+}
 
 onMounted(async () => {
   const onResize = () => {
@@ -652,6 +723,14 @@ watch(showCreateModal, (isOpen) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sidebar-theme-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 12px;
 }
 
 .create-section {
@@ -962,6 +1041,79 @@ watch(showCreateModal, (isOpen) => {
     var(--shadow-glow),
     0 8px 20px rgba(59, 130, 246, 0.3);
 }
+
+.daltonism-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-bg-modal, rgba(0,0,0,0.6));
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.daltonism-modal-container { max-width: 520px; width: 100%; }
+
+.daltonism-modal-content {
+  background: var(--color-bg-card, var(--bg-card));
+  border: 1px solid var(--color-border-primary, var(--border-primary));
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.daltonism-modal-header {
+  padding: 24px;
+  text-align: center;
+  background: var(--gradient-accent);
+}
+
+.daltonism-icon-wrapper { display: flex; justify-content: center; margin-bottom: 12px; }
+.daltonism-icon-bg {
+  width: 56px; height: 56px; border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.daltonism-modal-title { color: var(--color-text-primary); margin: 8px 0 6px; font-size: 1.25rem; font-weight: 700; }
+.daltonism-modal-subtitle { color: rgba(255,255,255,0.9); margin: 0; font-size: 0.95rem; }
+
+.daltonism-options { padding: 16px; display: grid; gap: 8px; background: var(--color-bg-card, var(--bg-card)); }
+.daltonism-option {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-primary, var(--border-primary));
+  background: var(--color-bg-card, var(--bg-card));
+  color: var(--color-text-primary, var(--text-primary));
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+.daltonism-option:hover { background: var(--color-hover-bg, var(--overlay-hover)); }
+.daltonism-option.active { box-shadow: 0 0 0 2px var(--color-border-focus, var(--border-accent)); }
+
+.option-left { display: inline-flex; align-items: center; gap: 10px; }
+.option-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border-primary, var(--border-primary)); display: flex; align-items: center; justify-content: center; }
+.option-radio .dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+.option-radio.checked .dot { background: var(--color-accent-primary, var(--accent-primary)); }
+.option-title { font-weight: 600; }
+
+.daltonism-modal-actions { padding: 16px; display: flex; justify-content: center; gap: 12px; }
+.daltonism-action-btn {
+  padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: var(--transition-colors);
+  border: 1px solid var(--color-border-primary, var(--border-primary)); background: var(--color-bg-card, var(--bg-card)); color: var(--color-text-primary, var(--text-primary));
+}
+.daltonism-action-btn.cancel:hover { background: var(--color-hover-bg, var(--overlay-hover)); }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
