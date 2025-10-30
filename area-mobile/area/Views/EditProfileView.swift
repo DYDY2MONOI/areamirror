@@ -28,7 +28,7 @@ struct EditProfileView: View {
     @State private var linkFeedbackMessage: String?
     @State private var showLinkFeedback = false
     
-    private let oauthProviders = OAuthProvider.availableProviders
+    private var oauthProviders: [OAuthProvider] { OAuthProvider.availableProviders }
     
     let onDismiss: () -> Void
     
@@ -436,14 +436,17 @@ struct EditProfileView: View {
             }
         }
         .onAppear {
+            if authService.isAuthenticated {
+                authService.fetchProfile()
+            }
             loadCurrentProfile()
         }
-        .onChange(of: authService.errorMessage) { _, newValue in
+        .onChange(of: authService.errorMessage) { newValue in
             if newValue != nil {
                 showAlert = true
             }
         }
-        .onChange(of: authService.isLoading) { _, newValue in
+        .onChange(of: authService.isLoading) { newValue in
             if !newValue && authService.errorMessage == nil {
                 showSuccessAlert = true
             }
@@ -475,6 +478,9 @@ struct EditProfileView: View {
             }
         } message: {
             Text("Profile updated successfully!")
+        }
+        .onReceive(authService.$currentUser) { _ in
+            loadCurrentProfile()
         }
     }
     
