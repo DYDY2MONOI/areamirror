@@ -152,6 +152,13 @@ func main() {
 	r.GET("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetUserRoles)
 	r.PUT("/users/:id/role", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateUserRole)
 
+	googleAgendaController := controllers.NewGoogleAgendaController()
+	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
+	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
+	r.GET("/google-agenda/events", controllers.AuthMiddleware(), googleAgendaController.GetUpcomingEvents)
+	r.GET("/google-agenda/test", controllers.AuthMiddleware(), googleAgendaController.TestAgendaConnection)
+	r.GET("/google-agenda/calendars", controllers.AuthMiddleware(), googleAgendaController.ListCalendars)
+
 	scheduler, err := services.NewSchedulerService()
 	if err != nil {
 		log.Printf("Warning: Failed to initialize scheduler: %v", err)
