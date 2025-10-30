@@ -241,3 +241,26 @@ func (s *GoogleAgendaService) ListCalendars(userID string) ([]string, error) {
 
 	return calendarIDs, nil
 }
+
+func parseDuration(durationStr string) (time.Duration, error) {
+	if durationStr == "" {
+		return 15 * time.Minute, nil
+	}
+
+	switch durationStr {
+	case "5m":
+		return 5 * time.Minute, nil
+	case "15m":
+		return 15 * time.Minute, nil
+	case "30m":
+		return 30 * time.Minute, nil
+	case "1h":
+		return 1 * time.Hour, nil
+	case "2h":
+		return 2 * time.Hour, nil
+	case "1d":
+		return 24 * time.Hour, nil
+	default:
+		return time.ParseDuration(durationStr)
+	}
+}
