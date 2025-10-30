@@ -751,6 +751,10 @@ watch(showCreateModal, (isOpen) => {
 .create-section {
   position: relative;
   min-height: 300px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  align-items: center;
 }
 
 .floating-icons {
@@ -829,6 +833,11 @@ watch(showCreateModal, (isOpen) => {
 .cards-grid .card-spotlight-container:nth-child(2) { animation-delay: .05s; }
 .cards-grid .card-spotlight-container:nth-child(3) { animation-delay: .1s; }
 .cards-grid .card-spotlight-container:nth-child(4) { animation-delay: .15s; }
+
+.create-section .cards-grid {
+  grid-template-columns: 1fr;
+  justify-items: start;
+}
 
 .bottom-nav {
   position: fixed;
@@ -1293,6 +1302,15 @@ watch(showCreateModal, (isOpen) => {
 
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .create-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .create-section .cards-grid {
+    justify-items: center;
   }
 }
 
