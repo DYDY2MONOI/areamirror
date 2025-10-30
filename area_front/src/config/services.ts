@@ -76,6 +76,17 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     isEnabled: true
   },
   {
+    id: 'onedrive',
+    name: 'OneDrive',
+    icon: 'onedrive',
+    color: '#0078D4',
+    description: 'Connect your OneDrive account to manage files and folders',
+    authUrl: 'http://localhost:8080/onedrive/auth/start',
+    callbackPath: '/auth/onedrive/callback',
+    scopes: ['Files.ReadWrite', 'Files.ReadWrite.All', 'offline_access'],
+    isEnabled: true
+  },
+  {
     id: 'twitter',
     name: 'Twitter / X',
     icon: 'twitter',
