@@ -2,9 +2,9 @@ services:
   database:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: area_db
-      POSTGRES_USER: area_user
-      POSTGRES_PASSWORD: area_password
+      POSTGRES_DB: ${POSTGRES_DB:-area_db}
+      POSTGRES_USER: ${POSTGRES_USER:-area_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -24,35 +24,38 @@ services:
     environment:
       DB_HOST: database
       DB_PORT: 5432
-      DB_USER: area_user
-      DB_PASSWORD: area_password
-      DB_NAME: area_db
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production-min-32-chars
-      JWT_ACCESS_TOKEN_EXPIRY: 15m
-      JWT_REFRESH_TOKEN_EXPIRY: 30d
-      OAUTH2_ACCESS_TOKEN_EXPIRY: 900
-      OAUTH2_REFRESH_TOKEN_EXPIRY: 2592000
-      OAUTH2_TOKEN_CLEANUP_INTERVAL: 24h
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
-      CORS_ALLOW_CREDENTIALS: "true"
-      RATE_LIMIT_REQUESTS_PER_MINUTE: 60
-      RATE_LIMIT_BURST: 10
-      GITHUB_CLIENT_ID: Ov23liQ7GPEEWs0hVzyM
-      GITHUB_CLIENT_SECRET: d20831e34517a30903d8166a67d7aee11969be99
-      GOOGLE_CLIENT_ID: 635456942993-cl4hm8rvh0pcslhjfko23cbgh18o4cdq.apps.googleusercontent.com
-      GOOGLE_CLIENT_SECRET: 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
-      TWITTER_CLIENT_ID: bk1hWG93bjJwOGRqbXh6ZjJpRkQ6MTpjaQ
-      TWITTER_CLIENT_SECRET: gXhuaScVi00A8cE768QOL5_fky251mFl9pV_VDLJQGbtkX2qqc
-      TWITTER_REDIRECT_URI: https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback
-      GOOGLE_REDIRECT_URI: http://localhost:3000/callback
-      GITHUB_REDIRECT_URI: http://localhost:3000/oauth2/github/callback
+      DB_USER: ${POSTGRES_USER:-area_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB:-area_db}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY: ${JWT_ACCESS_TOKEN_EXPIRY:-15m}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-30d}
+      OAUTH2_ACCESS_TOKEN_EXPIRY: ${OAUTH2_ACCESS_TOKEN_EXPIRY:-900}
+      OAUTH2_REFRESH_TOKEN_EXPIRY: ${OAUTH2_REFRESH_TOKEN_EXPIRY:-2592000}
+      OAUTH2_TOKEN_CLEANUP_INTERVAL: ${OAUTH2_TOKEN_CLEANUP_INTERVAL:-24h}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+      RATE_LIMIT_REQUESTS_PER_MINUTE: ${RATE_LIMIT_REQUESTS_PER_MINUTE:-60}
+      RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-10}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      TWITTER_CLIENT_ID: ${TWITTER_CLIENT_ID}
+      TWITTER_CLIENT_SECRET: ${TWITTER_CLIENT_SECRET}
+      TWITTER_REDIRECT_URI: ${TWITTER_REDIRECT_URI}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/callback}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:3000/oauth2/github/callback}
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:8080/webhooks/github}
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6}
-      FACEBOOK_CLIENT_ID: 827003503004798
-      FACEBOOK_CLIENT_SECRET: 991527f3bbb9c3a764db25e425fc7637
-      FACEBOOK_REDIRECT_URI: http://localhost:3000/oauth2/facebook/callback
-      GOOGLE_SHEETS_API_KEY: AIzaSyAG2M7Hv6TGS92z7-0Y-huE8a8J0iEdVhY
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET}
+      FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI:-http://localhost:3000/oauth2/facebook/callback}
+      ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID}
+      ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET}
+      ONEDRIVE_REDIRECT_URI: ${ONEDRIVE_REDIRECT_URI:-http://localhost:8080/onedrive/callback}
+      GOOGLE_SHEETS_API_KEY: ${GOOGLE_SHEETS_API_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
@@ -75,7 +78,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        VITE_FACEBOOK_CLIENT_ID: 827003503004798
+        VITE_FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
     ports:
       - "3000:80"
     depends_on:
@@ -84,6 +87,22 @@ services:
     networks:
       - area_network
     restart: unless-stopped
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - "http"
+      - "frontend:80"
+      - "--domain=overeasily-superable-catarina.ngrok-free.dev"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    networks:
+      - area_network
+    depends_on:
+      - frontend
 
 volumes:
   postgres_data:

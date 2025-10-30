@@ -1,12 +1,7 @@
-/* ============================================
-   THEME SYSTEM - Dark & Light Modes
-   ============================================ */
 
 :root {
-  /* Transitions communes */
   --transition-colors: all 0.3s ease;
   
-  /* Variables de couleurs pour compatibilité (mode sombre par défaut) */
   --color-text-primary: #ffffff;
   --color-text-secondary: #9ca3af;
   --color-text-muted: #6b7280;

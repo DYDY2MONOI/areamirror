@@ -145,6 +145,17 @@ export function useAuth() {
     }
   }
 
+  const linkOneDriveAccount = async (code: string) => {
+    try {
+      const result = await authService.linkOneDriveAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('OneDrive link error:', error)
+      throw error
+    }
+  }
+
   const linkSpotifyAccount = async (code: string) => {
     try {
       const result = await authService.linkSpotifyAccount(code)
@@ -152,6 +163,16 @@ export function useAuth() {
       return result
     } catch (error) {
       console.error('Spotify link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkOneDriveAccount = async () => {
+    try {
+      await authService.unlinkOneDriveAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('OneDrive unlink error:', error)
       throw error
     }
   }
@@ -228,6 +249,8 @@ export function useAuth() {
     unlinkGoogleAccount,
     linkFacebookAccount,
     unlinkFacebookAccount,
+    linkOneDriveAccount,
+    unlinkOneDriveAccount,
     linkSpotifyAccount,
     unlinkSpotifyAccount,
     linkTwitterAccount,

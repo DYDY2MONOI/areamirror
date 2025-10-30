@@ -32,6 +32,10 @@ type User struct {
 	GoogleEmail        *string    `json:"google_email"`
 	FacebookID         *string    `json:"facebook_id" gorm:"uniqueIndex"`
 	FacebookEmail      *string    `json:"facebook_email"`
+	OneDriveID         *string    `json:"onedrive_id" gorm:"column:one_drive_id;uniqueIndex"`
+	OneDriveEmail      *string    `json:"onedrive_email" gorm:"column:one_drive_email"`
+	OneDriveToken      *string    `json:"-" gorm:"column:one_drive_token;type:text"`
+	OneDriveRefresh    *string    `json:"-" gorm:"column:one_drive_refresh;type:text"`
 	SpotifyID          *string    `json:"spotify_id" gorm:"uniqueIndex"`
 	SpotifyEmail       *string    `json:"spotify_email"`
 	TwitterID          *string    `json:"twitter_id" gorm:"uniqueIndex"`

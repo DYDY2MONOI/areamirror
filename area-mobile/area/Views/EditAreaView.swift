@@ -40,7 +40,7 @@ struct EditAreaView: View {
         
         if let triggerConfig = area.triggerConfig {
             print("📱 Loading trigger config for existing area: \(area.name)")
-            if area.triggerService == "Google Calendar" {
+            if area.triggerService == "Date Timer" {
                 _eventDate = State(initialValue: triggerConfig["eventDate"]?.value as? String ?? "")
                 _eventTime = State(initialValue: triggerConfig["eventTime"]?.value as? String ?? "")
                 _eventTitle = State(initialValue: triggerConfig["eventTitle"]?.value as? String ?? "")
@@ -50,7 +50,7 @@ struct EditAreaView: View {
                 }
                 print("📱 Loaded calendar config: date=\(triggerConfig["eventDate"]?.value as? String ?? "nil"), time=\(triggerConfig["eventTime"]?.value as? String ?? "nil")")
             }
-        } else if area.triggerService == "Google Calendar" {
+        } else if area.triggerService == "Date Timer" {
             print("📱 No trigger config, using default calendar config")
             _eventDate = State(initialValue: "")
             _eventTime = State(initialValue: "")
@@ -85,7 +85,7 @@ struct EditAreaView: View {
                         
                         formCard
                         
-                        if area.triggerService == "Google Calendar" {
+                        if area.triggerService == "Date Timer" {
                             calendarTriggerCard
                         }
                         
@@ -176,8 +176,8 @@ struct EditAreaView: View {
                 DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
                     .labelsHidden()
                     .datePickerStyle(.compact)
-                    .onChange(of: eventDateTime) { _ in
-                        let (dateStr, timeStr) = Self.formatCalendarStrings(from: eventDateTime)
+                    .onChange(of: eventDateTime) { oldValue, newValue in
+                        let (dateStr, timeStr) = Self.formatCalendarStrings(from: newValue)
                         eventDate = dateStr
                         eventTime = timeStr
                     }
@@ -218,7 +218,7 @@ struct EditAreaView: View {
         Task {
             do {
                 var triggerConfig: [String: AnyCodable] = [:]
-                if area.triggerService == "Google Calendar" {
+                if area.triggerService == "Date Timer" {
                     triggerConfig = [
                         "eventDate": AnyCodable(eventDate),
                         "eventTime": AnyCodable(eventTime),
@@ -240,7 +240,7 @@ struct EditAreaView: View {
                     name: name,
                     description: description,
                     triggerService: area.triggerService,
-                    triggerType: area.triggerService == "Google Calendar" ? "Event" : "Webhook",
+                    triggerType: area.triggerService == "Date Timer" ? "Event" : "Webhook",
                     actionService: area.actionService,
                     actionType: resolveActionType(area.actionService),
                     triggerConfig: triggerConfig,
@@ -499,9 +499,9 @@ fileprivate func serviceColor(_ service: String) -> Color {
     EditAreaView(
         area: Area(
             id: "1",
-            name: "Google Calendar → Gmail",
-            description: "This AREA sends you an email via Gmail when a new event from your Google Calendar starts.",
-            triggerService: "Google Calendar",
+            name: "Date Timer → Gmail",
+            description: "This AREA sends you an email via Gmail when a new event from your Date Timer starts.",
+            triggerService: "Date Timer",
             actionService: "Gmail",
             isActive: true,
             isPublic: false,

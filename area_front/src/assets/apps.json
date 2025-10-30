@@ -1,6 +1,10 @@
 [
   {
-    "name": "Google Calendar",
+    "name": "Date Timer",
+    "icon": "google-calendar.png"
+  },
+  {
+    "name": "Google Agenda",
     "icon": "google-calendar.png"
   },
   {
@@ -24,8 +28,8 @@
     "icon": "twitter.png"
   },
   {
-    "name": "Google Drive",
-    "icon": "google-drive.png"
+    "name": "OneDrive",
+    "icon": "onedrive.png"
   },
   {
     "name": "GitHub",
