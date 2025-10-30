@@ -176,8 +176,8 @@ struct EditAreaView: View {
                 DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
                     .labelsHidden()
                     .datePickerStyle(.compact)
-                    .onChange(of: eventDateTime) { _ in
-                        let (dateStr, timeStr) = Self.formatCalendarStrings(from: eventDateTime)
+                    .onChange(of: eventDateTime) { oldValue, newValue in
+                        let (dateStr, timeStr) = Self.formatCalendarStrings(from: newValue)
                         eventDate = dateStr
                         eventTime = timeStr
                     }

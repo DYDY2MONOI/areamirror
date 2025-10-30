@@ -19,6 +19,7 @@ struct RegisterView: View {
     @State private var showAlert = false
     
     @StateObject private var authService = AuthService.shared
+    private let oauthProviders = OAuthProvider.availableProviders
     
     let onRegisterSuccess: () -> Void
     let onLoginTap: () -> Void
@@ -61,12 +62,10 @@ struct RegisterView: View {
                         
                         DividerWithText(text: "Or")
                         
-                        SocialLoginButtons(
-                            onGoogleLogin: {
-                                print("Google Register")
-                            },
-                            onAppleLogin: {
-                                print("Apple Register")
+                        OAuthLoginButtons(
+                            providers: oauthProviders,
+                            onProviderSelected: { provider in
+                                authService.login(with: provider)
                             }
                         )
                         

@@ -5,13 +5,17 @@ import (
 	"Golang-API-tutoriel/models"
 	"Golang-API-tutoriel/services"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +23,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 var jwtKey = []byte("your-secret-key-change-in-production")
@@ -86,7 +91,8 @@ type GitHubUserResponse struct {
 }
 
 type GoogleLinkRequest struct {
-	Code string `json:"code" binding:"required"`
+	Code        string `json:"code" binding:"required"`
+	RedirectURI string `json:"redirect_uri"`
 }
 
 type GoogleTokenResponse struct {
@@ -123,10 +129,161 @@ type FacebookUserResponse struct {
 	Name  string `json:"name"`
 }
 
+type SpotifyLinkRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+type SpotifyTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	Scope        string `json:"scope"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type SpotifyUserProfile struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+}
+
+type TwitterLinkRequest struct {
+	Code         string `json:"code" binding:"required"`
+	CodeVerifier string `json:"code_verifier" binding:"required"`
+}
+
+type TwitterTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+}
+
+type TwitterUserResponse struct {
+	Data struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Username string `json:"username"`
+	} `json:"data"`
+}
+
 func init() {
 	if key := os.Getenv("JWT_SECRET"); key != "" {
 		jwtKey = []byte(key)
 	}
+}
+
+func getRedirectURI(defaultEnv, mobileEnv, fallback string, isMobile bool) string {
+	if isMobile {
+		if mobile := os.Getenv(mobileEnv); mobile != "" {
+			return mobile
+		}
+	}
+
+	if standard := os.Getenv(defaultEnv); standard != "" {
+		return standard
+	}
+
+	return fallback
+}
+
+type mobileState struct {
+	isMobile bool
+	mode     string
+	payload  string
+}
+
+func parseMobileState(state string) mobileState {
+	result := mobileState{mode: "login"}
+	if state == "" {
+		return result
+	}
+
+	if !strings.HasPrefix(state, "mobile") {
+		return result
+	}
+
+	result.isMobile = true
+	parts := strings.Split(state, ":")
+	if len(parts) >= 2 {
+		if parts[1] == "link" {
+			result.mode = "link"
+			if len(parts) >= 3 {
+				result.payload = parts[2]
+			}
+		} else if parts[1] != "" {
+			result.payload = parts[1]
+		}
+	}
+
+	if len(parts) >= 3 && parts[1] != "link" {
+		result.payload = parts[2]
+	}
+
+	return result
+}
+
+func redirectToMobileWithTokens(c *gin.Context, provider string, tokenResponse OAuth2TokenResponse) {
+	scheme := os.Getenv("MOBILE_CALLBACK_SCHEME")
+	if scheme == "" {
+		scheme = "area"
+	}
+
+	host := os.Getenv("MOBILE_CALLBACK_HOST")
+	if host == "" {
+		host = "oauth2"
+	}
+
+	path := os.Getenv("MOBILE_CALLBACK_PATH")
+	if path == "" {
+		path = "/callback"
+	}
+
+	values := url.Values{}
+	values.Set("mode", "login")
+	values.Set("provider", provider)
+	values.Set("access_token", tokenResponse.AccessToken)
+	if tokenResponse.RefreshToken != "" {
+		values.Set("refresh_token", tokenResponse.RefreshToken)
+	}
+	values.Set("token_type", tokenResponse.TokenType)
+	expiresIn := tokenResponse.ExpiresIn
+	if expiresIn <= 0 {
+		expiresIn = 900
+	}
+	values.Set("expires_in", strconv.Itoa(expiresIn))
+
+	redirectURL := fmt.Sprintf("%s://%s%s?%s", scheme, host, path, values.Encode())
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+}
+
+func redirectToMobileWithAuthorizationCode(c *gin.Context, provider, code, codeVerifier string) {
+	scheme := os.Getenv("MOBILE_CALLBACK_SCHEME")
+	if scheme == "" {
+		scheme = "area"
+	}
+
+	host := os.Getenv("MOBILE_CALLBACK_HOST")
+	if host == "" {
+		host = "oauth2"
+	}
+
+	path := os.Getenv("MOBILE_CALLBACK_PATH")
+	if path == "" {
+		path = "/callback"
+	}
+
+	values := url.Values{}
+	values.Set("mode", "link")
+	values.Set("provider", provider)
+	values.Set("code", code)
+	if codeVerifier != "" {
+		values.Set("code_verifier", codeVerifier)
+	}
+
+	redirectURL := fmt.Sprintf("%s://%s%s?%s", scheme, host, path, values.Encode())
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
 func Register(c *gin.Context) {
@@ -171,13 +328,17 @@ func Register(c *gin.Context) {
 		"message": "User created successfully",
 		"token":   token,
 		"user": gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
-			"profile_image": user.ProfileImage,
-			"role":          user.Role,
-			"is_active":     user.IsActive,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -211,13 +372,17 @@ func Login(c *gin.Context) {
 		"message": "Login successful",
 		"token":   token,
 		"user": gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
-			"profile_image": user.ProfileImage,
-			"role":          user.Role,
-			"is_active":     user.IsActive,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -259,13 +424,17 @@ func OAuth2Login(c *gin.Context) {
 		TokenType:    "Bearer",
 		ExpiresIn:    900,
 		User: gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
-			"profile_image": user.ProfileImage,
-			"role":          user.Role,
-			"is_active":     user.IsActive,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -323,27 +492,31 @@ func GetMe(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":              user.ID,
-			"email":           user.Email,
-			"first_name":      user.FirstName,
-			"last_name":       user.LastName,
-			"created_at":      user.CreatedAt,
-			"updated_at":      user.UpdatedAt,
-			"phone":           user.Phone,
-			"birthday":        user.Birthday,
-			"gender":          user.Gender,
-			"country":         user.Country,
-			"lang":            user.Lang,
-			"login_provider":  user.LoginProvider,
-			"profile_image":   user.ProfileImage,
-			"role":            user.Role,
-			"is_active":       user.IsActive,
-			"github_id":       user.GitHubID,
-			"github_username": user.GitHubUsername,
-			"google_id":       user.GoogleID,
-			"google_email":    user.GoogleEmail,
-			"facebook_id":     user.FacebookID,
-			"facebook_email":  user.FacebookEmail,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"created_at":       user.CreatedAt,
+			"updated_at":       user.UpdatedAt,
+			"phone":            user.Phone,
+			"birthday":         user.Birthday,
+			"gender":           user.Gender,
+			"country":          user.Country,
+			"lang":             user.Lang,
+			"login_provider":   user.LoginProvider,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"github_id":        user.GitHubID,
+			"github_username":  user.GitHubUsername,
+			"google_id":        user.GoogleID,
+			"google_email":     user.GoogleEmail,
+			"facebook_id":      user.FacebookID,
+			"facebook_email":   user.FacebookEmail,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -363,27 +536,31 @@ func GetProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":              user.ID,
-			"email":           user.Email,
-			"first_name":      user.FirstName,
-			"last_name":       user.LastName,
-			"created_at":      user.CreatedAt,
-			"updated_at":      user.UpdatedAt,
-			"phone":           user.Phone,
-			"birthday":        user.Birthday,
-			"gender":          user.Gender,
-			"country":         user.Country,
-			"lang":            user.Lang,
-			"login_provider":  user.LoginProvider,
-			"profile_image":   user.ProfileImage,
-			"role":            user.Role,
-			"is_active":       user.IsActive,
-			"github_id":       user.GitHubID,
-			"github_username": user.GitHubUsername,
-			"google_id":       user.GoogleID,
-			"google_email":    user.GoogleEmail,
-			"facebook_id":     user.FacebookID,
-			"facebook_email":  user.FacebookEmail,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"created_at":       user.CreatedAt,
+			"updated_at":       user.UpdatedAt,
+			"phone":            user.Phone,
+			"birthday":         user.Birthday,
+			"gender":           user.Gender,
+			"country":          user.Country,
+			"lang":             user.Lang,
+			"login_provider":   user.LoginProvider,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"github_id":        user.GitHubID,
+			"github_username":  user.GitHubUsername,
+			"google_id":        user.GoogleID,
+			"google_email":     user.GoogleEmail,
+			"facebook_id":      user.FacebookID,
+			"facebook_email":   user.FacebookEmail,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -447,25 +624,29 @@ func UpdateProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":              user.ID,
-			"email":           user.Email,
-			"first_name":      user.FirstName,
-			"last_name":       user.LastName,
-			"created_at":      user.CreatedAt,
-			"updated_at":      user.UpdatedAt,
-			"phone":           user.Phone,
-			"birthday":        user.Birthday,
-			"gender":          user.Gender,
-			"country":         user.Country,
-			"lang":            user.Lang,
-			"login_provider":  user.LoginProvider,
-			"profile_image":   user.ProfileImage,
-			"github_id":       user.GitHubID,
-			"github_username": user.GitHubUsername,
-			"google_id":       user.GoogleID,
-			"google_email":    user.GoogleEmail,
-			"facebook_id":     user.FacebookID,
-			"facebook_email":  user.FacebookEmail,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"created_at":       user.CreatedAt,
+			"updated_at":       user.UpdatedAt,
+			"phone":            user.Phone,
+			"birthday":         user.Birthday,
+			"gender":           user.Gender,
+			"country":          user.Country,
+			"lang":             user.Lang,
+			"login_provider":   user.LoginProvider,
+			"profile_image":    user.ProfileImage,
+			"github_id":        user.GitHubID,
+			"github_username":  user.GitHubUsername,
+			"google_id":        user.GoogleID,
+			"google_email":     user.GoogleEmail,
+			"facebook_id":      user.FacebookID,
+			"facebook_email":   user.FacebookEmail,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -625,25 +806,29 @@ func UploadProfileImage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":              user.ID,
-			"email":           user.Email,
-			"first_name":      user.FirstName,
-			"last_name":       user.LastName,
-			"created_at":      user.CreatedAt,
-			"updated_at":      user.UpdatedAt,
-			"phone":           user.Phone,
-			"birthday":        user.Birthday,
-			"gender":          user.Gender,
-			"country":         user.Country,
-			"lang":            user.Lang,
-			"login_provider":  user.LoginProvider,
-			"profile_image":   user.ProfileImage,
-			"github_id":       user.GitHubID,
-			"github_username": user.GitHubUsername,
-			"google_id":       user.GoogleID,
-			"google_email":    user.GoogleEmail,
-			"facebook_id":     user.FacebookID,
-			"facebook_email":  user.FacebookEmail,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"created_at":       user.CreatedAt,
+			"updated_at":       user.UpdatedAt,
+			"phone":            user.Phone,
+			"birthday":         user.Birthday,
+			"gender":           user.Gender,
+			"country":          user.Country,
+			"lang":             user.Lang,
+			"login_provider":   user.LoginProvider,
+			"profile_image":    user.ProfileImage,
+			"github_id":        user.GitHubID,
+			"github_username":  user.GitHubUsername,
+			"google_id":        user.GoogleID,
+			"google_email":     user.GoogleEmail,
+			"facebook_id":      user.FacebookID,
+			"facebook_email":   user.FacebookEmail,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -834,7 +1019,12 @@ func LinkGoogleAccount(c *gin.Context) {
 		return
 	}
 
-	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret)
+	redirectURI := strings.TrimSpace(req.RedirectURI)
+	if redirectURI == "" {
+		redirectURI = getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", false)
+	}
+
+	tokenResp, err := exchangeGoogleCodeForToken(req.Code, googleClientID, googleClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -912,6 +1102,167 @@ func LinkGoogleAccount(c *gin.Context) {
 	})
 }
 
+func LinkSpotifyAccount(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var req SpotifyLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	redirectURI := os.Getenv("SPOTIFY_LINK_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/spotify/callback"
+	}
+
+	if spotifyClientID == "" || spotifyClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
+		return
+	}
+
+	tokenResp, err := exchangeSpotifyCodeForToken(req.Code, spotifyClientID, spotifyClientSecret, redirectURI)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		return
+	}
+
+	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		return
+	}
+
+	if spotifyUser.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Spotify account does not provide an email address"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existing models.User
+	if err := database.DB.Where("spotify_id = ? AND id <> ?", spotifyUser.ID, uid).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Spotify account is already linked to another user"})
+		return
+	}
+
+	user.SpotifyID = &spotifyUser.ID
+	user.SpotifyEmail = &spotifyUser.Email
+	if user.LoginProvider == "" || user.LoginProvider == "email" {
+		user.LoginProvider = "spotify"
+	}
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Spotify account"})
+		return
+	}
+
+	expiry := time.Now().Add(time.Hour)
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	}
+
+	var oauth2Token models.OAuth2Token
+	findErr := database.DB.Where("user_id = ? AND service = ?", uid, "spotify").First(&oauth2Token).Error
+	if findErr != nil {
+		if errors.Is(findErr, gorm.ErrRecordNotFound) {
+			oauth2Token = models.OAuth2Token{
+				UserID:       uid,
+				Service:      "spotify",
+				AccessToken:  tokenResp.AccessToken,
+				RefreshToken: tokenResp.RefreshToken,
+				TokenType:    tokenResp.TokenType,
+				Scope:        tokenResp.Scope,
+				ExpiresAt:    &expiry,
+			}
+
+			if err := database.DB.Create(&oauth2Token).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Spotify OAuth2 token"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch Spotify OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.Scope = tokenResp.Scope
+		oauth2Token.ExpiresAt = &expiry
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Spotify OAuth2 token"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Spotify account linked successfully",
+		"spotify_email": user.SpotifyEmail,
+	})
+}
+
+func UnlinkSpotifyAccount(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.SpotifyID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No Spotify account linked"})
+		return
+	}
+
+	user.SpotifyID = nil
+	user.SpotifyEmail = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Spotify account"})
+		return
+	}
+
+	if err := database.DB.Where("user_id = ? AND service = ?", uid, "spotify").Delete(&models.OAuth2Token{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove Spotify tokens"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Spotify account unlinked successfully",
+	})
+}
+
 func UnlinkGoogleAccount(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -943,13 +1294,8 @@ func UnlinkGoogleAccount(c *gin.Context) {
 	})
 }
 
-func exchangeGoogleCodeForToken(code, clientID, clientSecret string) (*GoogleTokenResponse, error) {
+func exchangeGoogleCodeForToken(code, clientID, clientSecret, redirectURI string) (*GoogleTokenResponse, error) {
 	url := "https://oauth2.googleapis.com/token"
-
-	redirectURI := os.Getenv("GOOGLE_REDIRECT_URI")
-	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/callback"
-	}
 
 	data := map[string]string{
 		"client_id":     clientID,
@@ -1020,6 +1366,81 @@ func getGoogleUser(accessToken string) (*GoogleUserResponse, error) {
 	}
 
 	return &googleUser, nil
+}
+
+func exchangeSpotifyCodeForToken(code, clientID, clientSecret, redirectURI string) (*SpotifyTokenResponse, error) {
+	tokenURL := "https://accounts.spotify.com/api/token"
+
+	form := url.Values{}
+	form.Set("grant_type", "authorization_code")
+	form.Set("code", code)
+	form.Set("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	basicAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientID, clientSecret)))
+	req.Header.Set("Authorization", "Basic "+basicAuth)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("spotify token exchange failed: %s", string(body))
+	}
+
+	var tokenResp SpotifyTokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, err
+	}
+
+	return &tokenResp, nil
+}
+
+func getSpotifyUser(accessToken string) (*SpotifyUserProfile, error) {
+	userURL := "https://api.spotify.com/v1/me"
+
+	req, err := http.NewRequest("GET", userURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("spotify user info request failed: %s", string(body))
+	}
+
+	var profile SpotifyUserProfile
+	if err := json.Unmarshal(body, &profile); err != nil {
+		return nil, err
+	}
+
+	return &profile, nil
 }
 
 type GitHubRepository struct {
@@ -1247,7 +1668,8 @@ func LinkFacebookAccount(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeFacebookCodeForToken(req.Code, facebookClientID, facebookClientSecret)
+	redirectURI := getRedirectURI("FACEBOOK_REDIRECT_URI", "MOBILE_FACEBOOK_REDIRECT_URI", "http://localhost:3000/auth/facebook/callback", false)
+	accessToken, err := exchangeFacebookCodeForToken(req.Code, facebookClientID, facebookClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1316,13 +1738,8 @@ func UnlinkFacebookAccount(c *gin.Context) {
 	})
 }
 
-func exchangeFacebookCodeForToken(code, clientID, clientSecret string) (string, error) {
+func exchangeFacebookCodeForToken(code, clientID, clientSecret, redirectURI string) (string, error) {
 	url := "https://graph.facebook.com/v18.0/oauth/access_token"
-
-	redirectURI := os.Getenv("FACEBOOK_REDIRECT_URI")
-	if redirectURI == "" {
-		redirectURI = "http://localhost:3000/auth/facebook/callback"
-	}
 
 	data := map[string]string{
 		"client_id":     clientID,
@@ -1435,13 +1852,17 @@ func MobileOAuth2Login(c *gin.Context) {
 		TokenType:    "Bearer",
 		ExpiresIn:    900,
 		User: gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
-			"profile_image": user.ProfileImage,
-			"role":          user.Role,
-			"is_active":     user.IsActive,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
 	})
 }
@@ -1450,6 +1871,14 @@ func GitHubDirectLogin(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization code required"})
+		return
+	}
+
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "github", code, "")
 		return
 	}
 
@@ -1505,7 +1934,7 @@ func GitHubDirectLogin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -1520,8 +1949,21 @@ func GitHubDirectLogin(c *gin.Context) {
 			"is_active":       user.IsActive,
 			"github_id":       user.GitHubID,
 			"github_username": user.GitHubUsername,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "github", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 func GoogleDirectLogin(c *gin.Context) {
@@ -1531,6 +1973,16 @@ func GoogleDirectLogin(c *gin.Context) {
 		return
 	}
 
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "google", code, "")
+		return
+	}
+
+	redirectURI := getRedirectURI("GOOGLE_REDIRECT_URI", "MOBILE_GOOGLE_REDIRECT_URI", "http://localhost:3000/callback", stateInfo.isMobile)
+
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 
@@ -1539,7 +1991,7 @@ func GoogleDirectLogin(c *gin.Context) {
 		return
 	}
 
-	tokenResp, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret)
+	tokenResp, err := exchangeGoogleCodeForToken(code, googleClientID, googleClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1622,23 +2074,207 @@ func GoogleDirectLogin(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    900,
 		User: gin.H{
-			"id":            user.ID,
-			"email":         user.Email,
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
-			"profile_image": user.ProfileImage,
-			"role":          user.Role,
-			"is_active":     user.IsActive,
-			"google_id":     user.GoogleID,
-			"google_email":  user.GoogleEmail,
+			"id":              user.ID,
+			"email":           user.Email,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"profile_image":   user.ProfileImage,
+			"role":            user.Role,
+			"is_active":       user.IsActive,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
+			"github_id":       user.GitHubID,
+			"github_username": user.GitHubUsername,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
 		},
-	})
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "google", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
+}
+
+func SpotifyDirectLogin(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization code required"})
+		return
+	}
+
+	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "spotify", code, "")
+		return
+	}
+
+	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "http://127.0.0.1:3000/oauth2/spotify/callback", stateInfo.isMobile)
+
+	if spotifyClientID == "" || spotifyClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
+		return
+	}
+
+	tokenResp, err := exchangeSpotifyCodeForToken(code, spotifyClientID, spotifyClientSecret, redirectURI)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		return
+	}
+
+	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		return
+	}
+
+	if spotifyUser.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Spotify account does not provide an email address"})
+		return
+	}
+
+	var user models.User
+	result := database.DB.Where("spotify_id = ?", spotifyUser.ID).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			if err := database.DB.Where("email = ?", spotifyUser.Email).First(&user).Error; err != nil {
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to look up user"})
+					return
+				}
+
+				user = models.User{
+					Email:         spotifyUser.Email,
+					FirstName:     spotifyUser.DisplayName,
+					SpotifyID:     &spotifyUser.ID,
+					SpotifyEmail:  &spotifyUser.Email,
+					LoginProvider: "spotify",
+					IsActive:      true,
+					Role:          "member",
+				}
+
+				if err := database.DB.Create(&user).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+					return
+				}
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
+			return
+		}
+	}
+
+	if user.SpotifyID == nil || *user.SpotifyID != spotifyUser.ID {
+		user.SpotifyID = &spotifyUser.ID
+	}
+	user.SpotifyEmail = &spotifyUser.Email
+	if user.LoginProvider == "" || user.LoginProvider == "email" {
+		user.LoginProvider = "spotify"
+	}
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	expiry := time.Now().Add(time.Hour)
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	}
+
+	var oauth2Token models.OAuth2Token
+	tokenResult := database.DB.Where("user_id = ? AND service = ?", user.ID, "spotify").First(&oauth2Token)
+	if tokenResult.Error != nil {
+		if errors.Is(tokenResult.Error, gorm.ErrRecordNotFound) {
+			oauth2Token = models.OAuth2Token{
+				UserID:       user.ID,
+				Service:      "spotify",
+				AccessToken:  tokenResp.AccessToken,
+				RefreshToken: tokenResp.RefreshToken,
+				TokenType:    tokenResp.TokenType,
+				Scope:        tokenResp.Scope,
+				ExpiresAt:    &expiry,
+			}
+
+			if err := database.DB.Create(&oauth2Token).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Spotify OAuth2 token"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch Spotify OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.Scope = tokenResp.Scope
+		oauth2Token.ExpiresAt = &expiry
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Spotify OAuth2 token"})
+			return
+		}
+	}
+
+	accessTokenJWT, err := generateAccessToken(user.ID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
+		return
+	}
+
+	refreshToken, err := generateRefreshToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
+		return
+	}
+
+	tokenResponse := OAuth2TokenResponse{
+		AccessToken:  accessTokenJWT,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    900,
+		User: gin.H{
+			"id":              user.ID,
+			"email":           user.Email,
+			"first_name":      user.FirstName,
+			"last_name":       user.LastName,
+			"profile_image":   user.ProfileImage,
+			"role":            user.Role,
+			"is_active":       user.IsActive,
+			"spotify_id":      user.SpotifyID,
+			"spotify_email":   user.SpotifyEmail,
+			"github_id":       user.GitHubID,
+			"github_username": user.GitHubUsername,
+			"google_id":       user.GoogleID,
+			"google_email":    user.GoogleEmail,
+			"facebook_id":     user.FacebookID,
+			"facebook_email":  user.FacebookEmail,
+		},
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "spotify", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
 }
 
 func FacebookDirectLogin(c *gin.Context) {
@@ -1648,6 +2284,16 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
+	state := c.Query("state")
+	stateInfo := parseMobileState(state)
+
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "facebook", code, "")
+		return
+	}
+
+	redirectURI := getRedirectURI("FACEBOOK_REDIRECT_URI", "MOBILE_FACEBOOK_REDIRECT_URI", "http://localhost:3000/auth/facebook/callback", stateInfo.isMobile)
+
 	facebookClientID := os.Getenv("FACEBOOK_CLIENT_ID")
 	facebookClientSecret := os.Getenv("FACEBOOK_CLIENT_SECRET")
 
@@ -1656,7 +2302,7 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := exchangeFacebookCodeForToken(code, facebookClientID, facebookClientSecret)
+	accessToken, err := exchangeFacebookCodeForToken(code, facebookClientID, facebookClientSecret, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
@@ -1698,21 +2344,356 @@ func FacebookDirectLogin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, OAuth2TokenResponse{
+	tokenResponse := OAuth2TokenResponse{
 		AccessToken:  accessTokenJWT,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    900,
 		User: gin.H{
-			"id":             user.ID,
-			"email":          user.Email,
-			"first_name":     user.FirstName,
-			"last_name":      user.LastName,
-			"profile_image":  user.ProfileImage,
-			"role":           user.Role,
-			"is_active":      user.IsActive,
-			"facebook_id":    user.FacebookID,
-			"facebook_email": user.FacebookEmail,
+			"id":               user.ID,
+			"email":            user.Email,
+			"first_name":       user.FirstName,
+			"last_name":        user.LastName,
+			"profile_image":    user.ProfileImage,
+			"role":             user.Role,
+			"is_active":        user.IsActive,
+			"facebook_id":      user.FacebookID,
+			"facebook_email":   user.FacebookEmail,
+			"spotify_id":       user.SpotifyID,
+			"spotify_email":    user.SpotifyEmail,
+			"github_id":        user.GitHubID,
+			"github_username":  user.GitHubUsername,
+			"google_id":        user.GoogleID,
+			"google_email":     user.GoogleEmail,
+			"twitter_id":       user.TwitterID,
+			"twitter_username": user.TwitterUsername,
 		},
+	}
+
+	if stateInfo.isMobile {
+		redirectToMobileWithTokens(c, "facebook", tokenResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, tokenResponse)
+}
+
+func exchangeTwitterCodeForToken(code, clientID, clientSecret, redirectURI, codeVerifier string) (*TwitterTokenResponse, error) {
+	data := url.Values{}
+	data.Set("code", code)
+	data.Set("grant_type", "authorization_code")
+	data.Set("redirect_uri", redirectURI)
+	data.Set("code_verifier", codeVerifier)
+
+	req, err := http.NewRequest("POST", "https://api.twitter.com/2/oauth2/token", strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+	req.Header.Set("Authorization", "Basic "+auth)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("twitter token exchange failed: %s", string(body))
+	}
+
+	var tokenResp TwitterTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return nil, err
+	}
+
+	return &tokenResp, nil
+}
+
+func getTwitterUser(accessToken string) (*TwitterUserResponse, error) {
+	req, err := http.NewRequest("GET", "https://api.twitter.com/2/users/me", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get twitter user: %s", string(body))
+	}
+
+	var userResp TwitterUserResponse
+	if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
+		return nil, err
+	}
+
+	return &userResp, nil
+}
+
+func LinkTwitterAccount(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var req TwitterLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	twitterClientID := os.Getenv("TWITTER_CLIENT_ID")
+	twitterClientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
+	redirectURI := os.Getenv("TWITTER_REDIRECT_URI")
+
+	if redirectURI == "" {
+		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback"
+	}
+
+	if twitterClientID == "" || twitterClientSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Twitter OAuth not configured"})
+		return
+	}
+
+	tokenResp, err := exchangeTwitterCodeForToken(req.Code, twitterClientID, twitterClientSecret, redirectURI, req.CodeVerifier)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Twitter token"})
+		return
+	}
+
+	twitterUser, err := getTwitterUser(tokenResp.AccessToken)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Twitter user"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existing models.User
+	if err := database.DB.Where("twitter_id = ? AND id <> ?", twitterUser.Data.ID, uid).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This Twitter account is already linked to another user"})
+		return
+	}
+
+	user.TwitterID = &twitterUser.Data.ID
+	user.TwitterUsername = &twitterUser.Data.Username
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to link Twitter account"})
+		return
+	}
+
+	expiry := time.Now().Add(time.Hour * 2)
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	}
+
+	var oauth2Token models.OAuth2Token
+	findErr := database.DB.Where("user_id = ? AND service = ?", uid, "twitter").First(&oauth2Token).Error
+	if findErr != nil {
+		if errors.Is(findErr, gorm.ErrRecordNotFound) {
+			oauth2Token = models.OAuth2Token{
+				UserID:       uid,
+				Service:      "twitter",
+				AccessToken:  tokenResp.AccessToken,
+				RefreshToken: tokenResp.RefreshToken,
+				TokenType:    tokenResp.TokenType,
+				Scope:        tokenResp.Scope,
+				ExpiresAt:    &expiry,
+			}
+
+			if err := database.DB.Create(&oauth2Token).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store Twitter OAuth2 token"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch Twitter OAuth2 token"})
+			return
+		}
+	} else {
+		oauth2Token.AccessToken = tokenResp.AccessToken
+		if tokenResp.RefreshToken != "" {
+			oauth2Token.RefreshToken = tokenResp.RefreshToken
+		}
+		oauth2Token.TokenType = tokenResp.TokenType
+		oauth2Token.Scope = tokenResp.Scope
+		oauth2Token.ExpiresAt = &expiry
+
+		if err := database.DB.Save(&oauth2Token).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Twitter OAuth2 token"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":          "Twitter account linked successfully",
+		"twitter_username": user.TwitterUsername,
 	})
+}
+
+func UnlinkTwitterAccount(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	user.TwitterID = nil
+	user.TwitterUsername = nil
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlink Twitter account"})
+		return
+	}
+
+	database.DB.Where("user_id = ? AND service = ?", uid, "twitter").Delete(&models.OAuth2Token{})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Twitter account unlinked successfully"})
+}
+
+func TwitterDirectLogin(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=missing_code")
+		return
+	}
+
+	state := c.Query("state")
+	if state == "link" {
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://overeasily-superable-catarina.ngrok-free.dev/auth/twitter/callback?code=%s&state=link", code))
+		return
+	}
+	stateInfo := parseMobileState(state)
+	if stateInfo.isMobile && stateInfo.mode == "link" {
+		redirectToMobileWithAuthorizationCode(c, "twitter", code, stateInfo.payload)
+		return
+	}
+
+	codeVerifier := ""
+	if stateInfo.isMobile && stateInfo.payload != "" {
+		codeVerifier = stateInfo.payload
+	}
+
+	twitterClientID := os.Getenv("TWITTER_CLIENT_ID")
+	twitterClientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
+	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback", stateInfo.isMobile)
+
+	if twitterClientID == "" || twitterClientSecret == "" {
+		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=twitter_not_configured")
+		return
+	}
+
+	tokenResp, err := exchangeTwitterCodeForToken(code, twitterClientID, twitterClientSecret, redirectURI, codeVerifier)
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=token_exchange_failed")
+		return
+	}
+
+	twitterUser, err := getTwitterUser(tokenResp.AccessToken)
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=user_fetch_failed")
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("twitter_id = ?", twitterUser.Data.ID).First(&user).Error; err != nil {
+		user = models.User{
+			Email:           twitterUser.Data.Username + "@twitter.placeholder",
+			FirstName:       twitterUser.Data.Name,
+			TwitterID:       &twitterUser.Data.ID,
+			TwitterUsername: &twitterUser.Data.Username,
+			LoginProvider:   "twitter",
+			IsActive:        true,
+			Role:            "member",
+		}
+
+		if err := database.DB.Create(&user).Error; err != nil {
+			c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=user_creation_failed")
+			return
+		}
+	}
+
+	accessTokenJWT, err := generateAccessToken(user.ID, user.Email)
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=token_generation_failed")
+		return
+	}
+
+	refreshToken, err := generateRefreshToken(user.ID)
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, "http://127.0.0.1:3000/login?error=refresh_token_failed")
+		return
+	}
+
+	if stateInfo.isMobile {
+		tokenResponse := OAuth2TokenResponse{
+			AccessToken:  accessTokenJWT,
+			RefreshToken: refreshToken,
+			TokenType:    "Bearer",
+			ExpiresIn:    900,
+			User: gin.H{
+				"id":               user.ID,
+				"email":            user.Email,
+				"first_name":       user.FirstName,
+				"last_name":        user.LastName,
+				"profile_image":    user.ProfileImage,
+				"role":             user.Role,
+				"is_active":        user.IsActive,
+				"twitter_id":       user.TwitterID,
+				"twitter_username": user.TwitterUsername,
+				"spotify_id":       user.SpotifyID,
+				"spotify_email":    user.SpotifyEmail,
+				"github_id":        user.GitHubID,
+				"github_username":  user.GitHubUsername,
+				"google_id":        user.GoogleID,
+				"google_email":     user.GoogleEmail,
+				"facebook_id":      user.FacebookID,
+				"facebook_email":   user.FacebookEmail,
+			},
+		}
+
+		redirectToMobileWithTokens(c, "twitter", tokenResponse)
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf(
+		"http://127.0.0.1:3000/home?access_token=%s&refresh_token=%s&token_type=Bearer",
+		accessTokenJWT,
+		refreshToken,
+	))
 }

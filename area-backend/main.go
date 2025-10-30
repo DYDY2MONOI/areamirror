@@ -34,6 +34,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	r.GET("/about.json", controllers.AboutJSON)
+
 	r.POST("/register", controllers.Register)
 	r.POST("/login", controllers.Login)
 	r.GET("/profile", controllers.AuthMiddleware(), controllers.GetProfile)
@@ -44,7 +46,9 @@ func main() {
 
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
+	r.GET("/oauth2/spotify/callback", controllers.SpotifyDirectLogin)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
+	r.GET("/oauth2/twitter/callback", controllers.TwitterDirectLogin)
 
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
 	r.POST("/mobile/oauth2/refresh", controllers.RefreshToken)
@@ -58,6 +62,10 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
+	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
+	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
+	r.POST("/profile/twitter/link", controllers.AuthMiddleware(), controllers.LinkTwitterAccount)
+	r.DELETE("/profile/twitter/unlink", controllers.AuthMiddleware(), controllers.UnlinkTwitterAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
@@ -127,6 +135,7 @@ func main() {
 	r.POST("/test/email", controllers.TestEmail)
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
+	r.GET("/test/spotify", controllers.AuthMiddleware(), controllers.TestSpotify)
 	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
 	r.POST("/test/weather", controllers.TestWeatherTrigger)
 	r.GET("/weather", controllers.GetWeatherData)

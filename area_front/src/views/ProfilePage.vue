@@ -321,7 +321,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
+const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkSpotifyAccount, unlinkSpotifyAccount, linkTwitterAccount, unlinkTwitterAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const profileImageUrl = ref<string | null>(null)
@@ -330,6 +330,27 @@ const uploadError = ref<string | null>(null)
 const errorMessages = ref<Record<string, string>>({})
 const successMessages = ref<Record<string, string>>({})
 const isLoading = ref(false)
+
+// PKCE helper functions for Twitter OAuth 2.0
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return base64URLEncode(array)
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(verifier)
+  const hash = await crypto.subtle.digest('SHA-256', data)
+  return base64URLEncode(new Uint8Array(hash))
+}
+
+function base64URLEncode(array: Uint8Array): string {
+  return btoa(String.fromCharCode.apply(null, Array.from(array)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
 
 const enabledServices = computed(() => getEnabledServices())
 
@@ -369,6 +390,8 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.discord_id
     case 'spotify':
       return !!currentUser.value.spotify_id
+    case 'twitter':
+      return !!currentUser.value.twitter_username
     default:
       return false
   }
@@ -421,6 +444,39 @@ const linkService = async (serviceId: string) => {
       const facebookAuthUrl = `${service.authUrl}?client_id=${facebookClientId}&redirect_uri=${redirectUri}&scope=${service.scopes.join(',')}&response_type=code`
 
       window.location.href = facebookAuthUrl
+    } else if (serviceId === 'spotify') {
+      const spotifyClientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'your_spotify_client_id_here'
+
+      if (!spotifyClientId || spotifyClientId === 'your_spotify_client_id_here') {
+        errorMessages.value = { ...errorMessages.value, [serviceId]: 'Spotify OAuth not configured. Please set the VITE_SPOTIFY_CLIENT_ID environment variable.' }
+        return
+      }
+
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
+      const redirectUri = encodeURIComponent(overrideRedirect)
+      const scopeParam = encodeURIComponent(service.scopes.join(' '))
+      const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
+
+      window.location.href = spotifyAuthUrl
+    } else if (serviceId === 'twitter') {
+      const twitterApiKey = import.meta.env.VITE_TWITTER_API_KEY || 'your_twitter_api_key_here'
+
+      if (!twitterApiKey || twitterApiKey === 'your_twitter_api_key_here') {
+        errorMessages.value = { ...errorMessages.value, [serviceId]: 'Twitter OAuth not configured. Please set the VITE_TWITTER_API_KEY environment variable.' }
+        return
+      }
+
+      // Generate PKCE parameters for Twitter OAuth 2.0
+      const codeVerifier = generateCodeVerifier()
+      const codeChallenge = await generateCodeChallenge(codeVerifier)
+      
+      // Store code_verifier in sessionStorage for later use
+      sessionStorage.setItem('twitter_code_verifier', codeVerifier)
+
+      const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
+      const twitterAuthUrl = `${service.authUrl}?client_id=${twitterApiKey}&response_type=code&redirect_uri=${redirectUri}&scope=${encodeURIComponent(service.scopes.join(' '))}&state=link&code_challenge=${codeChallenge}&code_challenge_method=S256`
+
+      window.location.href = twitterAuthUrl
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${service.name} integration is not yet implemented.` }
     }
@@ -447,6 +503,12 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'facebook') {
       await unlinkFacebookAccount()
       successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account unlinked successfully' }
+    } else if (serviceId === 'spotify') {
+      await unlinkSpotifyAccount()
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Spotify account unlinked successfully' }
+    } else if (serviceId === 'twitter') {
+      await unlinkTwitterAccount()
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Twitter account unlinked successfully' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} unlinking is not yet implemented.` }
     }
@@ -473,6 +535,17 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
     } else if (serviceId === 'facebook') {
       const result = await linkFacebookAccount(code)
       successMessages.value = { ...successMessages.value, [serviceId]: 'Facebook account linked successfully!' }
+    } else if (serviceId === 'spotify') {
+      const result = await linkSpotifyAccount(code)
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Spotify account linked successfully!' }
+    } else if (serviceId === 'twitter') {
+      const codeVerifier = sessionStorage.getItem('twitter_code_verifier')
+      if (!codeVerifier) {
+        throw new Error('PKCE verification failed')
+      }
+      const result = await linkTwitterAccount(code, codeVerifier)
+      sessionStorage.removeItem('twitter_code_verifier')
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Twitter account linked successfully!' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} linking is not yet implemented.` }
     }
@@ -747,11 +820,22 @@ onMounted(async () => {
   letter-spacing: -0.02em;
 }
 
+[data-theme="light"] .page-title {
+  background: linear-gradient(135deg, #1a1a1a 0%, #3b82f6 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .page-subtitle {
   font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
   font-weight: 400;
+}
+
+[data-theme="light"] .page-subtitle {
+  color: #4b5563;
 }
 
 .content-container {
@@ -777,12 +861,29 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .profile-card,
+[data-theme="light"] .info-card,
+[data-theme="light"] .stats-card,
+[data-theme="light"] .actions-card {
+  background: #e5e7eb;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
 .profile-card:hover,
 .info-card:hover,
 .stats-card:hover,
 .actions-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .profile-card:hover,
+[data-theme="light"] .info-card:hover,
+[data-theme="light"] .stats-card:hover,
+[data-theme="light"] .actions-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .profile-header {
@@ -890,10 +991,18 @@ onMounted(async () => {
   letter-spacing: -0.01em;
 }
 
+[data-theme="light"] .profile-name {
+  color: #1a1a1a;
+}
+
 .profile-email {
   font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
+}
+
+[data-theme="light"] .profile-email {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .profile-badges {
@@ -936,6 +1045,10 @@ onMounted(async () => {
   margin: 0 0 0.5rem 0;
 }
 
+[data-theme="light"] .section-title {
+  color: #1a1a1a;
+}
+
 .title-icon {
   color: var(--color-accent-primary);
 }
@@ -944,6 +1057,10 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.875rem;
   margin: 0;
+}
+
+[data-theme="light"] .section-description {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .info-grid {
@@ -963,10 +1080,21 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .info-item {
+  background: #d1d5db;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .info-item:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+[data-theme="light"] .info-item:hover {
+  background: #d1d5db;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .info-icon {
@@ -993,10 +1121,18 @@ onMounted(async () => {
   margin-bottom: 0.25rem;
 }
 
+[data-theme="light"] .info-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
 .info-value {
   font-size: 1rem;
   font-weight: 600;
   color: white;
+}
+
+[data-theme="light"] .info-value {
+  color: #1a1a1a;
 }
 
 .stats-grid {
@@ -1016,10 +1152,21 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .stat-card {
+  background: #d1d5db;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .stat-card:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-3px);
+}
+
+[data-theme="light"] .stat-card:hover {
+  background: #d1d5db;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .stat-icon {
@@ -1044,10 +1191,18 @@ onMounted(async () => {
   margin-bottom: 0.25rem;
 }
 
+[data-theme="light"] .stat-number {
+  color: #1a1a1a;
+}
+
 .stat-label {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
+}
+
+[data-theme="light"] .stat-label {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .actions-grid {
@@ -1087,10 +1242,22 @@ onMounted(async () => {
   color: white;
 }
 
+[data-theme="light"] .action-btn.secondary {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  color: #1a1a1a;
+}
+
 .action-btn.secondary:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
+}
+
+[data-theme="light"] .action-btn.secondary:hover {
+  background: #f9fafb;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .action-btn.danger {
@@ -1162,9 +1329,20 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .linked-accounts-card {
+  background: #e5e7eb;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
 .linked-accounts-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .linked-accounts-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .add-account-btn {
@@ -1203,15 +1381,31 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
+[data-theme="light"] .account-card {
+  background: #e5e7eb;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .account-card:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
+[data-theme="light"] .account-card:hover {
+  background: #d1d5db;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
 .account-card.linked {
   border-color: rgba(16, 185, 129, 0.3);
   background: rgba(16, 185, 129, 0.05);
+}
+
+[data-theme="light"] .account-card.linked {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .account-header {
@@ -1239,11 +1433,19 @@ onMounted(async () => {
   margin: 0 0 0.25rem 0;
 }
 
+[data-theme="light"] .account-info h4 {
+  color: #1a1a1a;
+}
+
 .account-info p {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
   line-height: 1.4;
+}
+
+[data-theme="light"] .account-info p {
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .account-status {
@@ -1282,6 +1484,10 @@ onMounted(async () => {
   flex: 1;
 }
 
+[data-theme="light"] .status-text {
+  color: rgba(0, 0, 0, 0.7);
+}
+
 .link-btn,
 .unlink-btn {
   padding: 0.5rem 0.75rem;
@@ -1302,15 +1508,27 @@ onMounted(async () => {
   box-shadow: 0 10px 30px rgba(87, 128, 232, 0.3);
 }
 
+[data-theme="light"] .link-btn {
+  box-shadow: 0 4px 12px rgba(87, 128, 232, 0.4);
+}
+
 .link-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(87, 128, 232, 0.4);
+}
+
+[data-theme="light"] .link-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(87, 128, 232, 0.5);
 }
 
 .unlink-btn {
   background: transparent;
   border: 1px solid rgba(239, 68, 68, 0.5);
   color: #ef4444;
+}
+
+[data-theme="light"] .unlink-btn {
+  border: 2px solid rgba(239, 68, 68, 0.7);
 }
 
 .unlink-btn:hover:not(:disabled) {
@@ -1412,3 +1630,9 @@ onMounted(async () => {
   }
 }
 </style>
+
+
+
+
+
+

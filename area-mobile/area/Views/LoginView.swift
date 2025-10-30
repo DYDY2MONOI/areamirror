@@ -16,6 +16,7 @@ struct LoginView: View {
     @State private var showAlert = false
     
     @StateObject private var authService = AuthService.shared
+    private let oauthProviders = OAuthProvider.availableProviders
     
     let onLoginSuccess: () -> Void
     let onSignUpTap: () -> Void
@@ -54,13 +55,9 @@ struct LoginView: View {
                         
                         DividerWithText(text: "Or")
                         
-                        SocialLoginButtons(
-                            onGoogleLogin: {
-                                print("Google Login")
-                            },
-                            onAppleLogin: {
-                                print("Apple Login")
-                            }
+                        OAuthLoginButtons(
+                            providers: oauthProviders,
+                            onProviderSelected: loginWithProvider
                         )
                         
                         SignUpPrompt {
@@ -100,6 +97,10 @@ struct LoginView: View {
         if authService.errorMessage != nil {
             showAlert = true
         }
+    }
+
+    private func loginWithProvider(_ provider: OAuthProvider) {
+        authService.login(with: provider)
     }
 }
 

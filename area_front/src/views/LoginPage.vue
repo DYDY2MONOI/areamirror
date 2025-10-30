@@ -77,6 +77,15 @@
 
           <button
             type="button"
+            @click="loginWithSpotify"
+            class="oauth-button spotify-button"
+          >
+            <v-icon size="20" class="oauth-icon">mdi-spotify</v-icon>
+            <span>Continue with Spotify</span>
+          </button>
+
+          <button
+            type="button"
             @click="continueAsGuest"
             class="guest-button"
           >
@@ -103,6 +112,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService, type LoginRequest } from '@/services/auth'
 import { initiateGoogleLogin } from '@/utils/google-oauth'
+import { initiateSpotifyLogin } from '@/utils/spotify-oauth'
 
 const router = useRouter()
 
@@ -139,6 +149,15 @@ const continueAsGuest = () => {
 
 const loginWithGoogle = () => {
   initiateGoogleLogin()
+}
+
+const loginWithSpotify = () => {
+  try {
+    initiateSpotifyLogin()
+  } catch (err) {
+    console.error('Spotify OAuth error:', err)
+    error.value = err instanceof Error ? err.message : 'Spotify login is not available right now'
+  }
 }
 </script>
 
@@ -479,11 +498,28 @@ const loginWithGoogle = () => {
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
 }
 
+.spotify-button {
+  background: linear-gradient(135deg, #1db954, #1aa34a);
+  border-color: #1db954;
+  color: white;
+}
+
+.spotify-button:hover {
+  background: linear-gradient(135deg, #199f48, #14883c);
+  border-color: #199f48;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
 .oauth-icon {
   transition: var(--transition-normal);
 }
 
 .google-button:hover .oauth-icon {
+  transform: scale(1.1);
+}
+
+.spotify-button:hover .oauth-icon {
   transform: scale(1.1);
 }
 

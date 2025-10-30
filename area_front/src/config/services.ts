@@ -62,7 +62,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     description: 'Connect your Discord account to send messages and manage servers',
     callbackPath: '/auth/discord/callback',
     scopes: ['identify', 'guilds'],
-    isEnabled: false // Not implemented yet
+    isEnabled: false
   },
   {
     id: 'spotify',
@@ -70,9 +70,21 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'spotify',
     color: '#1db954',
     description: 'Connect your Spotify account to control music and playlists',
-    callbackPath: '/auth/spotify/callback',
-    scopes: ['user-read-email', 'user-read-private'],
-    isEnabled: false // Not implemented yet
+    authUrl: 'https://accounts.spotify.com/authorize',
+    callbackPath: '/oauth2/spotify/callback',
+    scopes: ['user-read-email', 'user-read-private', 'user-read-currently-playing', 'user-read-playback-state'],
+    isEnabled: true
+  },
+  {
+    id: 'twitter',
+    name: 'Twitter / X',
+    icon: 'twitter',
+    color: '#1DA1F2',
+    description: 'Connect your Twitter/X account to post tweets and access your timeline',
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    callbackPath: '/oauth2/twitter/callback',
+    scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+    isEnabled: true
   }
 ]
 
