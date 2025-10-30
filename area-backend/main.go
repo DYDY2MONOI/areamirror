@@ -85,6 +85,14 @@ func main() {
 	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
 	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
 
+	// Google Agenda routes
+	googleAgendaController := controllers.NewGoogleAgendaController()
+	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
+	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
+	r.GET("/google-agenda/events", controllers.AuthMiddleware(), googleAgendaController.GetUpcomingEvents)
+	r.GET("/google-agenda/test", controllers.AuthMiddleware(), googleAgendaController.TestAgendaConnection)
+	r.GET("/google-agenda/calendars", controllers.AuthMiddleware(), googleAgendaController.ListCalendars)
+
 	api := r.Group("/api")
 	{
 		api.GET("/github/repositories", controllers.AuthMiddleware(), controllers.GetGitHubRepositories)
