@@ -134,7 +134,7 @@ const handleDelete = () => {
 
 const getTriggerIcon = (service: string) => {
   switch (service) {
-    case "Google Calendar":
+    case "Date Timer":
       return "mdi-calendar"
     case "GitHub":
       return "mdi-github"
@@ -194,7 +194,7 @@ const getActionIcon = (service: string) => {
 
 const getTriggerEmoji = (service: string) => {
   switch (service) {
-    case "Google Calendar":
+    case "Date Timer":
       return "📅"
     case "GitHub":
       return "🐙"

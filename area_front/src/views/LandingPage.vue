@@ -601,23 +601,38 @@ const goToAllAreas = () => {
 }
 
 const getTriggerIcon = (service: string) => {
-  const iconMap: Record<string, string> = {
-    "Google Calendar": "mdi-calendar",
-    "GitHub": "mdi-github",
-    "Gmail": "mdi-email-outline",
-    "Discord": "mdi-discord",
-    "Slack": "mdi-slack",
-    "Weather": "mdi-weather-partly-cloudy",
-    "Instagram": "mdi-instagram",
-    "Twitter": "mdi-twitter",
-    "YouTube": "mdi-youtube",
-    "Spotify": "mdi-music",
-    "Telegram": "mdi-telegram",
-    "Twitch": "mdi-twitch",
-    "Dropbox": "mdi-dropbox",
-    "Notion": "mdi-notebook"
+  switch (service) {
+    case "Date Timer":
+      return "mdi-calendar"
+    case "GitHub":
+      return "mdi-github"
+    case "Gmail":
+      return "mdi-email-outline"
+    case "Discord":
+      return "mdi-discord"
+    case "Slack":
+      return "mdi-slack"
+    case "Weather":
+      return "mdi-weather-partly-cloudy"
+    case "Instagram":
+      return "mdi-instagram"
+    case "Twitter":
+      return "mdi-twitter"
+    case "YouTube":
+      return "mdi-youtube"
+    case "Spotify":
+      return "mdi-music"
+    case "Telegram":
+      return "mdi-telegram"
+    case "Twitch":
+      return "mdi-twitch"
+    case "Dropbox":
+      return "mdi-dropbox"
+    case "Notion":
+      return "mdi-notebook"
+    default:
+      return "mdi-cog"
   }
-  return iconMap[service] || "mdi-cog"
 }
 
 const getActionIcon = (service: string) => {

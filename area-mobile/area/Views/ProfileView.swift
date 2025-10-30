@@ -198,6 +198,11 @@ struct ProfileView: View {
                 }
             )
         }
+        .onAppear {
+            if authService.isAuthenticated {
+                authService.fetchProfile()
+            }
+        }
     }
 }
 
