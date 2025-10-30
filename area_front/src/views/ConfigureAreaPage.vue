@@ -894,7 +894,6 @@ watch(() => template.value, (newTemplate) => {
         condition: ''
       }
     } else if (newTemplate.triggerService === 'OneDrive') {
-      // Initialize default trigger name for OneDrive
       if (!newTemplate.triggerName) {
         newTemplate.triggerName = 'New File'
       }
@@ -1177,14 +1176,13 @@ const getTodayDate = () => {
 
 const resolveActionType = (service: string, actionName?: string) => {
   if (service === 'OneDrive') {
-    // Différencier les actions OneDrive basées sur le nom
     if (actionName === 'Upload File' || actionName === 'UploadFile') {
       return 'UploadFile'
     }
     if (actionName === 'Create Folder' || actionName === 'CreateFolder') {
       return 'CreateFolder'
     }
-    return 'UploadFile' // Par défaut
+    return 'UploadFile'
   }
 
   switch (service) {
@@ -1210,7 +1208,6 @@ const resolveTriggerType = (service: string, triggerName?: string) => {
     case 'Spotify':
       return 'Playback'
     case 'OneDrive':
-      // Différencier les triggers OneDrive basés sur le nom
       if (triggerName === 'Fichier modifié' || triggerName === 'ModifiedFile') {
         return 'ModifiedFile'
       }
