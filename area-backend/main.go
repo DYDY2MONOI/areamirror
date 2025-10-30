@@ -69,6 +69,8 @@ func main() {
 	r.DELETE("/profile/google/unlink", controllers.AuthMiddleware(), controllers.UnlinkGoogleAccount)
 	r.POST("/profile/facebook/link", controllers.AuthMiddleware(), controllers.LinkFacebookAccount)
 	r.DELETE("/profile/facebook/unlink", controllers.AuthMiddleware(), controllers.UnlinkFacebookAccount)
+	r.POST("/profile/onedrive/link", controllers.AuthMiddleware(), controllers.LinkOneDriveAccount)
+	r.DELETE("/profile/onedrive/unlink", controllers.AuthMiddleware(), controllers.UnlinkOneDriveAccount)
 	r.POST("/profile/spotify/link", controllers.AuthMiddleware(), controllers.LinkSpotifyAccount)
 	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 	r.POST("/profile/twitter/link", controllers.AuthMiddleware(), controllers.LinkTwitterAccount)
@@ -79,6 +81,24 @@ func main() {
 	r.GET("/gmail/oauth2/status", controllers.AuthMiddleware(), controllers.GetGmailTokenStatus)
 	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
 	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
+
+	// OneDrive routes
+	r.GET("/onedrive/auth/start", controllers.OneDriveAuthStart)
+	r.GET("/onedrive/callback", controllers.OneDriveCallback)
+	r.GET("/onedrive/files", controllers.OneDriveListFiles)
+	r.POST("/onedrive/upload", controllers.OneDriveUploadFile)
+	r.GET("/onedrive/download/:fileId", controllers.OneDriveDownloadFile)
+	r.DELETE("/onedrive/delete/:fileId", controllers.OneDriveDeleteFile)
+	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
+	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
+
+	// Google Agenda routes
+	googleAgendaController := controllers.NewGoogleAgendaController()
+	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
+	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
+	r.GET("/google-agenda/events", controllers.AuthMiddleware(), googleAgendaController.GetUpcomingEvents)
+	r.GET("/google-agenda/test", controllers.AuthMiddleware(), googleAgendaController.TestAgendaConnection)
+	r.GET("/google-agenda/calendars", controllers.AuthMiddleware(), googleAgendaController.ListCalendars)
 
 	api := r.Group("/api")
 	{
@@ -135,6 +155,9 @@ func main() {
 	r.POST("/webhooks/telegram", controllers.TelegramWebhook)
 
 	r.Static("/uploads", "./uploads")
+	r.StaticFile("/test-onedrive.html", "./test-onedrive.html")
+	r.StaticFile("/test-slack.html", "./test-slack.html")
+	r.StaticFile("/test-slack-advanced.html", "./test-slack-advanced.html")
 
 	r.GET("/areas/popular", controllers.GetPopularAreas)
 	r.GET("/areas/recommended", controllers.GetRecommendedAreas)
@@ -158,13 +181,6 @@ func main() {
 	r.DELETE("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.RemoveRoleFromUser)
 	r.GET("/users/:id/roles", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.GetUserRoles)
 	r.PUT("/users/:id/role", controllers.AuthMiddleware(), controllers.RoleMiddleware("admin"), controllers.UpdateUserRole)
-
-	googleAgendaController := controllers.NewGoogleAgendaController()
-	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
-	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
-	r.GET("/google-agenda/events", controllers.AuthMiddleware(), googleAgendaController.GetUpcomingEvents)
-	r.GET("/google-agenda/test", controllers.AuthMiddleware(), googleAgendaController.TestAgendaConnection)
-	r.GET("/google-agenda/calendars", controllers.AuthMiddleware(), googleAgendaController.ListCalendars)
 
 	scheduler, err := services.NewSchedulerService()
 	if err != nil {
