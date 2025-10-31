@@ -287,6 +287,48 @@ class AreaService: ObservableObject {
             throw AreaServiceError.server("Decoding error: \(Self.describeDecodingError(error)) | Body: \(body)")
         }
     }
+
+    func toggleArea(areaId: String) async throws -> Area {
+        print("🔁 AreaService.toggleArea called with ID: \(areaId)")
+        guard let authorization = authorizationHeader() else {
+            print("❌ No auth token for toggle")
+            throw AreaServiceError.unauthorized
+        }
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/\(areaId)/toggle")) else {
+            print("❌ Invalid toggle URL")
+            throw AreaServiceError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw AreaServiceError.server("Invalid response")
+        }
+        print("📡 Toggle response status: \(http.statusCode)")
+        guard (200...299).contains(http.statusCode) else {
+            let msg = String(data: data, encoding: .utf8) ?? "Server error"
+            print("❌ Toggle failed: \(msg)")
+            throw AreaServiceError.server(msg)
+        }
+        do {
+            let decoded = try JSONDecoder().decode(SingleAreaResponse.self, from: data)
+            if let idx = self.userAreas.firstIndex(where: { $0.id == decoded.data.id }) {
+                self.userAreas[idx] = decoded.data
+            }
+            return decoded.data
+        } catch {
+            if let lenient = try? Self.parseAreaLenient(from: data), let updatedArea = lenient {
+                if let idx = self.userAreas.firstIndex(where: { $0.id == updatedArea.id }) {
+                    self.userAreas[idx] = updatedArea
+                }
+                return updatedArea
+            }
+            let body = String(data: data, encoding: .utf8) ?? "<no-body>"
+            throw AreaServiceError.server("Decoding error: \(Self.describeDecodingError(error)) | Body: \(body)")
+        }
+    }
     
     private static func parseAreaLenient(from data: Data) throws -> Area? {
         guard
