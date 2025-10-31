@@ -7,6 +7,7 @@ import (
 	"Golang-API-tutoriel/services"
 	"context"
 	"log"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -189,6 +190,15 @@ func main() {
 		ctx := context.Background()
 		go scheduler.StartScheduler(ctx)
 		log.Println("Scheduler started in background")
+	}
+
+	// Setup Telegram webhook if configured
+	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	webhookURL := os.Getenv("TELEGRAM_WEBHOOK_URL")
+	if botToken != "" && webhookURL != "" {
+		if err := controllers.SetupTelegramWebhook(botToken, webhookURL); err != nil {
+			log.Printf("Warning: Failed to setup Telegram webhook: %v", err)
+		}
 	}
 
 	r.Run()
