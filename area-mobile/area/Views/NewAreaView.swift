@@ -254,14 +254,18 @@ struct NewAreaView: View {
         .sheet(isPresented: $showingActionSelection) {
             MultiServiceSelectionSheet(
                 title: "Select Action Services",
+                mode: .action,
                 selectedServices: $selectedActions
             )
+            .environmentObject(CatalogService.shared)
         }
         .sheet(isPresented: $showingReactionSelection) {
             MultiServiceSelectionSheet(
                 title: "Select Reaction Services",
+                mode: .reaction,
                 selectedServices: $selectedReactions
             )
+            .environmentObject(CatalogService.shared)
         }
         .alert("AREA Created!", isPresented: $showingSuccessAlert) {
             Button("OK") {
@@ -303,11 +307,43 @@ struct CustomTextFieldStyle: TextFieldStyle {
 }
 
 struct MultiServiceSelectionSheet: View {
+    enum Mode { case action, reaction }
     let title: String
+    let mode: Mode
     @Binding var selectedServices: [Service]
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var catalogService: CatalogService
     
-    let availableServices = Service.availableServices
+    private var availableServices: [Service] {
+        // Build dynamic services from /about.json with basic icon mapping
+        let source = catalogService.services
+        let filtered: [AboutService]
+        switch mode {
+        case .action:
+            filtered = source.filter { !$0.actions.isEmpty }
+        case .reaction:
+            filtered = source.filter { !$0.reactions.isEmpty }
+        }
+        return filtered.map { svc in
+            let iconName = iconForService(svc.name)
+            return Service(name: svc.name, icon: iconName, color: Color.gray, category: .other)
+        }
+    }
+    
+    private func iconForService(_ name: String) -> String {
+        switch name.lowercased() {
+        case "gmail": return "gmail"
+        case "google calendar": return "google-calendar"
+        case "google sheets": return "google-sheets"
+        case "github": return "github"
+        case "discord": return "discord"
+        case "slack": return "slack"
+        case "weather": return "weather"
+        case "onedrive": return "onedrive"
+        case "spotify": return "spotify"
+        default: return "generic-service"
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -350,6 +386,11 @@ struct MultiServiceSelectionSheet: View {
                     }
                     .foregroundColor(AppColors.primaryBlue)
                 }
+            }
+        }
+        .task {
+            if catalogService.services.isEmpty && !catalogService.isLoading {
+                await catalogService.fetchCatalog()
             }
         }
     }
