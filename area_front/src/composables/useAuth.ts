@@ -103,9 +103,9 @@ export function useAuth() {
     }
   }
 
-  const linkGoogleAccount = async (code: string) => {
+  const linkGoogleAccount = async (code: string, redirectUri?: string) => {
     try {
-      const result = await authService.linkGoogleAccount(code)
+      const result = await authService.linkGoogleAccount(code, redirectUri)
       await refreshProfile()
       return result
     } catch (error) {

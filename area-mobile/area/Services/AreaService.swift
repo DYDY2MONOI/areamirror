@@ -27,14 +27,18 @@ class AreaService: ObservableObject {
     
     func fetchUserAreas() async {
         guard let authorization = authorizationHeader() else {
-            self.errorMessage = "No authentication token"
+            print("ℹ️ No authentication token – skipping user areas fetch")
+            self.errorMessage = nil
+            self.userAreas = []
+            self.userAreasLoaded = true
+            self.isLoading = false
             return
         }
         
         self.isLoading = true
         self.errorMessage = nil
         
-        guard let url = URL(string: AppConfig.getAPIEndpoint("/user/me/areas")) else {
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/user/me/areas")) else {
             self.errorMessage = "Invalid URL"
             self.isLoading = false
             return
@@ -46,11 +50,11 @@ class AreaService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            print("📡 GET /user/me/areas")
+            print("📡 GET /mobile/user/me/areas")
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
-                print("📡 /user/me/areas status: \(httpResponse.statusCode)")
+                print("📡 /mobile/user/me/areas status: \(httpResponse.statusCode)")
                 if httpResponse.statusCode == 200 {
                     do {
                         let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
@@ -83,7 +87,7 @@ class AreaService: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
         
-        guard let url = URL(string: AppConfig.getAPIEndpoint("/areas/popular")) else {
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/popular")) else {
             self.errorMessage = "Invalid URL"
             self.isLoading = false
             return
@@ -120,7 +124,7 @@ class AreaService: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
         
-        guard let url = URL(string: AppConfig.getAPIEndpoint("/areas/recommended")) else {
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/recommended")) else {
             self.errorMessage = "Invalid URL"
             self.isLoading = false
             return
@@ -198,7 +202,7 @@ class AreaService: ObservableObject {
             print("❌ No auth token for create")
             throw AreaServiceError.unauthorized
         }
-        guard let url = URL(string: AppConfig.getAPIEndpoint("/areas")) else {
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas")) else {
             print("❌ Invalid URL for create")
             throw AreaServiceError.invalidURL
         }
@@ -237,7 +241,7 @@ class AreaService: ObservableObject {
             print("❌ No auth token")
             throw AreaServiceError.unauthorized
         }
-        guard let url = URL(string: AppConfig.getAPIEndpoint("/areas/\(areaId)")) else {
+        guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/\(areaId)")) else {
             print("❌ Invalid URL")
             throw AreaServiceError.invalidURL
         }

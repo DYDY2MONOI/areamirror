@@ -718,7 +718,15 @@ private func sendLinkRequest(provider: OAuthProvider, code: String, codeVerifier
     }
 
     let body = try JSONSerialization.data(withJSONObject: payload, options: [])
-    _ = try await performAuthorizedRequest(path: endpoint, method: "POST", body: body)
+    let data = try await performAuthorizedRequest(path: endpoint, method: "POST", body: body)
+
+    if let response = try? JSONDecoder().decode(LinkAccountResponse.self, from: data), let updatedUser = response.user {
+        currentUser = updatedUser
+        isAuthenticated = true
+        errorMessage = nil
+    } else {
+        fetchProfile()
+    }
 }
 
 @MainActor
@@ -727,7 +735,14 @@ private func sendUnlinkRequest(providerID: String) async throws {
         throw AuthServiceError.invalidProvider
     }
 
-    _ = try await performAuthorizedRequest(path: endpoint, method: "DELETE")
+    let data = try await performAuthorizedRequest(path: endpoint, method: "DELETE")
+
+    if let response = try? JSONDecoder().decode(LinkAccountResponse.self, from: data), let updatedUser = response.user {
+        currentUser = updatedUser
+        errorMessage = nil
+    } else {
+        fetchProfile()
+    }
 }
 
 @MainActor
