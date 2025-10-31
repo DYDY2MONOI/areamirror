@@ -751,6 +751,10 @@ watch(showCreateModal, (isOpen) => {
 .create-section {
   position: relative;
   min-height: 300px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  align-items: center;
 }
 
 .floating-icons {
@@ -815,7 +819,7 @@ watch(showCreateModal, (isOpen) => {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   width: 100%;
   box-sizing: border-box;
@@ -829,6 +833,11 @@ watch(showCreateModal, (isOpen) => {
 .cards-grid .card-spotlight-container:nth-child(2) { animation-delay: .05s; }
 .cards-grid .card-spotlight-container:nth-child(3) { animation-delay: .1s; }
 .cards-grid .card-spotlight-container:nth-child(4) { animation-delay: .15s; }
+
+.create-section .cards-grid {
+  grid-template-columns: 1fr;
+  justify-items: start;
+}
 
 .bottom-nav {
   position: fixed;
@@ -1289,6 +1298,19 @@ watch(showCreateModal, (isOpen) => {
   .floating-card {
     width: 50px;
     height: 50px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .create-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .create-section .cards-grid {
+    justify-items: center;
   }
 }
 
