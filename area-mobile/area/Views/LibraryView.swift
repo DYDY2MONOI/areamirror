@@ -123,16 +123,16 @@ struct LibraryView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(areaService.userAreas) { area in
+                                    ForEach($areaService.userAreas) { $area in
                                         AreaCard(
-                                            area: area,
+                                            area: $area,
                                             onEdit: {
                                                 selectedArea = area
                                             },
                                             onDelete: {
                                             },
                                             onToggle: {
-                                                _ = try await areaService.toggleArea(areaId: area.id)
+                                                try await areaService.toggleArea(areaId: area.id)
                                             }
                                         )
                                     }
@@ -188,10 +188,10 @@ struct AreaItem: Identifiable {
 }
 
 struct AreaCard: View {
-    let area: Area
+    @Binding var area: Area
     var onEdit: () -> Void
     var onDelete: () -> Void
-    var onToggle: () async throws -> Void
+    var onToggle: () async throws -> Area
     @State private var isProcessing = false
     
     var body: some View {
@@ -212,11 +212,14 @@ struct AreaCard: View {
                 Button(action: {
                     guard !isProcessing else { return }
                     isProcessing = true
+                    let originalState = area.isActive
                     Task { @MainActor in
                         defer { isProcessing = false }
                         do {
-                            try await onToggle()
+                            let updatedArea = try await onToggle()
+                            area = updatedArea
                         } catch {
+                            area.isActive = originalState
                             print("❌ Error toggling area: \(error.localizedDescription)")
                         }
                     }

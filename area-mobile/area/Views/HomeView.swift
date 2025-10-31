@@ -27,133 +27,127 @@ struct HomeView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
+        ScrollView {
+            VStack(spacing: 0) {
+                VStack(spacing: 20) {
+                    HStack {
+                        ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        VStack(spacing: 20) {
-                            HStack {
-                                ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
+                        Spacer()
 
-                                Spacer()
+                        Button(action: { showTestView = true }) {
+                            Image(systemName: "testtube.2")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
 
-                                Button(action: { showTestView = true }) {
-                                    Image(systemName: "testtube.2")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.white)
-                                }
+                    HStack(spacing: 0) {
+                        TabButton(title: "All", isSelected: selectedTab == 0) {
+                            selectedTab = 0
+                        }
+                        TabButton(title: "My AREAs", isSelected: selectedTab == 1) {
+                            selectedTab = 1
+                        }
+                        TabButton(title: "Popular", isSelected: selectedTab == 2) {
+                            selectedTab = 2
+                        }
+                        TabButton(title: "Create", isSelected: selectedTab == 3) {
+                            selectedTab = 3
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                VStack(spacing: 32) {
+                    if areaService.isLoading {
+                        ProgressView("Loading areas...")
+                            .foregroundColor(.white)
+                            .padding()
+                    } else {
+                        if areaService.userAreasLoaded {
+                            if !areaService.popularAreas.isEmpty {
+                                AppletSection(
+                                    title: "Popular AREAs",
+                                    applets: areaService.popularAreas.map { convertAreaToApplet($0) }
+                                )
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 10)
 
-                            HStack(spacing: 0) {
-                                TabButton(title: "All", isSelected: selectedTab == 0) {
-                                    selectedTab = 0
-                                }
-                                TabButton(title: "My AREAs", isSelected: selectedTab == 1) {
-                                    selectedTab = 1
-                                }
-                                TabButton(title: "Popular", isSelected: selectedTab == 2) {
-                                    selectedTab = 2
-                                }
-                                TabButton(title: "Create", isSelected: selectedTab == 3) {
-                                    selectedTab = 3
-                                }
+                            if !areaService.recommendedAreas.isEmpty {
+                                AppletSection(
+                                    title: "Recommended for you",
+                                    applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
+                                )
                             }
-                            .padding(.horizontal, 20)
+                        } else {
+                            VStack {
+                                ProgressView("Loading your areas...")
+                                    .foregroundColor(.white)
+                                Text("Please wait while we check your existing areas")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(.caption)
+                            }
+                            .padding()
                         }
 
-                        VStack(spacing: 32) {
-                            if areaService.isLoading {
-                                ProgressView("Loading areas...")
-                                    .foregroundColor(.white)
-                                    .padding()
-                            } else {
-                                if areaService.userAreasLoaded {
-                                    if !areaService.popularAreas.isEmpty {
-                                        AppletSection(
-                                            title: "Popular AREAs",
-                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
-                                        )
-                                    }
-
-                                    if !areaService.recommendedAreas.isEmpty {
-                                        AppletSection(
-                                            title: "Recommended for you",
-                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
-                                        )
-                                    }
-                                } else {
-                                    VStack {
-                                        ProgressView("Loading your areas...")
-                                            .foregroundColor(.white)
-                                        Text("Please wait while we check your existing areas")
-                                            .foregroundColor(.white.opacity(0.7))
-                                            .font(.caption)
-                                    }
-                                    .padding()
-                                }
-
-                                if selectedTab == 1 && !areaService.userAreas.isEmpty {
-                                    AppletSection(
-                                        title: "My AREAs",
-                                        applets: areaService.userAreas.map { area in
-                                            Applet(
-                                                title: area.name,
-                                                subtitle: "\(area.triggerService) → \(area.actionService)",
-                                                description: area.description,
-                                                icon: getServiceIcon(area.triggerService),
-                                                gradient: getServiceGradient(area.triggerService, area.actionService),
-                                                type: .create,
-                                                action: { selectedArea = area }
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-
+                        if selectedTab == 1 && !areaService.userAreas.isEmpty {
                             AppletSection(
-                                title: "Create new AREA",
-                                applets: [
+                                title: "My AREAs",
+                                applets: areaService.userAreas.map { area in
                                     Applet(
-                                        title: "New AREA",
-                                        subtitle: "Get started",
-                                        description: "Connect your favorite services",
-                                        icon: "plus.circle.fill",
-                                        gradient: OptimizedGradients.primaryGradient,
+                                        title: area.name,
+                                        subtitle: "\(area.triggerService) → \(area.actionService)",
+                                        description: area.description,
+                                        icon: getServiceIcon(area.triggerService),
+                                        gradient: getServiceGradient(area.triggerService, area.actionService),
                                         type: .create,
-                                        action: { showNewArea = true }
-                                    ),
-                                    Applet(
-                                        title: "Email Template",
-                                        subtitle: "Gmail automation",
-                                        description: "Automate your important emails",
-                                        icon: "envelope.badge.fill",
-                                        gradient: OptimizedGradients.blueGradient,
-                                        type: .create,
-                                        action: { print("Email Template") }
-                                    ),
-                                    Applet(
-                                        title: "Social Template",
-                                        subtitle: "Social networks",
-                                        description: "Automate your posts and shares",
-                                        icon: "share.and.arrow.up.fill",
-                                        gradient: OptimizedGradients.purpleGradient,
-                                        type: .create,
-                                        action: { print("Social Template") }
+                                        action: { selectedArea = area }
                                     )
-                                ]
+                                }
                             )
                         }
-                        .padding(.top, 20)
-                        .padding(.bottom, 40)
                     }
+
+                    AppletSection(
+                        title: "Create new AREA",
+                        applets: [
+                            Applet(
+                                title: "New AREA",
+                                subtitle: "Get started",
+                                description: "Connect your favorite services",
+                                icon: "plus.circle.fill",
+                                gradient: OptimizedGradients.primaryGradient,
+                                type: .create,
+                                action: { showNewArea = true }
+                            ),
+                            Applet(
+                                title: "Email Template",
+                                subtitle: "Gmail automation",
+                                description: "Automate your important emails",
+                                icon: "envelope.badge.fill",
+                                gradient: OptimizedGradients.blueGradient,
+                                type: .create,
+                                action: { print("Email Template") }
+                            ),
+                            Applet(
+                                title: "Social Template",
+                                subtitle: "Social networks",
+                                description: "Automate your posts and shares",
+                                icon: "share.and.arrow.up.fill",
+                                gradient: OptimizedGradients.purpleGradient,
+                                type: .create,
+                                action: { print("Social Template") }
+                            )
+                        ]
+                    )
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 40)
             }
         }
+        .background(Color.black.ignoresSafeArea())
         .fullScreenCover(isPresented: $showTestView) {
             TestView()
         }
