@@ -6,11 +6,43 @@
     @mousemove="handleMouseMove"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
-    :class="{ 'has-delete': showDeleteButton }"
   >
     <div class="card-spotlight" :style="spotlightStyle">
       <div class="spotlight"></div>
       <div class="card-content">
+        <div
+          v-if="showToggleButton || showDeleteButton"
+          class="card-controls"
+        >
+          <button
+            v-if="showToggleButton"
+            class="control-button"
+            :class="{ active: isActive, inactive: !isActive }"
+            type="button"
+            :title="isActive ? 'Deactivate area' : 'Activate area'"
+            :disabled="isToggling"
+            @click.stop="handleToggle"
+          >
+            <v-progress-circular
+              v-if="isToggling"
+              indeterminate
+              size="16"
+              width="2"
+              color="white"
+            />
+            <v-icon v-else size="18">{{ isActive ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+          </button>
+          <button
+            v-if="showDeleteButton"
+            class="control-button delete"
+            type="button"
+            title="Delete area"
+            @click.stop="handleDelete"
+          >
+            <v-icon size="16" color="white">mdi-delete</v-icon>
+          </button>
+        </div>
+
         <div class="service-icons">
           <div class="service-icon trigger-icon">
             <img
@@ -44,14 +76,6 @@
         </div>
       </div>
 
-      <button
-        v-if="showDeleteButton"
-        class="delete-button"
-        @click.stop="handleDelete"
-        type="button"
-      >
-        <v-icon size="16" color="white">mdi-delete</v-icon>
-      </button>
     </div>
   </div>
 </template>
@@ -92,11 +116,14 @@ interface AreaTemplate {
 const props = defineProps<{
   area: AreaTemplate | Area
   showDeleteButton?: boolean
+  showToggleButton?: boolean
+  isToggling?: boolean
 }>()
 
 const emit = defineEmits<{
   click: [area: AreaTemplate | Area]
   delete: [area: AreaTemplate | Area]
+  toggle: [area: AreaTemplate | Area]
 }>()
 
 const cardRef = ref<HTMLElement | null>(null)
@@ -131,6 +158,17 @@ const handleClick = () => {
 const handleDelete = () => {
   emit('delete', props.area)
 }
+
+const handleToggle = () => {
+  emit('toggle', props.area)
+}
+
+const isActive = computed(() => {
+  const value = (props.area as any).isActive ?? (props.area as any).is_active
+  return value !== undefined ? Boolean(value) : true
+})
+
+const isToggling = computed(() => props.isToggling === true)
 
 const getTriggerIcon = (service: string) => {
   switch (service) {
@@ -453,38 +491,6 @@ const getIconUrl = (iconName: string) => {
   color: rgba(0, 0, 0, 0.6);
 }
 
-.delete-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-[data-theme="light"] .delete-button {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.delete-button:hover {
-  background: rgba(239, 68, 68, 0.4);
-  transform: scale(1.1);
-}
-
-[data-theme="light"] .delete-button:hover {
-  background: rgba(239, 68, 68, 0.25);
-}
-
 [data-theme="light"] .card-spotlight :deep(.v-icon) {
   color: rgba(0, 0, 0, 0.8) !important;
 }
@@ -493,12 +499,73 @@ const getIconUrl = (iconName: string) => {
   filter: brightness(0);
 }
 
-.delete-button:active {
-  transform: scale(0.95);
+.card-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 10;
 }
 
-.card-spotlight-container.has-delete .card-spotlight {
-  padding-top: 48px;
+.control-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.control-button:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.control-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-button.delete {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.control-button.delete:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.control-button.active {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.control-button.inactive {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="light"] .control-button {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="light"] .control-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .control-button.delete {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 @media (max-width: 768px) {
