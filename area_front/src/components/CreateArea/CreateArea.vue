@@ -47,24 +47,6 @@
           </div>
         </div>
 
-        <div v-if="form.triggerService && form.actionService" class="form-section">
-          <div class="section-label">
-            <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
-            <span class="label-text">Configuration</span>
-          </div>
-
-          <div class="config-actions">
-            <button class="config-btn" @click="configureServices">
-              <v-icon size="18">mdi-cog</v-icon>
-              Configure Services
-            </button>
-            <button class="test-btn" @click="testConnection">
-              <v-icon size="18">mdi-flash</v-icon>
-              Test Connection
-            </button>
-          </div>
-        </div>
-
         <div class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-link-variant</v-icon>
@@ -84,38 +66,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.triggerService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 15)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectTrigger(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllTriggerServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.triggerService)?.icon || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.triggerService" class="service-grid">
+                    <div
+                      v-for="item in triggerItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectTrigger(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
-                      <span class="service-type">Trigger Service</span>
+                    <div class="service-card more-services" @click="showAllTriggerServices = true" v-if="triggerItems.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.triggerService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.triggerService || ''] || getFallbackIcon(form.triggerService || '')" :alt="getServiceName(form.triggerService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.triggerService) }}</span>
+                        <span class="service-type">Trigger Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.triggerService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -125,6 +119,55 @@
               <div class="arrow-line"></div>
               <div class="arrow-icon">
                 <v-icon size="20" color="#3b82f6">mdi-arrow-down</v-icon>
+              </div>
+              <div class="arrow-line"></div>
+            </div>
+
+            <div v-if="form.triggerService" class="service-selector intermediate-selector">
+              <div class="selector-header">
+                <div class="selector-icon">
+                  <v-icon size="24" color="#8b5cf6">mdi-brain</v-icon>
+                </div>
+                <div class="selector-info">
+                  <h3 class="selector-title">✨ Transform with AI (Optional)</h3>
+                  <p class="selector-subtitle">Use OpenAI to generate text before sending</p>
+                </div>
+              </div>
+
+              <div class="service-selection">
+                <div v-if="!form.intermediateActionService" class="service-grid">
+                  <div
+                    class="service-card optional-card"
+                    @click="form.intermediateActionService = 'OpenAI'"
+                  >
+                    <div class="service-card-icon">
+                      <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+                    </div>
+                    <span class="service-card-name">Add OpenAI</span>
+                  </div>
+                </div>
+
+                <div v-else class="selected-service-display">
+                  <div class="selected-service-card">
+                    <div class="service-avatar">
+                      <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+                    </div>
+                    <div class="service-info">
+                      <span class="service-name">OpenAI</span>
+                      <span class="service-type">Intermediate Action</span>
+                    </div>
+                    <button class="change-service-btn" @click="form.intermediateActionService = ''">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="form.intermediateActionService" class="connection-arrow">
+              <div class="arrow-line"></div>
+              <div class="arrow-icon">
+                <v-icon size="20" color="#8b5cf6">mdi-arrow-down</v-icon>
               </div>
               <div class="arrow-line"></div>
             </div>
@@ -141,38 +184,50 @@
               </div>
 
               <div class="service-selection">
-                <div v-if="!form.actionService" class="service-grid">
-                  <div
-                    v-for="item in appItems.slice(0, 15)"
-                    :key="item.value"
-                    class="service-card"
-                    @click="selectAction(item.value)"
-                  >
-                    <div class="service-card-icon">
-                      <img :src="item.icon" :alt="item.title" class="service-icon" />
-                    </div>
-                    <span class="service-card-name">{{ item.title }}</span>
-                  </div>
-                  <div class="service-card more-services" @click="showAllReactionServices = true">
-                    <div class="service-card-icon">
-                      <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
-                    </div>
-                    <span class="service-card-name">More...</span>
-                  </div>
+                <div v-if="servicesError" class="service-error">
+                  <v-icon size="18" color="#ef4444">mdi-alert-circle</v-icon>
+                  <span>{{ servicesError }}</span>
                 </div>
 
-                <div v-else class="selected-service-display">
-                  <div class="selected-service-card">
-                    <div class="service-avatar">
-                      <img :src="getIconUrl(apps.find(a => a.name === form.actionService)?.icon || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                <div v-else-if="isLoadingServices" class="service-loading">
+                  <div class="spinner"></div>
+                  <span>Loading services...</span>
+                </div>
+
+                <div v-else>
+                  <div v-if="!form.actionService" class="service-grid">
+                    <div
+                      v-for="item in actionItems.slice(0, 15)"
+                      :key="item.value"
+                      class="service-card"
+                      @click="selectAction(item.value)"
+                    >
+                      <div class="service-card-icon">
+                        <img :src="item.icon" :alt="item.title" class="service-icon" />
+                      </div>
+                      <span class="service-card-name">{{ item.title }}</span>
                     </div>
-                    <div class="service-info">
-                      <span class="service-name">{{ getServiceName(form.actionService) }}</span>
-                      <span class="service-type">Action Service</span>
+                    <div class="service-card more-services" @click="showAllReactionServices = true" v-if="actionItems.length > 15">
+                      <div class="service-card-icon">
+                        <v-icon size="24" color="#3b82f6">mdi-plus</v-icon>
+                      </div>
+                      <span class="service-card-name">More...</span>
                     </div>
-                    <button class="change-service-btn" @click="form.actionService = ''">
-                      <v-icon size="16">mdi-close</v-icon>
-                    </button>
+                  </div>
+
+                  <div v-else class="selected-service-display">
+                    <div class="selected-service-card">
+                      <div class="service-avatar">
+                        <img :src="serviceIcons[form.actionService || ''] || getFallbackIcon(form.actionService || '')" :alt="getServiceName(form.actionService)" class="service-icon" />
+                      </div>
+                      <div class="service-info">
+                        <span class="service-name">{{ getServiceName(form.actionService) }}</span>
+                        <span class="service-type">Action Service</span>
+                      </div>
+                      <button class="change-service-btn" @click="form.actionService = ''">
+                        <v-icon size="16">mdi-close</v-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -186,10 +241,10 @@
             <span class="label-text">Configuration</span>
           </div>
 
-          <div v-if="form.triggerService === 'Date Timer'" class="config-section">
+          <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
-                <img :src="getIconUrl('google-calendar.png')" alt="Date Timer" class="service-icon" />
+                <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
               </div>
               <div class="config-info">
                 <h4 class="config-title">📅 Calendar Event Trigger</h4>
@@ -302,65 +357,6 @@
                     </label>
                   </div>
                   <small class="input-hint">Choose which GitHub events should trigger this area</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="form.triggerService === 'Google Agenda'" class="config-section">
-            <div class="config-header">
-              <div class="config-icon">
-                <img :src="getIconUrl('google-calendar.png')" alt="Google Agenda" class="service-icon" />
-              </div>
-              <div class="config-info">
-                <h4 class="config-title">📅 Google Agenda Trigger</h4>
-                <p class="config-subtitle">Configure when this area should trigger based on upcoming events</p>
-              </div>
-            </div>
-
-            <div class="config-content">
-              <div class="input-group">
-                <div class="input-container">
-                  <label class="input-label">📅 Calendar ID</label>
-                  <input
-                    v-model="form.triggerConfig.calendarId"
-                    class="modern-input"
-                    placeholder="primary"
-                    required
-                  />
-                  <small class="input-hint">Use 'primary' for your main calendar, or enter a specific calendar ID</small>
-                </div>
-
-                <div class="input-container">
-                  <label class="input-label">⏰ Trigger Before</label>
-                  <select v-model="form.triggerConfig.timeBefore" class="modern-select" required>
-                    <option value="5m">5 minutes before</option>
-                    <option value="15m">15 minutes before</option>
-                    <option value="30m">30 minutes before</option>
-                    <option value="1h">1 hour before</option>
-                    <option value="2h">2 hours before</option>
-                    <option value="1d">1 day before</option>
-                  </select>
-                </div>
-
-                <div class="input-container">
-                  <label class="input-label">📝 Event Title Filter (optional)</label>
-                  <input
-                    v-model="form.triggerConfig.eventTitle"
-                    class="modern-input"
-                    placeholder="Leave empty to trigger on all events"
-                  />
-                  <small class="input-hint">Only trigger on events with this specific title</small>
-                </div>
-
-                <div class="input-container">
-                  <label class="input-label">📊 Event Status Filter (optional)</label>
-                  <select v-model="form.triggerConfig.eventStatus" class="modern-select">
-                    <option value="">All statuses</option>
-                    <option value="confirmed">Confirmed only</option>
-                    <option value="tentative">Tentative only</option>
-                    <option value="cancelled">Cancelled only</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -681,6 +677,84 @@
             </div>
           </div>
 
+          <div v-if="form.intermediateActionService === 'OpenAI'" class="config-section">
+            <div class="config-header">
+              <div class="config-icon">
+                <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
+              </div>
+              <div class="config-info">
+                <h4 class="config-title">🤖 OpenAI Configuration</h4>
+                <p class="config-subtitle">Configure how OpenAI should generate text from your trigger data</p>
+              </div>
+            </div>
+
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label">💬 System Prompt (Optional)</label>
+                  <textarea
+                    v-model="form.intermediateActionConfig.systemPrompt"
+                    class="modern-textarea"
+                    placeholder="You are a helpful assistant..."
+                    rows="3"
+                  ></textarea>
+                  <small class="input-hint">Define the AI's role or behavior. This helps guide the response style.</small>
+                </div>
+
+                <div class="input-container">
+                  <label class="input-label">✍️ Prompt</label>
+                  <textarea
+                    v-model="form.intermediateActionConfig.prompt"
+                    class="modern-textarea"
+                    placeholder="Generate a summary of the following data: {{changeType}} in {{sheetName}} at row {{rowNumber}}"
+                    rows="5"
+                    required
+                  ></textarea>
+                  <small class="input-hint">
+                    Use template variables from your trigger:
+                    <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'GitHub'">&#123;&#123;repository&#125;&#125;, &#123;&#123;branch&#125;&#125;</span>
+                    <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                  </small>
+                  <div class="info-box" style="margin-top: 0.5rem;">
+                    <v-icon size="16" color="#8b5cf6">mdi-lightbulb-on</v-icon>
+                    <span>The generated text will be available as <code>&#123;&#123;openaiGeneratedText&#125;&#125;</code> in your action</span>
+                  </div>
+                </div>
+
+                <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div class="input-container">
+                    <label class="input-label">🌡️ Temperature</label>
+                    <input
+                      v-model.number="form.intermediateActionConfig.temperature"
+                      type="number"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      class="modern-input"
+                    />
+                    <small class="input-hint">Creativity level (0 = focused, 2 = creative). Default: 0.7</small>
+                  </div>
+
+                  <div class="input-container">
+                    <label class="input-label">📏 Max Tokens</label>
+                    <input
+                      v-model.number="form.intermediateActionConfig.maxTokens"
+                      type="number"
+                      min="1"
+                      max="4000"
+                      step="50"
+                      class="modern-input"
+                    />
+                    <small class="input-hint">Maximum length of generated text. Default: 500</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="form.triggerService === 'Telegram'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
@@ -798,7 +872,7 @@
                     placeholder="Reminder: {{eventTitle}}"
                     required
                   />
-                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125; to include the event name</small>
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125; to include the event name<span v-if="form.intermediateActionService === 'OpenAI'">, or &#123;&#123;openaiGeneratedText&#125;&#125; for AI-generated content</span></small>
                 </div>
 
                 <div class="input-container">
@@ -810,7 +884,7 @@
                     rows="4"
                     required
                   ></textarea>
-                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders</small>
+                  <small class="input-hint">Use &#123;&#123;eventTitle&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, and &#123;&#123;areaName&#125;&#125; as placeholders<span v-if="form.intermediateActionService === 'OpenAI'">, or &#123;&#123;openaiGeneratedText&#125;&#125; for AI-generated content</span></small>
                 </div>
               </div>
             </div>
@@ -854,7 +928,9 @@
                     <span v-if="form.triggerService === 'Telegram'">&#123;&#123;messageText&#125;&#125;, &#123;&#123;firstName&#125;&#125;, &#123;&#123;username&#125;&#125;, &#123;&#123;chatId&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Timer'">&#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;</span>
                     <span v-else-if="form.triggerService === 'Google Sheets'">&#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125;</span>
+                    <span v-else-if="form.triggerService === 'Spotify'">&#123;&#123;trackName&#125;&#125;, &#123;&#123;artistNames&#125;&#125;, &#123;&#123;albumName&#125;&#125;, &#123;&#123;trackUrl&#125;&#125;</span>
                     <span v-else>&#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</span>
+                    <span v-if="form.intermediateActionService === 'OpenAI'">, &#123;&#123;openaiGeneratedText&#125;&#125;</span>
                   </small>
                 </div>
 
@@ -922,6 +998,7 @@
                   ></textarea>
                   <small class="input-hint">
                     Use template variables: &#123;&#123;areaName&#125;&#125;, &#123;&#123;triggerTime&#125;&#125;, &#123;&#123;interval&#125;&#125;, etc.
+                    <span v-if="form.intermediateActionService === 'OpenAI'"> Use &#123;&#123;openaiGeneratedText&#125;&#125; to include the AI-generated text.</span>
                     Telegram supports Markdown formatting (*bold*, _italic_)
                   </small>
                 </div>
@@ -929,7 +1006,7 @@
             </div>
           </div>
 
-          <div v-if="form.triggerService === 'Date Timer' && form.actionService === 'Gmail'" class="preview-section">
+          <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="preview-section">
             <div class="preview-header">
               <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
               <span class="preview-title">Email Preview</span>
@@ -993,7 +1070,7 @@
         </button>
 
         <button
-          v-if="form.triggerService === 'Date Timer' && form.actionService === 'Gmail'"
+          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
           class="action-btn test-email-btn"
           @click="sendTestEmail"
           :disabled="!canSendTestEmail || isSendingTest"
@@ -1012,7 +1089,7 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
-        <div v-if="form.triggerService === 'Date Timer' && form.actionService === 'Gmail'" class="debug-info">
+        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
@@ -1026,22 +1103,23 @@
       </div>
     </div>
 
-    <!-- Guide Modal -->
     <AreaGuideModal :is-open="showGuide" @close="showGuide = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import appsJson from '../../assets/apps.json'
+import { API_BASE_URL } from '../../config/api'
 import { areaService, type GoogleSheetsTestResponse } from '../../services/area'
 import { githubService, type GitHubRepository } from '../../services/github'
 import { useAuth } from '@/composables/useAuth'
-import { API_BASE_URL } from '../../config/api'
 import AreaGuideModal from '../AreaGuideModal.vue'
 
-type AppDef = { name: string; icon: string }
-const apps = (Array.isArray(appsJson) ? appsJson : (appsJson as any).apps ?? []) as AppDef[]
+type ServiceInfo = {
+  name: string
+  actions: { name: string; description: string }[]
+  reactions: { name: string; description: string }[]
+}
 
 interface AreaTemplate {
   id: string
@@ -1066,8 +1144,7 @@ const getIconUrl = (file: string) =>
   new URL(`../../assets/${ICONS_DIR}/${file}`, import.meta.url).href
 
 const priorityServices = [
-  'Date Timer',
-  'Google Agenda',
+  'Google Calendar',
   'Gmail',
   'Weather',
   'Discord',
@@ -1080,8 +1157,108 @@ const priorityServices = [
   'Twitter'
 ]
 
+const intermediateServices = [
+  'OpenAI'
+]
+
+const services = ref<ServiceInfo[]>([])
+const serviceIcons = ref<Record<string, string>>({})
+const isLoadingServices = ref(false)
+const servicesError = ref<string | null>(null)
+
+const fetchServices = async () => {
+  isLoadingServices.value = true
+  servicesError.value = null
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/about.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch services: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const fetchedServices = (data?.server?.services || []) as ServiceInfo[]
+
+    services.value = fetchedServices
+
+    const icons: Record<string, string> = {}
+    const defaultIcons: Record<string, string> = {
+      Gmail: 'gmail.png',
+      Slack: 'slack.png',
+      GitHub: 'github.png',
+      Weather: 'weather.png',
+      'Google Calendar': 'google-calendar.png',
+      Discord: 'discord.png',
+      'Google Sheets': 'google-sheets.png',
+      'Google Drive': 'google-drive.png',
+      Timer: 'google-calendar.png',
+      Telegram: 'telegram.png',
+      OpenAI: 'openai.png'
+    }
+
+    fetchedServices.forEach(service => {
+      const key = service.name
+      const normalized = key.toLowerCase()
+      const matchedDefault = Object.keys(defaultIcons).find(name => name.toLowerCase() === normalized)
+      if (matchedDefault) {
+        icons[key] = getIconUrl(defaultIcons[matchedDefault])
+      } else {
+        const sanitized = key.toLowerCase().replace(/\s+/g, '-')
+        icons[key] = getIconUrl(`${sanitized}.png`)
+      }
+    })
+
+    serviceIcons.value = icons
+  } catch (err) {
+    servicesError.value = err instanceof Error ? err.message : 'Failed to load services'
+  } finally {
+    isLoadingServices.value = false
+  }
+}
+
+onMounted(() => {
+  fetchServices()
+})
+
+const getFallbackIcon = (serviceName: string) => {
+  if (!serviceName) {
+    return getIconUrl('gmail.png')
+  }
+
+  const normalized = serviceName.toLowerCase()
+  if (serviceIcons.value[serviceName]) {
+    return serviceIcons.value[serviceName]
+  }
+
+  const defaultIcons: Record<string, string> = {
+    gmail: 'gmail.png',
+    slack: 'slack.png',
+    github: 'github.png',
+    weather: 'weather.png',
+    'google calendar': 'google-calendar.png',
+    discord: 'discord.png',
+    'google sheets': 'google-sheets.png',
+    'google drive': 'google-drive.png',
+    timer: 'google-calendar.png',
+    telegram: 'telegram.png',
+    openai: 'openai.png'
+  }
+
+  const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
+  if (matchedDefault) {
+    return getIconUrl(defaultIcons[matchedDefault])
+  }
+
+  const sanitized = normalized.replace(/\s+/g, '-')
+  return getIconUrl(`${sanitized}.png`)
+}
+
 const appItems = computed(() => {
-  const sortedApps = [...apps].sort((a, b) => {
+  if (services.value.length === 0) {
+    return []
+  }
+
+  const sortedServices = [...services.value].sort((a, b) => {
     const aPriority = priorityServices.indexOf(a.name)
     const bPriority = priorityServices.indexOf(b.name)
 
@@ -1093,7 +1270,19 @@ const appItems = computed(() => {
     return aPriority - bPriority
   })
 
-  return sortedApps.map(a => ({ title: a.name, value: a.name, icon: getIconUrl(a.icon) }))
+  return sortedServices.map(service => ({
+    title: service.name,
+    value: service.name,
+    icon: serviceIcons.value[service.name] || getFallbackIcon(service.name)
+  }))
+})
+
+const triggerItems = computed(() => {
+  return appItems.value.filter(item => item.value !== 'OpenAI')
+})
+
+const actionItems = computed(() => {
+  return appItems.value.filter(item => item.value !== 'OpenAI')
 })
 
 const form = reactive({
@@ -1101,8 +1290,15 @@ const form = reactive({
   description: '',
   triggerService: '' as string | null,
   actionService: '' as string | null,
+  intermediateActionService: '' as string | null,
   triggerConfig: {} as any,
   actionConfig: {} as any,
+  intermediateActionConfig: {
+    prompt: '',
+    systemPrompt: '',
+    temperature: 0.7,
+    maxTokens: 500
+  } as any,
 })
 
 const repositories = ref<GitHubRepository[]>([])
@@ -1118,7 +1314,7 @@ watch(() => props.template, (newTemplate) => {
     form.triggerService = newTemplate.triggerService
     form.actionService = newTemplate.actionService
 
-    if (newTemplate.triggerService === 'Date Timer' && newTemplate.actionService === 'Gmail') {
+    if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
         eventTitle: '',
@@ -1149,13 +1345,6 @@ watch(() => props.template, (newTemplate) => {
         range: 'Sheet1!A1:D',
         hasHeader: true
       }
-    } else if (newTemplate.triggerService === 'Google Agenda') {
-      form.triggerConfig = {
-        calendarId: 'primary',
-        eventTitle: '',
-        timeBefore: '15m',
-        eventStatus: ''
-      }
     } else if (newTemplate.triggerService === 'Telegram') {
       form.triggerConfig = {
         chatId: '',
@@ -1184,17 +1373,11 @@ const isFormValid = computed(() => {
                       form.triggerService !== '' &&
                       form.actionService !== ''
 
-  if (form.triggerService === 'Date Timer' && form.actionService === 'Gmail') {
+  if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
            form.actionConfig.subject
-  }
-
-  if (form.triggerService === 'Google Agenda') {
-    return hasBasicInfo &&
-           form.triggerConfig.calendarId &&
-           form.triggerConfig.timeBefore
   }
 
   if (form.triggerService === 'GitHub' && form.actionService === 'Gmail') {
@@ -1252,6 +1435,11 @@ const isFormValid = computed(() => {
            form.actionConfig.message
   }
 
+  if (form.intermediateActionService === 'OpenAI') {
+    return hasBasicInfo &&
+           form.intermediateActionConfig.prompt?.trim() !== ''
+  }
+
   return hasBasicInfo
 })
 
@@ -1288,18 +1476,11 @@ const selectTrigger = (serviceId: string) => {
   sheetsTestResult.value = null
   sheetsTestError.value = null
 
-  if (serviceId === 'Date Timer') {
+  if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
       eventTime: '',
       eventTitle: '',
       calendarId: 'primary'
-    }
-  } else if (serviceId === 'Google Agenda') {
-    form.triggerConfig = {
-      calendarId: 'primary',
-      eventTitle: '',
-      timeBefore: '15m',
-      eventStatus: ''
     }
   } else if (serviceId === 'GitHub') {
     form.triggerConfig = {
@@ -1370,6 +1551,8 @@ const selectAction = (serviceId: string) => {
       ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
       : form.triggerService === 'Google Sheets'
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing: {{trackName}} — {{artistNames}}\n🔗 {{trackUrl}}'
       : form.triggerService === 'Timer'
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
@@ -1385,6 +1568,8 @@ const selectAction = (serviceId: string) => {
       ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Telegram'
       ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      : form.triggerService === 'Spotify'
+      ? '🎧 Now playing on Spotify: {{trackName}} — {{artistNames}}'
       : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
@@ -1405,7 +1590,7 @@ const getMissingFields = () => {
   const missing = []
   if (!form.areaName.trim()) missing.push('Area Name')
 
-  if (form.triggerService === 'Date Timer') {
+  if (form.triggerService === 'Google Calendar') {
     if (!form.triggerConfig.eventTime) missing.push('Event Time')
   }
 
@@ -1443,6 +1628,10 @@ const getMissingFields = () => {
   if (form.actionService === 'Telegram') {
     if (!form.actionConfig.chatId) missing.push('Telegram Chat ID')
     if (!form.actionConfig.message) missing.push('Telegram Message')
+  }
+
+  if (form.intermediateActionService === 'OpenAI') {
+    if (!form.intermediateActionConfig.prompt?.trim()) missing.push('OpenAI Prompt')
   }
 
   return missing.join(', ')
@@ -1540,16 +1729,6 @@ const sendTestEmail = async () => {
   }
 }
 
-const configureServices = () => {
-  console.log('Configure services clicked')
-  alert('Configure Services functionality will be implemented')
-}
-
-const testConnection = () => {
-  console.log('Test connection clicked')
-  alert('Test Connection functionality will be implemented')
-}
-
 const testWeatherTrigger = async () => {
   if (!form.triggerConfig.city) {
     alert('Please enter a city name first')
@@ -1628,13 +1807,13 @@ const formatDateTimeWithTimezone = (date: Date): string => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
-  
+
   const timezoneOffset = -date.getTimezoneOffset()
   const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60)
   const offsetMinutes = Math.abs(timezoneOffset) % 60
   const offsetSign = timezoneOffset >= 0 ? '+' : '-'
   const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
-  
+
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`
 }
 
@@ -1652,7 +1831,7 @@ const createArea = async () => {
         form.triggerConfig.notificationTypes
       )
     } else if (form.triggerService === 'Google Sheets') {
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1668,9 +1847,20 @@ const createArea = async () => {
         actionConfig: form.actionConfig
       }
 
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
+      }
+
       await areaService.createArea(areaData)
     } else if (form.triggerService === 'Weather') {
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1679,6 +1869,17 @@ const createArea = async () => {
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: form.triggerConfig,
         actionConfig: form.actionConfig
+      }
+
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
@@ -1693,7 +1894,7 @@ const createArea = async () => {
         triggerConfig.command = form.triggerConfig.command
       }
 
-      const areaData = {
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
@@ -1704,34 +1905,27 @@ const createArea = async () => {
         actionConfig: form.actionConfig
       }
 
-      await areaService.createArea(areaData)
-    } else if (form.triggerService === 'Google Agenda') {
-      const areaData = {
-        name: form.areaName,
-        description: form.description,
-        triggerService: form.triggerService!,
-        triggerType: 'Event',
-        actionService: form.actionService!,
-        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
-        triggerConfig: {
-          calendarId: form.triggerConfig.calendarId,
-          eventTitle: form.triggerConfig.eventTitle,
-          timeBefore: form.triggerConfig.timeBefore,
-          eventStatus: form.triggerConfig.eventStatus
-        },
-        actionConfig: form.actionConfig
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
     } else {
       let triggerConfig = { ...form.triggerConfig }
-      
-      if (form.triggerService === 'Date Timer' && form.triggerConfig.eventTime) {
+
+      if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
         const eventDateTime = new Date(form.triggerConfig.eventTime)
         const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
-        
+
         const [datePart, timePart] = formattedDateTime.split('T')
-        
+
         triggerConfig = {
           eventDate: datePart,
           eventTime: formattedDateTime,
@@ -1739,16 +1933,31 @@ const createArea = async () => {
           calendarId: form.triggerConfig.calendarId || 'primary'
         }
       }
-      
-      const areaData = {
+
+      const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: form.triggerService === 'Date Timer' ? 'Event' : 'Webhook',
+        triggerType: form.triggerService === 'Google Calendar'
+          ? 'Event'
+          : form.triggerService === 'Spotify'
+          ? 'Playback'
+          : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
         triggerConfig: triggerConfig,
         actionConfig: form.actionConfig
+      }
+
+      if (form.intermediateActionService === 'OpenAI') {
+        areaData.intermediateActionService = 'OpenAI'
+        areaData.intermediateActionType = 'GenerateText'
+        areaData.intermediateActionConfig = {
+          prompt: form.intermediateActionConfig.prompt,
+          systemPrompt: form.intermediateActionConfig.systemPrompt || '',
+          temperature: form.intermediateActionConfig.temperature || 0.7,
+          maxTokens: form.intermediateActionConfig.maxTokens || 500
+        }
       }
 
       await areaService.createArea(areaData)
@@ -1793,9 +2002,21 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   position: relative;
 }
 
+[data-theme="light"] .main-card {
+  background: #e5e7eb;
+  border: 3px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
 .card-header {
   padding: 2rem 2rem 1rem 2rem;
   border-bottom: 1px solid var(--color-border-primary);
+}
+
+[data-theme="light"] .card-header {
+  border-bottom: 3px solid rgba(0, 0, 0, 0.3);
 }
 
 .header-content {
@@ -1842,9 +2063,24 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   justify-content: center;
 }
 
+[data-theme="light"] .close-button {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .close-button :deep(.v-icon) {
+  color: #1a1a1a !important;
+}
+
 .close-button:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .close-button:hover {
+  background: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .icon-container {
@@ -1872,6 +2108,12 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
+}
+
+[data-theme="light"] .card-title {
+  color: #8b5cf6;
+  text-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+  font-weight: 800;
 }
 
 .card-subtitle {
@@ -1943,11 +2185,25 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   outline: none;
 }
 
+[data-theme="light"] .modern-input,
+[data-theme="light"] .modern-textarea {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-input:focus,
 .modern-textarea:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-input:focus,
+[data-theme="light"] .modern-textarea:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .modern-input::placeholder,
@@ -1976,9 +2232,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .service-selector {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .service-selector:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .service-selector:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .selector-header {
@@ -2033,10 +2300,22 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   width: 100%;
 }
 
+[data-theme="light"] .modern-select {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+}
+
 .modern-select:focus {
   border-color: var(--color-accent-primary);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+[data-theme="light"] .modern-select:focus {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .selected-service {
@@ -2668,7 +2947,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-text-primary) !important;
 }
 
-/* Configuration Section Styles */
+
 .config-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border-primary);
@@ -2678,9 +2957,20 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .config-section {
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
 .config-section:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .config-section:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .config-header {
@@ -2868,7 +3158,7 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
   color: var(--color-border-primary) !important;
 }
 
-/* Info box for Timer and other configs */
+
 .info-box {
   display: flex;
   align-items: center;
@@ -3001,3 +3291,9 @@ const emit = defineEmits<{ (e: 'close'): void; (e: 'save'): void }>()
 }
 
 </style>
+
+
+
+
+
+
