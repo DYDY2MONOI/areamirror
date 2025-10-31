@@ -9,63 +9,65 @@
   >
     <div class="card-spotlight" :style="spotlightStyle">
       <div class="spotlight"></div>
-      <div class="card-content">
-        <div
-          v-if="showToggleButton || showDeleteButton"
-          class="card-controls"
+      <div
+        v-if="showToggleButton || showDeleteButton"
+        class="card-controls"
+      >
+        <button
+          v-if="showToggleButton"
+          class="control-button"
+          :class="{ active: isActive, inactive: !isActive }"
+          type="button"
+          :title="isActive ? 'Deactivate area' : 'Activate area'"
+          :disabled="isToggling"
+          @click.stop="handleToggle"
         >
-          <button
-            v-if="showToggleButton"
-            class="control-button"
-            :class="{ active: isActive, inactive: !isActive }"
-            type="button"
-            :title="isActive ? 'Deactivate area' : 'Activate area'"
-            :disabled="isToggling"
-            @click.stop="handleToggle"
-          >
-            <v-progress-circular
-              v-if="isToggling"
-              indeterminate
-              size="16"
-              width="2"
-              color="white"
-            />
-            <v-icon v-else size="18">{{ isActive ? 'mdi-pause' : 'mdi-play' }}</v-icon>
-          </button>
-          <button
-            v-if="showDeleteButton"
-            class="control-button delete"
-            type="button"
-            title="Delete area"
-            @click.stop="handleDelete"
-          >
-            <v-icon size="16" color="white">mdi-delete</v-icon>
-          </button>
-        </div>
+          <v-progress-circular
+            v-if="isToggling"
+            indeterminate
+            size="16"
+            width="2"
+            color="white"
+          />
+          <v-icon v-else size="18">{{ isActive ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+        </button>
+        <button
+          v-if="showDeleteButton"
+          class="control-button delete"
+          type="button"
+          title="Delete area"
+          @click.stop="handleDelete"
+        >
+          <v-icon size="16" color="white">mdi-delete</v-icon>
+        </button>
+      </div>
+      <div class="card-content">
 
-        <div class="service-icons">
-          <div class="service-icon trigger-icon">
-            <img
-              v-if="area.triggerIconUrl"
-              :src="getIconUrl(area.triggerIconUrl)"
-              :alt="area.triggerService"
-              class="service-logo"
-            />
-            <v-icon v-else :size="36" color="white">{{ getTriggerIcon(area.triggerService) }}</v-icon>
-            <div v-if="!area.triggerIconUrl" class="icon-fallback">{{ getTriggerEmoji(area.triggerService) }}</div>
-          </div>
-          <div class="service-arrow">
-            <v-icon size="20" color="white">mdi-arrow-right</v-icon>
-          </div>
-          <div class="service-icon action-icon">
-            <img
-              v-if="area.actionIconUrl"
-              :src="getIconUrl(area.actionIconUrl)"
-              :alt="area.actionService"
-              class="service-logo"
-            />
-            <v-icon v-else :size="36" color="white">{{ getActionIcon(area.actionService) }}</v-icon>
-            <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
+        <div class="card-body">
+          <div class="service-icons">
+            <div class="service-icon trigger-icon">
+              <img
+                v-if="area.triggerIconUrl"
+                :src="getIconUrl(area.triggerIconUrl)"
+                :alt="area.triggerService"
+                class="service-logo"
+              />
+              <v-icon v-else :size="36" color="white">{{ getTriggerIcon(area.triggerService) }}</v-icon>
+              <div v-if="!area.triggerIconUrl" class="icon-fallback">{{ getTriggerEmoji(area.triggerService) }}</div>
+            </div>
+            <div class="service-arrow">
+              <v-icon size="20" color="white">mdi-arrow-right</v-icon>
+            </div>
+            <div class="service-icon action-icon">
+              <img
+                v-if="area.actionIconUrl"
+                :src="getIconUrl(area.actionIconUrl)"
+                :alt="area.actionService"
+                class="service-logo"
+              />
+              <v-icon v-else :size="36" color="white">{{ getActionIcon(area.actionService) }}</v-icon>
+              <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
+            </div>
           </div>
         </div>
 
@@ -330,7 +332,7 @@ const getIconUrl = (iconName: string) => {
   background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 32px;
+  padding: 24px;
   height: 280px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -378,7 +380,16 @@ const getIconUrl = (iconName: string) => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  padding: 0;
+}
+
+.card-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  margin-top: 16px;
 }
 
 .service-icons {
@@ -386,7 +397,6 @@ const getIconUrl = (iconName: string) => {
   align-items: center;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 24px;
 }
 
 .service-icon {
@@ -450,6 +460,9 @@ const getIconUrl = (iconName: string) => {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  margin-top: auto;
+  text-align: left;
+  align-items: flex-start;
 }
 
 .card-title {
@@ -501,8 +514,8 @@ const getIconUrl = (iconName: string) => {
 
 .card-controls {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
   display: flex;
   gap: 8px;
   align-items: center;

@@ -319,7 +319,7 @@ class AreaService: ObservableObject {
             }
             return decoded.data
         } catch {
-            if let lenient = try? Self.parseAreaLenient(from: data), let updatedArea = lenient {
+            if let updatedArea = try? Self.parseAreaLenient(from: data) {
                 if let idx = self.userAreas.firstIndex(where: { $0.id == updatedArea.id }) {
                     self.userAreas[idx] = updatedArea
                 }
