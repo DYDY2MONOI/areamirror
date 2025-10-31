@@ -109,8 +109,20 @@
               <span class="status-text">{{ ((area as any).is_active || (area as any).isActive) ? 'Active' : 'Inactive' }}</span>
             </div>
             <div class="area-actions">
-              <button class="action-btn" @click.stop="toggleArea(area)" :title="((area as any).is_active || (area as any).isActive) ? 'Deactivate' : 'Activate'">
-                <v-icon size="18">{{ ((area as any).is_active || (area as any).isActive) ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+              <button
+                class="action-btn"
+                @click.stop="toggleArea(area)"
+                :title="((area as any).is_active || (area as any).isActive) ? 'Deactivate' : 'Activate'"
+                :disabled="isAreaToggling(area.id)"
+              >
+                <v-progress-circular
+                  v-if="isAreaToggling(area.id)"
+                  indeterminate
+                  size="16"
+                  width="2"
+                  color="white"
+                />
+                <v-icon v-else size="18">{{ ((area as any).is_active || (area as any).isActive) ? 'mdi-pause' : 'mdi-play' }}</v-icon>
               </button>
               <button class="action-btn" @click.stop="editArea(area)" title="Edit">
                 <v-icon size="18">mdi-pencil</v-icon>
@@ -179,7 +191,7 @@ import type { Area } from '@/services/area'
 
 const router = useRouter()
 const { currentUser, isAuthenticated } = useAuth()
-const { areas, isLoading, fetchUserAreas, toggleArea: toggleAreaService, deleteArea: deleteAreaService } = useAreas()
+const { areas, isLoading, fetchUserAreas, toggleArea: toggleAreaService, deleteArea: deleteAreaService, togglingAreaIds } = useAreas()
 
 const searchQuery = ref('')
 const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
@@ -241,11 +253,15 @@ const formatDate = (dateString?: string) => {
   })
 }
 
-const toggleArea = function(area: Area) {
-  return toggleAreaService(area.id).catch((error: unknown) => {
+const toggleArea = async (area: Area) => {
+  try {
+    await toggleAreaService(area.id)
+  } catch (error) {
     console.error('Error toggling area:', error)
-  })
+  }
 }
+
+const isAreaToggling = (id: string) => togglingAreaIds.value.includes(id)
 
 
 const editArea = (area: Area) => {
@@ -701,6 +717,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-btn:disabled:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .action-btn:hover {

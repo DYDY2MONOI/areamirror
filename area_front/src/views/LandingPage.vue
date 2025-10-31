@@ -117,8 +117,11 @@
             :key="area.id"
             :area="area"
             :show-delete-button="true"
+            :show-toggle-button="true"
+            :is-toggling="isAreaToggling(area.id)"
             @click="handleAreaClick"
             @delete="handleDeleteArea"
+            @toggle="handleToggleArea"
           />
         </div>
       </v-container>
@@ -358,7 +361,15 @@ const searchQuery = ref('')
 const isDesktop = ref(typeof window !== 'undefined' ? window.innerWidth >= 1280 : true)
 
 const { isAuthenticated, currentUser, logout, refreshProfile, getProfileImageUrl } = useAuth()
-const { areas, fetchUserAreas, fetchPopularAreas, fetchRecommendedAreas, deleteArea } = useAreas()
+const {
+  areas,
+  fetchUserAreas,
+  fetchPopularAreas,
+  fetchRecommendedAreas,
+  deleteArea,
+  toggleArea: toggleAreaService,
+  togglingAreaIds,
+} = useAreas()
 const router = useRouter()
 
 const searchSuggestions = ['Gmail', 'Discord', 'Spotify', 'GitHub']
@@ -547,6 +558,22 @@ const handleDeleteArea = (area: AreaTemplate | Area) => {
     showDeleteDialog.value = true
   })
 }
+
+const handleToggleArea = (area: AreaTemplate | Area) => {
+  requireAuth(async () => {
+    if (!area?.id) {
+      return
+    }
+
+    try {
+      await toggleAreaService(area.id)
+    } catch (error) {
+      console.error('Failed to toggle area:', error)
+    }
+  })
+}
+
+const isAreaToggling = (id: string) => togglingAreaIds.value.includes(id)
 
 const confirmDelete = async () => {
   if (!areaToDelete.value) return

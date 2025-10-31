@@ -204,6 +204,14 @@ func init() {
 	}
 }
 
+func getBaseURL() string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		return "https://overeasily-superable-catarina.ngrok-free.dev"
+	}
+	return baseURL
+}
+
 func getRedirectURI(defaultEnv, mobileEnv, fallback string, isMobile bool) string {
 	if isMobile {
 		if mobile := os.Getenv(mobileEnv); mobile != "" {
@@ -1098,7 +1106,7 @@ func LinkSpotifyAccount(c *gin.Context) {
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 	redirectURI := os.Getenv("SPOTIFY_LINK_REDIRECT_URI")
 	if redirectURI == "" {
-		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/spotify/callback"
+		redirectURI = getBaseURL() + "/oauth2/spotify/callback"
 	}
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
@@ -2440,7 +2448,7 @@ func LinkTwitterAccount(c *gin.Context) {
 	redirectURI := os.Getenv("TWITTER_REDIRECT_URI")
 
 	if redirectURI == "" {
-		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback"
+		redirectURI = getBaseURL() + "/oauth2/twitter/callback"
 	}
 
 	if twitterClientID == "" || twitterClientSecret == "" {
@@ -2563,13 +2571,13 @@ func UnlinkTwitterAccount(c *gin.Context) {
 func TwitterDirectLogin(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=missing_code")
+		c.Redirect(http.StatusTemporaryRedirect, getBaseURL()+"/login?error=missing_code")
 		return
 	}
 
 	state := c.Query("state")
 	if state == "link" {
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://overeasily-superable-catarina.ngrok-free.dev/auth/twitter/callback?code=%s&state=link", code))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf(getBaseURL()+"/auth/twitter/callback?code=%s&state=link", code))
 		return
 	}
 	stateInfo := parseMobileState(state)
@@ -2585,22 +2593,22 @@ func TwitterDirectLogin(c *gin.Context) {
 
 	twitterClientID := os.Getenv("TWITTER_CLIENT_ID")
 	twitterClientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
-	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback", stateInfo.isMobile)
+	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", getBaseURL()+"/oauth2/twitter/callback", stateInfo.isMobile)
 
 	if twitterClientID == "" || twitterClientSecret == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=twitter_not_configured")
+		c.Redirect(http.StatusTemporaryRedirect, getBaseURL()+"/login?error=twitter_not_configured")
 		return
 	}
 
 	tokenResp, err := exchangeTwitterCodeForToken(code, twitterClientID, twitterClientSecret, redirectURI, codeVerifier)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=token_exchange_failed")
+		c.Redirect(http.StatusTemporaryRedirect, getBaseURL()+"/login?error=token_exchange_failed")
 		return
 	}
 
 	twitterUser, err := getTwitterUser(tokenResp.AccessToken)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=user_fetch_failed")
+		c.Redirect(http.StatusTemporaryRedirect, getBaseURL()+"/login?error=user_fetch_failed")
 		return
 	}
 
