@@ -38,25 +38,10 @@ struct ProfileView: View {
                             }
                             .padding(.top, 20)
                             
-                            HStack(spacing: 20) {
-                                StatCard(title: "Areas", value: "12", icon: "gear")
-                                StatCard(title: "Active", value: "8", icon: "power")
-                                StatCard(title: "Created", value: "4", icon: "plus")
-                            }
-                            .padding(.horizontal, 20)
-                            
                             VStack(spacing: 12) {
                                 ProfileMenuItem(
                                     icon: "person.circle",
                                     title: "Edit Profile",
-                                    action: {
-                                        showEditProfile = true
-                                    }
-                                )
-                                
-                                ProfileMenuItem(
-                                    icon: "link",
-                                    title: "Connected Accounts",
                                     action: {
                                         showEditProfile = true
                                     }
@@ -203,39 +188,6 @@ struct ProfileView: View {
                 authService.fetchProfile()
             }
         }
-    }
-}
-
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(AppColors.primaryBlue)
-            
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.gray)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AppColors.darkBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-        )
     }
 }
 
