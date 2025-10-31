@@ -560,6 +560,22 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 		return false
 	}
 
+	interval, err := parseDuration(intervalStr)
+	if err != nil {
+		log.Printf("Timer area %s has invalid interval format: %v", area.Name, err)
+		return false
+	}
+
+	// Check if enough time has passed since last run
+	if area.LastRunAt != nil {
+		timeSinceLastRun := now.Sub(*area.LastRunAt)
+		if timeSinceLastRun < interval {
+			log.Printf("Timer area %s not yet ready (last run %v ago, need %v)", 
+				area.Name, timeSinceLastRun, interval)
+			return false
+		}
+	}
+
 	log.Printf("Timer trigger activated for area %s (interval: %s)", area.Name, intervalStr)
 	return true
 }
