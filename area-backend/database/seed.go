@@ -66,6 +66,7 @@ func SeedData() {
 		{ServiceID: onedrive.ID, Name: "Fichier modifié", Description: "Se déclenche quand un fichier est modifié", Parameters: `{"folder": "", "fileName": ""}`},
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
 		{ServiceID: spotify.ID, Name: "Nouvelle lecture Spotify", Description: "Se déclenche lorsqu'une nouvelle musique démarre sur Spotify", Parameters: `{}`},
+		{ServiceID: slack.ID, Name: "Nouveau message dans un channel", Description: "Se déclenche quand un nouveau message est posté dans un channel", Parameters: `{"channel": ""}`},
 	}
 
 	for _, action := range actions {
