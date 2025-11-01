@@ -192,7 +192,6 @@ func main() {
 		log.Println("Scheduler started in background")
 	}
 
-	// Setup Telegram webhook if configured
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 	webhookURL := os.Getenv("TELEGRAM_WEBHOOK_URL")
 	if botToken != "" && webhookURL != "" {

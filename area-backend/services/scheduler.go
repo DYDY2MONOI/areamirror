@@ -566,7 +566,6 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 		return false
 	}
 
-	// Check if enough time has passed since last run
 	if area.LastRunAt != nil {
 		timeSinceLastRun := now.Sub(*area.LastRunAt)
 		if timeSinceLastRun < interval {
