@@ -6,6 +6,7 @@ const popularAreas = ref<AreaTemplate[]>([])
 const recommendedAreas = ref<AreaTemplate[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const togglingAreaIds = ref<string[]>([])
 
 export function useAreas() {
   const fetchAreas = async () => {
@@ -133,7 +134,11 @@ export function useAreas() {
   }
 
   const toggleArea = async (id: string) => {
-    isLoading.value = true
+    if (togglingAreaIds.value.includes(id)) {
+      return areas.value.find(area => area.id === id)
+    }
+
+    togglingAreaIds.value = [...togglingAreaIds.value, id]
     error.value = null
 
     try {
@@ -147,7 +152,7 @@ export function useAreas() {
       error.value = err instanceof Error ? err.message : 'Failed to toggle area'
       throw err
     } finally {
-      isLoading.value = false
+      togglingAreaIds.value = togglingAreaIds.value.filter(areaId => areaId !== id)
     }
   }
 
@@ -169,6 +174,7 @@ export function useAreas() {
     recommendedAreas: computed(() => recommendedAreas.value),
     isLoading: computed(() => isLoading.value),
     error: computed(() => error.value),
+    togglingAreaIds: computed(() => togglingAreaIds.value),
     activeAreas: getActiveAreas,
     publicAreas: getPublicAreas,
 

@@ -123,11 +123,18 @@ struct LibraryView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(areaService.userAreas) { area in
-                                        AreaCard(area: area, onEdit: {
-                                            selectedArea = area
-                                        }, onDelete: {
-                                        })
+                                    ForEach($areaService.userAreas) { $area in
+                                        AreaCard(
+                                            area: $area,
+                                            onEdit: {
+                                                selectedArea = area
+                                            },
+                                            onDelete: {
+                                            },
+                                            onToggle: {
+                                                try await areaService.toggleArea(areaId: area.id)
+                                            }
+                                        )
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -181,10 +188,11 @@ struct AreaItem: Identifiable {
 }
 
 struct AreaCard: View {
-    let area: Area
+    @Binding var area: Area
     var onEdit: () -> Void
     var onDelete: () -> Void
-    @State private var isToggled = false
+    var onToggle: () async throws -> Area
+    @State private var isProcessing = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -202,12 +210,33 @@ struct AreaCard: View {
                 Spacer()
                 
                 Button(action: {
-                    isToggled.toggle()
+                    guard !isProcessing else { return }
+                    isProcessing = true
+                    let originalState = area.isActive
+                    Task { @MainActor in
+                        defer { isProcessing = false }
+                        do {
+                            let updatedArea = try await onToggle()
+                            area = updatedArea
+                        } catch {
+                            area.isActive = originalState
+                            print("❌ Error toggling area: \(error.localizedDescription)")
+                        }
+                    }
                 }) {
-                    Image(systemName: isToggled ? "power" : "poweroff")
-                        .font(.title2)
-                        .foregroundColor(isToggled ? .green : .red)
+                    if isProcessing {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .frame(width: 24, height: 24)
+                            .tint(area.isActive ? .green : .red)
+                    } else {
+                        Image(systemName: area.isActive ? "power" : "poweroff")
+                            .font(.title2)
+                            .foregroundColor(area.isActive ? .green : .red)
+                    }
                 }
+                .buttonStyle(.plain)
+                .disabled(isProcessing)
             }
             
             HStack {
