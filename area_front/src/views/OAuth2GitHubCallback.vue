@@ -38,6 +38,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { oauth2AuthService } from '@/services/oauth2-auth'
+import { API_BASE_URL } from '@/config/api'
 
 console.log('🚀 OAuth2GitHubCallback component is loading...')
 
@@ -88,7 +89,7 @@ onMounted(async () => {
     message.value = 'Authenticating with GitHub...'
     console.log('📡 Fetching from:', `${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
+    const response = await fetch(`${API_BASE_URL}/oauth2/github/callback?code=${code}`)
 
     console.log('📡 Response status:', response.status)
     console.log('📡 Response ok:', response.ok)

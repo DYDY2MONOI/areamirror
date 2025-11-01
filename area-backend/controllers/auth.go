@@ -209,7 +209,7 @@ func init() {
 func getBaseURL() string {
 	baseURL := os.Getenv("BASE_URL")
 	if baseURL == "" {
-		return "https://overeasily-superable-catarina.ngrok-free.dev"
+		return "https://electrovalent-pursily-yee.ngrok-free.dev"
 	}
 	return baseURL
 }
@@ -1165,13 +1165,15 @@ func LinkSpotifyAccount(c *gin.Context) {
 
 	tokenResp, err := exchangeSpotifyCodeForToken(req.Code, spotifyClientID, spotifyClientSecret, redirectURI)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		log.Printf("failed to exchange Spotify code for token (link): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token", "details": err.Error()})
 		return
 	}
 
 	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		log.Printf("failed to get Spotify user profile (link): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user", "details": err.Error()})
 		return
 	}
 
@@ -2373,7 +2375,7 @@ func SpotifyDirectLogin(c *gin.Context) {
 		return
 	}
 
-	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "http://127.0.0.1:3000/oauth2/spotify/callback", stateInfo.isMobile)
+	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback", stateInfo.isMobile)
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
@@ -2382,13 +2384,15 @@ func SpotifyDirectLogin(c *gin.Context) {
 
 	tokenResp, err := exchangeSpotifyCodeForToken(code, spotifyClientID, spotifyClientSecret, redirectURI)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		log.Printf("failed to exchange Spotify code for token (login): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token", "details": err.Error()})
 		return
 	}
 
 	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		log.Printf("failed to get Spotify user profile (login): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user", "details": err.Error()})
 		return
 	}
 
