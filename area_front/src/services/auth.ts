@@ -266,10 +266,14 @@ class AuthService {
     }
   }
 
-  async linkGitHubAccount(code: string): Promise<{ github_username: string }> {
+  async linkGitHubAccount(code: string, redirectUri?: string): Promise<{ github_username: string }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
+    }
+
+    if (!redirectUri) {
+      redirectUri = `${window.location.origin}/auth/github/callback`
     }
 
     const response = await fetch(`${API_BASE_URL}/profile/github/link`, {
@@ -278,7 +282,7 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ code, redirect_uri: redirectUri })
     })
 
     if (!response.ok) {

@@ -541,7 +541,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
 
   try {
     if (serviceId === 'github') {
-      const result = await linkGitHubAccount(code)
+      const service = SERVICES_CONFIG.find(s => s.id === serviceId)
+      const redirectUri = service ? `${window.location.origin}${service.callbackPath}` : undefined
+      const result = await linkGitHubAccount(code, redirectUri)
       successMessages.value = { ...successMessages.value, [serviceId]: 'GitHub account linked successfully!' }
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)

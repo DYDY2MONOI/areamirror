@@ -44,10 +44,19 @@ func main() {
 	r.POST("/oauth2/refresh", controllers.RefreshToken)
 	r.GET("/oauth2/me", controllers.AuthMiddleware(), controllers.GetMe)
 
+	r.GET("/oauth2/github", controllers.GitHubOAuth2Login)
 	r.GET("/oauth2/github/callback", controllers.GitHubDirectLogin)
+
+	r.GET("/oauth2/google", controllers.GoogleOAuth2Login)
 	r.GET("/oauth2/google/callback", controllers.GoogleDirectLogin)
+
+	r.GET("/oauth2/spotify", controllers.SpotifyOAuth2Login)
 	r.GET("/oauth2/spotify/callback", controllers.SpotifyDirectLogin)
+
+	r.GET("/oauth2/facebook", controllers.FacebookOAuth2Login)
 	r.GET("/oauth2/facebook/callback", controllers.FacebookDirectLogin)
+
+	r.GET("/oauth2/twitter", controllers.TwitterOAuth2Login)
 	r.GET("/oauth2/twitter/callback", controllers.TwitterDirectLogin)
 
 	r.POST("/mobile/oauth2/login", controllers.MobileOAuth2Login)
@@ -82,7 +91,6 @@ func main() {
 	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
 	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
 
-	// OneDrive routes
 	r.GET("/onedrive/auth/start", controllers.OneDriveAuthStart)
 	r.GET("/onedrive/callback", controllers.OneDriveCallback)
 	r.GET("/onedrive/files", controllers.OneDriveListFiles)
@@ -92,7 +100,6 @@ func main() {
 	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
 	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
 
-	// Google Agenda routes
 	googleAgendaController := controllers.NewGoogleAgendaController()
 	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
 	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
