@@ -465,7 +465,8 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
+      const fallbackRedirect = 'https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback'
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || fallbackRedirect
       const redirectUri = encodeURIComponent(overrideRedirect)
       const scopeParam = encodeURIComponent(service.scopes.join(' '))
       const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
@@ -555,7 +556,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
 
   try {
     if (serviceId === 'github') {
-      const result = await linkGitHubAccount(code)
+      const service = SERVICES_CONFIG.find(s => s.id === serviceId)
+      const redirectUri = service ? `${window.location.origin}${service.callbackPath}` : undefined
+      const result = await linkGitHubAccount(code, redirectUri)
       successMessages.value = { ...successMessages.value, [serviceId]: 'GitHub account linked successfully!' }
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)
@@ -1666,8 +1669,6 @@ onMounted(async () => {
   }
 }
 </style>
-
-
 
 
 

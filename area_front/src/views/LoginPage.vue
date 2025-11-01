@@ -68,6 +68,15 @@
 
           <button
             type="button"
+            @click="loginWithGithub"
+            class="oauth-button github-button"
+          >
+            <v-icon size="20" class="oauth-icon">mdi-github</v-icon>
+            <span>Continue with GitHub</span>
+          </button>
+
+          <button
+            type="button"
             @click="loginWithGoogle"
             class="oauth-button google-button"
           >
@@ -112,6 +121,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService, type LoginRequest } from '@/services/auth'
 import { initiateGoogleLogin } from '@/utils/google-oauth'
+import { initiateGitHubLogin } from '@/utils/github-oauth'
 import { initiateSpotifyLogin } from '@/utils/spotify-oauth'
 
 const router = useRouter()
@@ -149,6 +159,15 @@ const continueAsGuest = () => {
 
 const loginWithGoogle = () => {
   initiateGoogleLogin()
+}
+
+const loginWithGithub = () => {
+  try {
+    initiateGitHubLogin()
+  } catch (err) {
+    console.error('GitHub OAuth error:', err)
+    error.value = err instanceof Error ? err.message : 'GitHub login is not available right now'
+  }
 }
 
 const loginWithSpotify = () => {
@@ -496,6 +515,19 @@ const loginWithSpotify = () => {
   border-color: #3367d6;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.github-button {
+  background: linear-gradient(135deg, #24292e, #0d1117);
+  border-color: #24292e;
+  color: white;
+}
+
+.github-button:hover {
+  background: linear-gradient(135deg, #1a1e22, #0a0e12);
+  border-color: #0d1117;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(36, 41, 46, 0.3);
 }
 
 .spotify-button {

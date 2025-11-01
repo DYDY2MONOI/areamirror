@@ -101,7 +101,7 @@ class AuthService {
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${AUTH_ENDPOINTS.LOGIN}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.LOGIN}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ class AuthService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const response = await fetch(`${AUTH_ENDPOINTS.REGISTER}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${AUTH_ENDPOINTS.PROFILE}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.PROFILE}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -268,10 +268,14 @@ class AuthService {
     }
   }
 
-  async linkGitHubAccount(code: string): Promise<{ github_username: string }> {
+  async linkGitHubAccount(code: string, redirectUri?: string): Promise<{ github_username: string }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
+    }
+
+    if (!redirectUri) {
+      redirectUri = `${window.location.origin}/auth/github/callback`
     }
 
     const response = await fetch(`${API_BASE_URL}/profile/github/link`, {
@@ -280,7 +284,7 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ code, redirect_uri: redirectUri })
     })
 
     if (!response.ok) {

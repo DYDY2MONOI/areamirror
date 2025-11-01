@@ -38,6 +38,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { oauth2AuthService } from '@/services/oauth2-auth'
+import { API_BASE_URL } from '@/config/api'
+
+console.log('🚀 OAuth2GitHubCallback component is loading...')
 
 const router = useRouter()
 const loading = ref(true)
@@ -45,7 +48,10 @@ const success = ref(false)
 const error = ref('')
 const message = ref('Connecting to GitHub...')
 
+console.log('🚀 Component variables initialized')
+
 const redirectToDashboard = () => {
+  console.log('🔄 Redirecting to dashboard...')
   router.push('/profile')
 }
 
@@ -58,22 +64,35 @@ const goToLogin = () => {
 }
 
 onMounted(async () => {
+  console.log('🎯 onMounted hook started')
+  console.log('🔍 Current URL:', window.location.href)
+  console.log('🔍 Search params:', window.location.search)
+
   try {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     const errorParam = urlParams.get('error')
 
+    console.log('🔍 Code from URL:', code)
+    console.log('🔍 Error param:', errorParam)
+
     if (errorParam) {
+      console.error('❌ Error param found:', errorParam)
       throw new Error('GitHub authentication was cancelled or failed')
     }
 
     if (!code) {
+      console.error('❌ No code found in URL')
       throw new Error('No authorization code received from GitHub')
     }
 
     message.value = 'Authenticating with GitHub...'
+    console.log('📡 Fetching from:', `${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
+    const response = await fetch(`${API_BASE_URL}/oauth2/github/callback?code=${code}`)
+
+    console.log('📡 Response status:', response.status)
+    console.log('📡 Response ok:', response.ok)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }))
@@ -82,7 +101,18 @@ onMounted(async () => {
 
     const data = await response.json()
 
+    console.log('🔍 GitHub OAuth Response:', data)
+    console.log('🔍 Response user object:', data.user)
+    console.log('🔍 GitHub username in response:', data.user?.github_username)
+
+    if (!data.access_token || !data.user) {
+      throw new Error('Invalid response format from server')
+    }
+
     oauth2AuthService.handleSuccessfulAuth(data)
+
+    const storedUser = localStorage.getItem('oauth2_user')
+    console.log('✅ Stored user after auth:', storedUser ? JSON.parse(storedUser) : 'NULL')
 
     success.value = true
     loading.value = false
@@ -93,10 +123,14 @@ onMounted(async () => {
     }, 2000)
 
   } catch (err) {
+    console.error('💥 ERROR in GitHub OAuth callback:', err)
+    console.error('💥 Error stack:', err instanceof Error ? err.stack : 'No stack trace')
     loading.value = false
     error.value = err instanceof Error ? err.message : 'Failed to authenticate with GitHub'
     console.error('GitHub OAuth2 error:', err)
   }
+
+  console.log('🎯 onMounted hook completed')
 })
 </script>
 

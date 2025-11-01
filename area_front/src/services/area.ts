@@ -280,9 +280,14 @@ class AreaService {
     try {
       const token = localStorage.getItem('authToken')
 
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(`${this.baseURL}/${id}/toggle`, {
         method: 'PATCH',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
       })
@@ -292,7 +297,7 @@ class AreaService {
       }
 
       const data = await response.json()
-      return data.data
+      return transformAreaData(data.data)
     } catch (error) {
       console.error('Error toggling area:', error)
       throw error
