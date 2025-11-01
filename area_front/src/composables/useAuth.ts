@@ -208,6 +208,27 @@ export function useAuth() {
     }
   }
 
+  const linkSlackAccount = async (code: string) => {
+    try {
+      const result = await authService.linkSlackAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Slack link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkSlackAccount = async () => {
+    try {
+      await authService.unlinkSlackAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Slack unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -255,6 +276,8 @@ export function useAuth() {
     unlinkSpotifyAccount,
     linkTwitterAccount,
     unlinkTwitterAccount,
+    linkSlackAccount,
+    unlinkSlackAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
