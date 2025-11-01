@@ -463,7 +463,8 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
+      const fallbackRedirect = 'https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback'
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || fallbackRedirect
       const redirectUri = encodeURIComponent(overrideRedirect)
       const scopeParam = encodeURIComponent(service.scopes.join(' '))
       const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
@@ -1647,8 +1648,6 @@ onMounted(async () => {
   }
 }
 </style>
-
-
 
 
 

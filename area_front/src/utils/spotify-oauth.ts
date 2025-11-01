@@ -46,11 +46,11 @@ interface SpotifyOAuthOptions {
 
 export const createSpotifyOAuth = (options: SpotifyOAuthOptions = {}): SpotifyOAuth => {
   const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID
-  const defaultRedirect =
-    import.meta.env.VITE_SPOTIFY_REDIRECT_URI ||
-    (typeof window !== 'undefined'
+  const fallbackRedirect =
+    typeof window !== 'undefined'
       ? `${window.location.origin}/oauth2/spotify/callback`
-      : 'http://localhost:3000/oauth2/spotify/callback')
+      : 'http://localhost:3000/oauth2/spotify/callback'
+  const defaultRedirect = (import.meta.env.VITE_SPOTIFY_REDIRECT_URI || '').trim() || fallbackRedirect
 
   if (!clientId || clientId === 'your_spotify_client_id_here') {
     throw new Error('Spotify OAuth client ID is not configured')

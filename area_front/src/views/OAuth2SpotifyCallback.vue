@@ -49,6 +49,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { oauth2AuthService } from '@/services/oauth2-auth'
+import { API_BASE_URL } from '@/config/api'
 
 const router = useRouter()
 const loading = ref(true)
@@ -110,11 +111,13 @@ onMounted(async () => {
 
     message.value = 'Authenticating with Spotify...'
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/spotify/callback?code=${code}`)
+    const response = await fetch(`${API_BASE_URL}/oauth2/spotify/callback?code=${code}`)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }))
-      throw new Error(errorData.error || 'Spotify authentication failed')
+      const baseMessage = errorData.error || 'Spotify authentication failed'
+      const detailedMessage = errorData.details ? `${baseMessage} (${errorData.details})` : baseMessage
+      throw new Error(detailedMessage)
     }
 
     const data = await response.json()
