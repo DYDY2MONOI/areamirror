@@ -1,6 +1,5 @@
 import { ref, computed } from 'vue'
 import { authService, type User } from '@/services/auth'
-import { oauth2AuthService, type OAuth2User } from '@/services/oauth2-auth'
 
 const isAuthenticated = ref(false)
 const currentUser = ref<User | null>(null)
@@ -9,48 +8,9 @@ const isLoading = ref(false)
 const initAuth = async () => {
   isLoading.value = true
   try {
-    if (oauth2AuthService.isAuthenticated) {
-      const isAuth = await oauth2AuthService.checkAuthStatus()
-      isAuthenticated.value = isAuth
-      if (oauth2AuthService.currentUser) {
-        const oauthUser = oauth2AuthService.currentUser
-        currentUser.value = {
-          id: oauthUser.id,
-          email: oauthUser.email,
-          first_name: oauthUser.first_name,
-          last_name: oauthUser.last_name,
-          created_at: oauthUser.created_at,
-          updated_at: oauthUser.updated_at,
-          phone: oauthUser.phone,
-          birthday: oauthUser.birthday,
-          gender: oauthUser.gender,
-          country: oauthUser.country,
-          lang: oauthUser.lang,
-          login_provider: oauthUser.login_provider,
-          role: oauthUser.role || null,
-          is_active: oauthUser.is_active || false,
-          github_id: oauthUser.github_id,
-          github_username: oauthUser.github_username,
-          google_id: oauthUser.google_id,
-          google_email: oauthUser.google_email,
-          facebook_id: oauthUser.facebook_id,
-          facebook_email: oauthUser.facebook_email,
-          discord_id: oauthUser.discord_id,
-          discord_username: oauthUser.discord_username,
-          spotify_id: oauthUser.spotify_id,
-          spotify_email: oauthUser.spotify_email,
-          twitter_id: oauthUser.twitter_id,
-          twitter_username: oauthUser.twitter_username,
-          onedrive_id: null,
-          profile_image: oauthUser.profile_image,
-        }
-      }
-    } else {
-      // Fallback to regular auth service
-      const isAuth = await authService.checkAuthStatus()
-      isAuthenticated.value = isAuth
-      currentUser.value = authService.currentUser
-    }
+    const isAuth = await authService.checkAuthStatus()
+    isAuthenticated.value = isAuth
+    currentUser.value = authService.currentUser
   } catch (error) {
     console.error('Erreur lors de l\'initialisation de l\'authentification:', error)
     isAuthenticated.value = false
@@ -110,46 +70,6 @@ export function useAuth() {
 
   const refreshProfile = async () => {
     try {
-      if (oauth2AuthService.isAuthenticated) {
-        console.log('🔄 Using OAuth2 auth service for profile refresh')
-        const isAuth = await oauth2AuthService.checkAuthStatus()
-        isAuthenticated.value = isAuth
-        if (oauth2AuthService.currentUser) {
-          const oauthUser = oauth2AuthService.currentUser
-          currentUser.value = {
-            id: oauthUser.id,
-            email: oauthUser.email,
-            first_name: oauthUser.first_name,
-            last_name: oauthUser.last_name,
-            created_at: oauthUser.created_at,
-            updated_at: oauthUser.updated_at,
-            phone: oauthUser.phone,
-            birthday: oauthUser.birthday,
-            gender: oauthUser.gender,
-            country: oauthUser.country,
-            lang: oauthUser.lang,
-            login_provider: oauthUser.login_provider,
-            role: oauthUser.role || null,
-            is_active: oauthUser.is_active || false,
-            github_id: oauthUser.github_id,
-            github_username: oauthUser.github_username,
-            google_id: oauthUser.google_id,
-            google_email: oauthUser.google_email,
-            facebook_id: oauthUser.facebook_id,
-            facebook_email: oauthUser.facebook_email,
-            discord_id: oauthUser.discord_id,
-            discord_username: oauthUser.discord_username,
-            spotify_id: oauthUser.spotify_id,
-            spotify_email: oauthUser.spotify_email,
-            twitter_id: oauthUser.twitter_id,
-            twitter_username: oauthUser.twitter_username,
-            onedrive_id: null,
-            profile_image: oauthUser.profile_image,
-          }
-        }
-        return currentUser.value
-      }
-
       const isAuth = await authService.checkAuthStatus()
       isAuthenticated.value = isAuth
       currentUser.value = authService.currentUser
@@ -162,9 +82,9 @@ export function useAuth() {
     }
   }
 
-  const linkGitHubAccount = async (code: string, redirectUri?: string) => {
+  const linkGitHubAccount = async (code: string) => {
     try {
-      const result = await authService.linkGitHubAccount(code, redirectUri)
+      const result = await authService.linkGitHubAccount(code)
       await refreshProfile()
       return result
     } catch (error) {
@@ -288,6 +208,27 @@ export function useAuth() {
     }
   }
 
+  const linkSlackAccount = async (code: string) => {
+    try {
+      const result = await authService.linkSlackAccount(code)
+      await refreshProfile()
+      return result
+    } catch (error) {
+      console.error('Slack link error:', error)
+      throw error
+    }
+  }
+
+  const unlinkSlackAccount = async () => {
+    try {
+      await authService.unlinkSlackAccount()
+      await refreshProfile()
+    } catch (error) {
+      console.error('Slack unlink error:', error)
+      throw error
+    }
+  }
+
   const uploadProfileImage = async (imageFile: File) => {
     try {
       const result = await authService.uploadProfileImage(imageFile)
@@ -315,7 +256,7 @@ export function useAuth() {
   }
 
   return {
-    isAuthenticated: computed(() => isAuthenticated.value || oauth2AuthService.isAuthenticated),
+    isAuthenticated: computed(() => isAuthenticated.value),
     currentUser: computed(() => currentUser.value),
     isLoading: computed(() => isLoading.value),
 
@@ -335,6 +276,8 @@ export function useAuth() {
     unlinkSpotifyAccount,
     linkTwitterAccount,
     unlinkTwitterAccount,
+    linkSlackAccount,
+    unlinkSlackAccount,
     uploadProfileImage,
     getProfileImageUrl,
     updateProfile,
