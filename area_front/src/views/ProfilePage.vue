@@ -541,6 +541,8 @@ const unlinkService = async (serviceId: string) => {
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} unlinking is not yet implemented.` }
     }
+
+    await refreshProfile()
   } catch (error) {
     errorMessages.value = { ...errorMessages.value, [serviceId]: `Failed to unlink ${serviceId} account` }
     console.error(`Unlink ${serviceId} error:`, error)
