@@ -50,7 +50,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { linkOneDriveAccount } = useAuth()
+const { linkOneDriveAccount, refreshProfile } = useAuth()
 
 const loading = ref(true)
 const error = ref('')
@@ -78,6 +78,7 @@ onMounted(async () => {
     message.value = 'Linking OneDrive account...'
 
     await linkOneDriveAccount(code)
+    await refreshProfile()
 
     success.value = true
     loading.value = false
