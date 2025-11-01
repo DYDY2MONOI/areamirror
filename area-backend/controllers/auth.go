@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -1098,7 +1099,7 @@ func LinkSpotifyAccount(c *gin.Context) {
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 	redirectURI := os.Getenv("SPOTIFY_LINK_REDIRECT_URI")
 	if redirectURI == "" {
-		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/spotify/callback"
+		redirectURI = "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback"
 	}
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
@@ -1108,13 +1109,15 @@ func LinkSpotifyAccount(c *gin.Context) {
 
 	tokenResp, err := exchangeSpotifyCodeForToken(req.Code, spotifyClientID, spotifyClientSecret, redirectURI)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		log.Printf("failed to exchange Spotify code for token (link): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token", "details": err.Error()})
 		return
 	}
 
 	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		log.Printf("failed to get Spotify user profile (link): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user", "details": err.Error()})
 		return
 	}
 
@@ -2097,7 +2100,7 @@ func SpotifyDirectLogin(c *gin.Context) {
 		return
 	}
 
-	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "http://127.0.0.1:3000/oauth2/spotify/callback", stateInfo.isMobile)
+	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback", stateInfo.isMobile)
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})
@@ -2106,13 +2109,15 @@ func SpotifyDirectLogin(c *gin.Context) {
 
 	tokenResp, err := exchangeSpotifyCodeForToken(code, spotifyClientID, spotifyClientSecret, redirectURI)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token"})
+		log.Printf("failed to exchange Spotify code for token (login): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for Spotify token", "details": err.Error()})
 		return
 	}
 
 	spotifyUser, err := getSpotifyUser(tokenResp.AccessToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user"})
+		log.Printf("failed to get Spotify user profile (login): %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get Spotify user", "details": err.Error()})
 		return
 	}
 
@@ -2440,7 +2445,7 @@ func LinkTwitterAccount(c *gin.Context) {
 	redirectURI := os.Getenv("TWITTER_REDIRECT_URI")
 
 	if redirectURI == "" {
-		redirectURI = "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback"
+		redirectURI = "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/twitter/callback"
 	}
 
 	if twitterClientID == "" || twitterClientSecret == "" {
@@ -2563,13 +2568,13 @@ func UnlinkTwitterAccount(c *gin.Context) {
 func TwitterDirectLogin(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=missing_code")
+		c.Redirect(http.StatusTemporaryRedirect, "https://electrovalent-pursily-yee.ngrok-free.dev/login?error=missing_code")
 		return
 	}
 
 	state := c.Query("state")
 	if state == "link" {
-		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://overeasily-superable-catarina.ngrok-free.dev/auth/twitter/callback?code=%s&state=link", code))
+		c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://electrovalent-pursily-yee.ngrok-free.dev/auth/twitter/callback?code=%s&state=link", code))
 		return
 	}
 	stateInfo := parseMobileState(state)
@@ -2585,22 +2590,22 @@ func TwitterDirectLogin(c *gin.Context) {
 
 	twitterClientID := os.Getenv("TWITTER_CLIENT_ID")
 	twitterClientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
-	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/twitter/callback", stateInfo.isMobile)
+	redirectURI := getRedirectURI("TWITTER_REDIRECT_URI", "MOBILE_TWITTER_REDIRECT_URI", "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/twitter/callback", stateInfo.isMobile)
 
 	if twitterClientID == "" || twitterClientSecret == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=twitter_not_configured")
+		c.Redirect(http.StatusTemporaryRedirect, "https://electrovalent-pursily-yee.ngrok-free.dev/login?error=twitter_not_configured")
 		return
 	}
 
 	tokenResp, err := exchangeTwitterCodeForToken(code, twitterClientID, twitterClientSecret, redirectURI, codeVerifier)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=token_exchange_failed")
+		c.Redirect(http.StatusTemporaryRedirect, "https://electrovalent-pursily-yee.ngrok-free.dev/login?error=token_exchange_failed")
 		return
 	}
 
 	twitterUser, err := getTwitterUser(tokenResp.AccessToken)
 	if err != nil {
-		c.Redirect(http.StatusTemporaryRedirect, "https://overeasily-superable-catarina.ngrok-free.dev/login?error=user_fetch_failed")
+		c.Redirect(http.StatusTemporaryRedirect, "https://electrovalent-pursily-yee.ngrok-free.dev/login?error=user_fetch_failed")
 		return
 	}
 
