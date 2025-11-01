@@ -73,7 +73,6 @@ onMounted(async () => {
 
     message.value = 'Authenticating with Google...'
     
-    // Use the new OAuth2 direct login endpoint
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/google/callback?code=${code}`)
     
     if (!response.ok) {
@@ -83,7 +82,6 @@ onMounted(async () => {
 
     const data = await response.json()
     
-    // Handle the OAuth2 response
     oauth2AuthService.handleSuccessfulAuth(data)
     
     success.value = true
