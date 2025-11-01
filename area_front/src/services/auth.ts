@@ -99,7 +99,7 @@ class AuthService {
 
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${AUTH_ENDPOINTS.LOGIN}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.LOGIN}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,7 +131,7 @@ class AuthService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const response = await fetch(`${AUTH_ENDPOINTS.REGISTER}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.REGISTER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${AUTH_ENDPOINTS.PROFILE}`, {
+      const response = await fetch(`${BASE_URL}${AUTH_ENDPOINTS.PROFILE}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
