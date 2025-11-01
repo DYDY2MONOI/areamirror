@@ -40,6 +40,10 @@ type User struct {
 	SpotifyEmail       *string    `json:"spotify_email"`
 	TwitterID          *string    `json:"twitter_id" gorm:"uniqueIndex"`
 	TwitterUsername    *string    `json:"twitter_username"`
+	SlackID            *string    `json:"slack_id" gorm:"uniqueIndex"`
+	SlackTeamID        *string    `json:"slack_team_id"`
+	SlackToken         *string    `json:"-" gorm:"type:text"`
+	SlackBotToken      *string    `json:"-" gorm:"type:text"`
 	Role               string     `json:"role" gorm:"default:'member'"`
 	IsActive           bool       `json:"is_active" gorm:"default:true"`
 

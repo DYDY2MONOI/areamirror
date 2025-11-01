@@ -75,6 +75,8 @@ func main() {
 	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 	r.POST("/profile/twitter/link", controllers.AuthMiddleware(), controllers.LinkTwitterAccount)
 	r.DELETE("/profile/twitter/unlink", controllers.AuthMiddleware(), controllers.UnlinkTwitterAccount)
+	r.POST("/profile/slack/link", controllers.AuthMiddleware(), controllers.LinkSlackAccount)
+	r.DELETE("/profile/slack/unlink", controllers.AuthMiddleware(), controllers.UnlinkSlackAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
@@ -82,7 +84,6 @@ func main() {
 	r.POST("/gmail/oauth2/test", controllers.AuthMiddleware(), controllers.TestGmailConnection)
 	r.DELETE("/gmail/oauth2/revoke", controllers.AuthMiddleware(), controllers.RevokeGmailToken)
 
-	// OneDrive routes
 	r.GET("/onedrive/auth/start", controllers.OneDriveAuthStart)
 	r.GET("/onedrive/callback", controllers.OneDriveCallback)
 	r.GET("/onedrive/files", controllers.OneDriveListFiles)
@@ -91,6 +92,9 @@ func main() {
 	r.DELETE("/onedrive/delete/:fileId", controllers.OneDriveDeleteFile)
 	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
 	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
+
+	r.GET("/slack/auth/start", controllers.SlackAuthStart)
+	r.GET("/slack/callback", controllers.SlackCallback)
 
 	// Google Agenda routes
 	googleAgendaController := controllers.NewGoogleAgendaController()
