@@ -387,10 +387,7 @@ const userDisplayName = computed(() => {
 
 const userStatus = computed(() => 'Premium Member')
 
-const actionButtons = computed(() => [
-  { id: 'search', icon: 'mdi-magnify', tooltip: 'Search' },
-  { id: 'notifications', icon: 'mdi-bell-outline', tooltip: 'Notifications' }
-])
+const actionButtons = computed(() => [])
 
 const filteredAreas = computed(() => {
   if (!searchQuery.value.trim()) {
