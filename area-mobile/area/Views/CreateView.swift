@@ -241,7 +241,6 @@ struct CreateView: View {
         }
         .alert("AREA Created!", isPresented: $showSuccessAlert) {
             Button("OK") {
-                // Reset form
                 selectedAction = nil
                 selectedReaction = nil
                 selectedActionService = nil
@@ -279,25 +278,32 @@ struct CreateView: View {
     
     private func createArea() {
         guard let actionService = selectedActionService?.name,
-              let reactionService = selectedReactionService?.name else {
+              let reactionService = selectedReactionService?.name,
+              let triggerAction = selectedAction,
+              selectedReaction != nil else {
             errorMessage = "Please select both an action and a reaction"
             return
         }
-        
+
         isCreating = true
         errorMessage = nil
-        
+
         Task {
             do {
+                let resolvedTriggerType = AreaPayloadDefaults.triggerType(for: actionService)
+                let resolvedActionType = AreaPayloadDefaults.actionType(for: reactionService)
+                let triggerConfig = AreaPayloadDefaults.triggerConfig(for: actionService, actionName: triggerAction.name)
+                let actionConfig = AreaPayloadDefaults.actionConfig(for: reactionService)
+
                 let payload = AreaService.CreateOrUpdateAreaRequest(
                     name: areaName,
                     description: areaDescription.isEmpty ? nil : areaDescription,
-                    triggerService: actionService,
-                    triggerType: selectedAction?.name,
-                    actionService: reactionService,
-                    actionType: selectedReaction?.name,
-                    triggerConfig: nil,
-                    actionConfig: nil,
+                    triggerService: selectedActionService?.id ?? actionService,
+                    triggerType: resolvedTriggerType,
+                    actionService: selectedReactionService?.id ?? reactionService,
+                    actionType: resolvedActionType,
+                    triggerConfig: triggerConfig.isEmpty ? nil : triggerConfig,
+                    actionConfig: actionConfig.isEmpty ? nil : actionConfig,
                     isActive: true
                 )
                 

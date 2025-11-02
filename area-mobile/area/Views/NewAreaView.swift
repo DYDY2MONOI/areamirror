@@ -9,6 +9,7 @@ import SwiftUI
 
 struct NewAreaView: View {
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var areaService = AreaService.shared
     @State private var areaName = ""
     @State private var areaDescription = ""
     @State private var selectedActions: [Service] = []
@@ -16,6 +17,8 @@ struct NewAreaView: View {
     @State private var showingActionSelection = false
     @State private var showingReactionSelection = false
     @State private var showingSuccessAlert = false
+    @State private var isCreating = false
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationView {
@@ -217,9 +220,14 @@ struct NewAreaView: View {
                         .padding(.horizontal, 20)
                         
                         Button(action: createArea) {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Create AREA")
+                            HStack(spacing: 8) {
+                                if isCreating {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Image(systemName: "plus.circle.fill")
+                                }
+                                Text(isCreating ? "Creating..." : "Create AREA")
                             }
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
@@ -234,9 +242,17 @@ struct NewAreaView: View {
                                     ))
                             )
                         }
-                        .disabled(!canCreateArea)
+                        .disabled(!canCreateArea || isCreating)
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, 16)
+                        
+                        if let errorMessage = errorMessage {
+                            Text(errorMessage)
+                                .font(.system(size: 14))
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 24)
+                        }
                     }
                 }
             }
@@ -284,12 +300,51 @@ struct NewAreaView: View {
     }
     
     private func createArea() {
-        print("Creating AREA: \(areaName)")
-        print("Description: \(areaDescription)")
-        print("Actions: \(selectedActions.map { $0.name }.joined(separator: ", "))")
-        print("Reactions: \(selectedReactions.map { $0.name }.joined(separator: ", "))")
-        
-        showingSuccessAlert = true
+        guard let triggerService = selectedActions.first?.name,
+              let actionService = selectedReactions.first?.name else {
+            errorMessage = "Please select both an action and a reaction service"
+            return
+        }
+
+        isCreating = true
+        errorMessage = nil
+
+        print("🆕 NewAreaView.createArea attempting with trigger=\(triggerService) -> action=\(actionService)")
+
+        Task {
+            do {
+                let triggerType = AreaPayloadDefaults.triggerType(for: triggerService)
+                let actionType = AreaPayloadDefaults.actionType(for: actionService)
+                let triggerConfig = AreaPayloadDefaults.triggerConfig(for: triggerService, actionName: areaName.isEmpty ? triggerService : areaName)
+                let actionConfig = AreaPayloadDefaults.actionConfig(for: actionService)
+
+                let payload = AreaService.CreateOrUpdateAreaRequest(
+                    name: areaName,
+                    description: areaDescription.isEmpty ? nil : areaDescription,
+                    triggerService: triggerService,
+                    triggerType: triggerType,
+                    actionService: actionService,
+                    actionType: actionType,
+                    triggerConfig: triggerConfig.isEmpty ? nil : triggerConfig,
+                    actionConfig: actionConfig.isEmpty ? nil : actionConfig,
+                    isActive: true
+                )
+
+                _ = try await areaService.createArea(payload: payload)
+                print("✅ Area created successfully from NewAreaView")
+
+                await MainActor.run {
+                    isCreating = false
+                    showingSuccessAlert = true
+                }
+            } catch {
+                print("❌ Failed to create area from NewAreaView: \(error.localizedDescription)")
+                await MainActor.run {
+                    isCreating = false
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 }
 
@@ -315,7 +370,6 @@ struct MultiServiceSelectionSheet: View {
     @EnvironmentObject var catalogService: CatalogService
     
     private var availableServices: [Service] {
-        // Build dynamic services from /about.json with basic icon mapping
         let source = catalogService.services
         let filtered: [AboutService]
         switch mode {
@@ -360,7 +414,7 @@ struct MultiServiceSelectionSheet: View {
                                     if selectedServices.contains(where: { $0.name == service.name }) {
                                         selectedServices.removeAll { $0.name == service.name }
                                     } else {
-                                        selectedServices.append(service)
+                                        selectedServices = [service]
                                     }
                                 }
                             )

@@ -217,7 +217,16 @@ class AreaService: ObservableObject {
         #endif
         request.httpBody = bodyData
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse else {
+            throw AreaServiceError.server("Invalid response")
+        }
+        #if DEBUG
+        print("📡 createArea status: \(http.statusCode)")
+        if let body = String(data: data, encoding: .utf8) {
+            print("📦 createArea response body: \(body)")
+        }
+        #endif
+        guard (200...299).contains(http.statusCode) else {
             let msg = String(data: data, encoding: .utf8) ?? "Server error"
             throw AreaServiceError.server(msg)
         }
