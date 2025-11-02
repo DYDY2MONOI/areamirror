@@ -428,6 +428,102 @@
             </div>
           </div>
         </div>
+
+        <div v-if="template && template.actionService === 'Spotify'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-music</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">🎧 Mise à jour de playlist Spotify</h4>
+              <p class="config-subtitle">Synchronise une playlist Spotify avec les liens présents dans votre feuille Google Sheets</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">🎵 ID de la playlist</label>
+                <input
+                  v-model="form.actionConfig.playlistId"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex: 37i9dQZF1DXcBWIGoYBM5M"
+                  required
+                />
+                <small class="form-hint">
+                  L'ID est la partie finale de l'URL (ex: https://open.spotify.com/playlist/<strong>37i9dQZF...</strong>)
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">📄 Spreadsheet ID (optionnel)</label>
+                <input
+                  v-model="form.actionConfig.spreadsheetId"
+                  type="text"
+                  class="form-input"
+                  placeholder="Laisser vide pour utiliser la feuille du déclencheur"
+                />
+                <small class="form-hint">
+                  Si laissé vide, l'automatisation utilisera l'ID configuré dans le déclencheur Google Sheets.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">📊 Plage de la feuille</label>
+                <input
+                  v-model="form.actionConfig.range"
+                  type="text"
+                  class="form-input"
+                  placeholder="Feuille1!A2:C"
+                  required
+                />
+                <small class="form-hint">
+                  Plage à synchroniser (recommandé: commencer à la ligne 2 pour exclure l'entête).
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🔗 Colonne des liens Spotify</label>
+                <input
+                  v-model="form.actionConfig.urlColumn"
+                  type="text"
+                  class="form-input"
+                  placeholder="SpotifyLink"
+                  required
+                />
+                <small class="form-hint">
+                  Nom de la colonne contenant les liens (URL ou URI). Peut être une lettre (ex: C) ou un nom d'entête.
+                </small>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input
+                    v-model="form.actionConfig.hasHeader"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span>La première ligne contient les entêtes</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="test-actions">
+              <button
+                type="button"
+                class="test-button"
+                :disabled="!canTestSpotifyPlaylist || isTestingSpotifyPlaylist"
+                @click="testSpotifyPlaylist"
+              >
+                <v-icon size="18">{{ isTestingSpotifyPlaylist ? 'mdi-loading' : 'mdi-playlist-check' }}</v-icon>
+                {{ isTestingSpotifyPlaylist ? 'Vérification...' : 'Tester la playlist' }}
+              </button>
+              <p v-if="spotifyPlaylistTestMessage" class="test-message success">{{ spotifyPlaylistTestMessage }}</p>
+              <p v-if="spotifyPlaylistTestError" class="test-message error">{{ spotifyPlaylistTestError }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div
@@ -751,7 +847,12 @@ const form = reactive({
     subject: '',
     body: '',
     webhookUrl: '',
-    message: ''
+    message: '',
+    playlistId: '',
+    spreadsheetId: '',
+    range: '',
+    urlColumn: 'SpotifyLink',
+    hasHeader: true
   } as any,
 })
 
@@ -771,6 +872,9 @@ const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
 const isTestingSpotify = ref(false)
 const spotifyTestError = ref<string | null>(null)
 const spotifyTestResult = ref<any | null>(null)
+const isTestingSpotifyPlaylist = ref(false)
+const spotifyPlaylistTestMessage = ref<string | null>(null)
+const spotifyPlaylistTestError = ref<string | null>(null)
 
 const loadDiscordLogs = async (areaId: string | undefined) => {
   if (!areaId) return
@@ -807,6 +911,9 @@ watch(() => template.value, (newTemplate) => {
   spotifyTestResult.value = null
   spotifyTestError.value = null
   isTestingSpotify.value = false
+  spotifyPlaylistTestMessage.value = null
+  spotifyPlaylistTestError.value = null
+  isTestingSpotifyPlaylist.value = false
 
   if (newTemplate && !isEditingExisting.value) {
     console.log('Initializing form for new template:', newTemplate)
@@ -863,6 +970,19 @@ watch(() => template.value, (newTemplate) => {
         message: defaultMessage
       }
       discordTestError.value = null
+    } else if (newTemplate.actionService === 'Spotify') {
+      const fallbackRange = form.triggerConfig?.range || 'Sheet1!A2:C'
+      const fallbackSheetId = form.triggerConfig?.spreadsheetId || ''
+      const hasHeader = typeof form.triggerConfig?.hasHeader === 'boolean' ? form.triggerConfig.hasHeader : true
+
+      form.actionConfig = {
+        playlistId: '',
+        spreadsheetId: fallbackSheetId,
+        range: fallbackRange,
+        urlColumn: form.actionConfig.urlColumn || 'SpotifyLink',
+        hasHeader
+      }
+      discordTestError.value = null
     } else {
       form.actionConfig = {}
       discordTestError.value = null
@@ -899,6 +1019,13 @@ watch(() => existingArea.value, (newArea) => {
     if (newArea.actionConfig) {
       form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
       console.log('Action config loaded:', form.actionConfig)
+
+      if (newArea.actionService === 'Spotify') {
+        form.actionConfig.urlColumn = form.actionConfig.urlColumn || 'SpotifyLink'
+        if (typeof form.actionConfig.hasHeader !== 'boolean') {
+          form.actionConfig.hasHeader = true
+        }
+      }
     }
 
     if (newArea.actionService === 'Discord') {
@@ -919,6 +1046,39 @@ watch(
     if (template.value?.triggerService === 'Google Sheets') {
       sheetsTestResult.value = null
       sheetsTestError.value = null
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.spreadsheetId,
+  (newValue, oldValue) => {
+    if (template.value?.actionService === 'Spotify') {
+      const current = (form.actionConfig?.spreadsheetId || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.spreadsheetId = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.range,
+  (newValue, oldValue) => {
+    if (template.value?.actionService === 'Spotify') {
+      const current = (form.actionConfig?.range || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.range = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.hasHeader,
+  (newValue) => {
+    if (template.value?.actionService === 'Spotify' && typeof newValue === 'boolean') {
+      form.actionConfig.hasHeader = newValue
     }
   }
 )
@@ -953,6 +1113,12 @@ const actionIsValid = computed(() => {
       const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
       const message = (form.actionConfig.message || '').trim()
       return !!webhookUrl && !!message
+    case 'Spotify':
+      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim()
+      return !!playlistId && !!sheetId && !!range && !!urlColumn
     default:
       return true
   }
@@ -980,6 +1146,15 @@ const canTestGoogleSheets = computed(() => {
   const spreadsheetId = (form.triggerConfig?.spreadsheetId || '').toString().trim()
   const range = (form.triggerConfig?.range || '').toString().trim()
   return !!spreadsheetId && !!range
+})
+
+const canTestSpotifyPlaylist = computed(() => {
+  if (template.value?.actionService !== 'Spotify') {
+    return false
+  }
+
+  const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
+  return !!playlistId
 })
 
 const canTestTrigger = computed(() => {
@@ -1130,6 +1305,8 @@ const resolveActionType = (service: string) => {
       return 'SendEmail'
     case 'Discord':
       return 'SendDiscordMessage'
+    case 'Spotify':
+      return 'UpdatePlaylist'
     default:
       return 'Action'
   }
@@ -1284,6 +1461,31 @@ const testSpotifyConnection = async () => {
     alert('❌ Échec du test Spotify: ' + errorMessage)
   } finally {
     isTestingSpotify.value = false
+  }
+}
+
+const testSpotifyPlaylist = async () => {
+  if (!canTestSpotifyPlaylist.value) {
+    return
+  }
+
+  isTestingSpotifyPlaylist.value = true
+  spotifyPlaylistTestError.value = null
+  spotifyPlaylistTestMessage.value = null
+
+  try {
+    const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
+    const result = await areaService.testSpotifyPlaylist(playlistId)
+    const message = result?.message || 'Playlist accessible'
+    spotifyPlaylistTestMessage.value = message
+    alert('✅ ' + message)
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify playlist'
+    spotifyPlaylistTestError.value = errorMessage
+    console.error('Error testing Spotify playlist:', err)
+    alert('❌ Test playlist: ' + errorMessage)
+  } finally {
+    isTestingSpotifyPlaylist.value = false
   }
 }
 
@@ -1496,6 +1698,26 @@ const createArea = async () => {
       console.log('Weather trigger config:', triggerConfig)
     }
 
+    let actionConfig = { ...form.actionConfig }
+
+    if (template.value.actionService === 'Spotify') {
+      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink'
+      const hasHeader = typeof form.actionConfig.hasHeader === 'boolean'
+        ? form.actionConfig.hasHeader
+        : !!form.triggerConfig?.hasHeader
+
+      actionConfig = {
+        playlistId,
+        spreadsheetId: sheetId,
+        range,
+        urlColumn,
+        hasHeader,
+      }
+    }
+
     const areaData = {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
@@ -1504,7 +1726,7 @@ const createArea = async () => {
       actionService: template.value.actionService || 'Unknown',
       actionType: resolveActionType(template.value.actionService || 'Unknown'),
       triggerConfig: triggerConfig,
-      actionConfig: form.actionConfig
+      actionConfig
     }
 
     if (isEditingExisting.value && existingArea.value) {
@@ -1560,6 +1782,7 @@ const getActionIcon = (service: string) => {
     case "Slack": return "mdi-slack"
     case "Discord": return "mdi-discord"
     case "GitHub": return "mdi-github"
+    case "Spotify": return "mdi-music"
     default: return "mdi-cog"
   }
 }
@@ -2300,5 +2523,47 @@ const getActionIcon = (service: string) => {
   padding: 0.35rem 0.55rem;
   border-radius: 999px;
   font-size: 0.75rem;
+}
+
+.test-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.test-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.test-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.test-button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.test-message {
+  font-size: 0.9rem;
+}
+
+.test-message.success {
+  color: var(--color-success);
+}
+
+.test-message.error {
+  color: var(--color-danger);
 }
 </style>

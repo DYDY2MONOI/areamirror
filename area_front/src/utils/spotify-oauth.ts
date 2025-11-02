@@ -58,7 +58,14 @@ export const createSpotifyOAuth = (options: SpotifyOAuthOptions = {}): SpotifyOA
 
   const scope =
     options.scope ||
-    'user-read-email user-read-private user-read-currently-playing user-read-playback-state'
+    [
+      'user-read-email',
+      'user-read-private',
+      'user-read-currently-playing',
+      'user-read-playback-state',
+      'playlist-modify-private',
+      'playlist-modify-public'
+    ].join(' ')
   const redirectUri = options.redirectUri || defaultRedirect
 
   return new SpotifyOAuth({
