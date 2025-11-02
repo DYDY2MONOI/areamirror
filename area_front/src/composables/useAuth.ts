@@ -168,7 +168,7 @@ export function useAuth() {
 
   const linkGitHubAccount = async (code: string, redirectUri?: string) => {
     try {
-      const result = await authService.linkGitHubAccount(code, redirectUri)
+      const result = await authService.linkGitHubAccount(code)
       await refreshProfile()
       return result
     } catch (error) {
