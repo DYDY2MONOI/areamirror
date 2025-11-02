@@ -59,7 +59,7 @@
           <p class="debug-info">Form Data: {{ JSON.stringify(form) }}</p>
         </div>
 
-        <div v-if="template && isCalendarTrigger" class="config-card">
+        <div v-if="template && template.triggerService === 'Google Calendar'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
               <v-icon size="24" color="white">mdi-calendar</v-icon>
@@ -429,42 +429,98 @@
           </div>
         </div>
 
-        <div v-if="template && template.actionService === 'Telegram'" class="config-card">
+        <div v-if="template && template.actionService === 'Spotify'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
-              <v-icon size="24" color="white">mdi-send</v-icon>
+              <v-icon size="24" color="white">mdi-music</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">📲 Telegram Message</h4>
-              <p class="config-subtitle">Configure the chat and content for your Telegram notification</p>
+              <h4 class="config-title">🎧 Mise à jour de playlist Spotify</h4>
+              <p class="config-subtitle">Synchronise une playlist Spotify avec les liens présents dans votre feuille Google Sheets</p>
             </div>
           </div>
 
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">💬 Chat ID</label>
+                <label class="form-label">🎵 ID de la playlist</label>
                 <input
-                  v-model="form.actionConfig.chatId"
+                  v-model="form.actionConfig.playlistId"
                   type="text"
                   class="form-input"
-                  placeholder="e.g., 123456789 or @channelusername"
+                  placeholder="Ex: 37i9dQZF1DXcBWIGoYBM5M"
                   required
                 />
-                <small class="form-hint">Provide the chat ID or channel username where messages should be sent.</small>
+                <small class="form-hint">
+                  L'ID est la partie finale de l'URL (ex: https://open.spotify.com/playlist/<strong>37i9dQZF...</strong>)
+                </small>
               </div>
 
-              <div class="form-group full-width">
-                <label class="form-label">✍️ Message Content</label>
-                <textarea
-                  v-model="form.actionConfig.message"
-                  class="form-textarea"
-                  placeholder="Reminder: &#123;&#123;eventTitle&#125;&#125; starts at &#123;&#123;eventTime&#125;&#125;. Area: &#123;&#123;areaName&#125;&#125;"
-                  rows="4"
-                  required
-                ></textarea>
-                <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125; as placeholders</small>
+              <div class="form-group">
+                <label class="form-label">📄 Spreadsheet ID (optionnel)</label>
+                <input
+                  v-model="form.actionConfig.spreadsheetId"
+                  type="text"
+                  class="form-input"
+                  placeholder="Laisser vide pour utiliser la feuille du déclencheur"
+                />
+                <small class="form-hint">
+                  Si laissé vide, l'automatisation utilisera l'ID configuré dans le déclencheur Google Sheets.
+                </small>
               </div>
+
+              <div class="form-group">
+                <label class="form-label">📊 Plage de la feuille</label>
+                <input
+                  v-model="form.actionConfig.range"
+                  type="text"
+                  class="form-input"
+                  placeholder="Feuille1!A2:C"
+                  required
+                />
+                <small class="form-hint">
+                  Plage à synchroniser (recommandé: commencer à la ligne 2 pour exclure l'entête).
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">🔗 Colonne des liens Spotify</label>
+                <input
+                  v-model="form.actionConfig.urlColumn"
+                  type="text"
+                  class="form-input"
+                  placeholder="SpotifyLink"
+                  required
+                />
+                <small class="form-hint">
+                  Nom de la colonne contenant les liens (URL ou URI). Peut être une lettre (ex: C) ou un nom d'entête.
+                </small>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input
+                    v-model="form.actionConfig.hasHeader"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span>La première ligne contient les entêtes</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="test-actions">
+              <button
+                type="button"
+                class="test-button"
+                :disabled="!canTestSpotifyPlaylist || isTestingSpotifyPlaylist"
+                @click="testSpotifyPlaylist"
+              >
+                <v-icon size="18">{{ isTestingSpotifyPlaylist ? 'mdi-loading' : 'mdi-playlist-check' }}</v-icon>
+                {{ isTestingSpotifyPlaylist ? 'Vérification...' : 'Tester la playlist' }}
+              </button>
+              <p v-if="spotifyPlaylistTestMessage" class="test-message success">{{ spotifyPlaylistTestMessage }}</p>
+              <p v-if="spotifyPlaylistTestError" class="test-message error">{{ spotifyPlaylistTestError }}</p>
             </div>
           </div>
         </div>
@@ -820,9 +876,6 @@ const isTestingSpotifyPlaylist = ref(false)
 const spotifyPlaylistTestMessage = ref<string | null>(null)
 const spotifyPlaylistTestError = ref<string | null>(null)
 
-const CALENDAR_SERVICES = ['Google Calendar', 'Date Timer']
-const isCalendarTrigger = computed(() => CALENDAR_SERVICES.includes(template.value?.triggerService || ''))
-
 const loadDiscordLogs = async (areaId: string | undefined) => {
   if (!areaId) return
 
@@ -869,7 +922,7 @@ watch(() => template.value, (newTemplate) => {
     sheetsTestResult.value = null
     sheetsTestError.value = null
 
-    if (CALENDAR_SERVICES.includes(newTemplate.triggerService)) {
+    if (newTemplate.triggerService === 'Google Calendar') {
       form.triggerConfig = {
         eventDate: '',
         eventTime: '',
@@ -917,15 +970,19 @@ watch(() => template.value, (newTemplate) => {
         message: defaultMessage
       }
       discordTestError.value = null
-    } else if (newTemplate.actionService === 'Telegram') {
-      const defaultMessage = newTemplate.triggerService === 'Google Sheets'
-        ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
-        : 'Reminder: {{eventTitle}} starts at {{eventTime}}. Area: {{areaName}}'
+    } else if (newTemplate.actionService === 'Spotify') {
+      const fallbackRange = form.triggerConfig?.range || 'Sheet1!A2:C'
+      const fallbackSheetId = form.triggerConfig?.spreadsheetId || ''
+      const hasHeader = typeof form.triggerConfig?.hasHeader === 'boolean' ? form.triggerConfig.hasHeader : true
 
       form.actionConfig = {
-        chatId: '',
-        message: defaultMessage
+        playlistId: '',
+        spreadsheetId: fallbackSheetId,
+        range: fallbackRange,
+        urlColumn: form.actionConfig.urlColumn || 'SpotifyLink',
+        hasHeader
       }
+      discordTestError.value = null
     } else {
       form.actionConfig = {}
       discordTestError.value = null
@@ -1031,7 +1088,6 @@ const triggerIsValid = computed(() => {
 
   switch (template.value.triggerService) {
     case 'Google Calendar':
-    case 'Date Timer':
       return !!form.triggerConfig.eventDate &&
              !!form.triggerConfig.eventTime
     case 'GitHub':
@@ -1057,8 +1113,12 @@ const actionIsValid = computed(() => {
       const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
       const message = (form.actionConfig.message || '').trim()
       return !!webhookUrl && !!message
-    case 'Telegram':
-      return !!(form.actionConfig.chatId || '').trim() && !!(form.actionConfig.message || '').trim()
+    case 'Spotify':
+      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim()
+      return !!playlistId && !!sheetId && !!range && !!urlColumn
     default:
       return true
   }
@@ -1275,7 +1335,7 @@ const sendTestEmail = async () => {
     }
 
     console.log('Making request to backend...')
-    const response = await fetch(`${API_BASE_URL}/test/email`, {
+    const response = await fetch('http://localhost:8080/test/email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1321,7 +1381,7 @@ const sendTestDiscord = async () => {
   discordTestError.value = null
 
   try {
-    const response = await fetch(`${API_BASE_URL}/test/discord`, {
+    const response = await fetch('http://localhost:8080/test/discord', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1464,7 +1524,7 @@ const testTrigger = async () => {
     console.log('Test area created:', createdArea)
 
     console.log('Testing scheduler for area ID:', createdArea.id)
-    const response = await fetch(`${API_BASE_URL}/test/scheduler/${createdArea.id}`, {
+    const response = await fetch(`http://localhost:8080/test/scheduler/${createdArea.id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1479,7 +1539,7 @@ const testTrigger = async () => {
       triggerError.value = null
 
       try {
-        await fetch(`${API_BASE_URL}/areas/${createdArea.id}`, {
+        await fetch(`http://localhost:8080/areas/${createdArea.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -1537,7 +1597,7 @@ const testGitHubTrigger = async () => {
     console.log('Test GitHub area created:', createdArea)
 
     console.log('Testing GitHub webhook for area ID:', createdArea.id)
-    const response = await fetch(`${API_BASE_URL}/test/github/${createdArea.id}`, {
+    const response = await fetch(`http://localhost:8080/test/github/${createdArea.id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1557,7 +1617,7 @@ const testGitHubTrigger = async () => {
       triggerError.value = null
 
       try {
-        await fetch(`${API_BASE_URL}/areas/${createdArea.id}`, {
+        await fetch(`http://localhost:8080/areas/${createdArea.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -1614,7 +1674,7 @@ const createArea = async () => {
   try {
     let triggerConfig = { ...form.triggerConfig }
 
-    if (CALENDAR_SERVICES.includes(template.value.triggerService) && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
+    if (template.value.triggerService === 'Google Calendar' && form.triggerConfig.eventDate && form.triggerConfig.eventTime) {
       const eventDateTime = new Date(`${form.triggerConfig.eventDate}T${form.triggerConfig.eventTime}:00`)
       triggerConfig.eventTime = formatDateTimeWithTimezone(eventDateTime)
       console.log('Combined event time:', triggerConfig.eventTime)
@@ -1662,7 +1722,7 @@ const createArea = async () => {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
       triggerService: template.value.triggerService || 'Unknown',
-      triggerType: CALENDAR_SERVICES.includes(template.value.triggerService || '') ? 'Event' : resolveTriggerType(template.value.triggerService || 'Unknown'),
+      triggerType: resolveTriggerType(template.value.triggerService || 'Unknown'),
       actionService: template.value.actionService || 'Unknown',
       actionType: resolveActionType(template.value.actionService || 'Unknown'),
       triggerConfig: triggerConfig,
@@ -1721,7 +1781,6 @@ const getActionIcon = (service: string) => {
     case "Gmail": return "mdi-email"
     case "Slack": return "mdi-slack"
     case "Discord": return "mdi-discord"
-    case "Telegram": return "mdi-send"
     case "GitHub": return "mdi-github"
     case "Spotify": return "mdi-music"
     default: return "mdi-cog"

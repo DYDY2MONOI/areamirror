@@ -235,13 +235,13 @@
           </div>
         </div>
 
-        <div v-if="form.triggerService && form.actionService" class="form-section">
+        <div v-if="form.triggerService" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
           </div>
 
-          <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
+          <div v-if="isCalendarTrigger" class="config-section">
             <div class="config-header">
               <div class="config-icon">
                 <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
@@ -276,7 +276,7 @@
                   <small class="input-hint">This will be used in the email subject and body</small>
                 </div>
 
-                <div class="input-container">
+                <div class="input-container" v-if="form.triggerService === 'Google Calendar'">
                   <label class="input-label">🗓️ Calendar ID</label>
                   <input
                     v-model="form.triggerConfig.calendarId"
@@ -1006,7 +1006,7 @@
             </div>
           </div>
 
-          <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="preview-section">
+          <div v-if="isCalendarTrigger && form.actionService === 'Gmail'" class="preview-section">
             <div class="preview-header">
               <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
               <span class="preview-title">Email Preview</span>
@@ -1070,7 +1070,7 @@
         </button>
 
         <button
-          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
+          v-if="isCalendarTrigger && form.actionService === 'Gmail'"
           class="action-btn test-email-btn"
           @click="sendTestEmail"
           :disabled="!canSendTestEmail || isSendingTest"
@@ -1089,7 +1089,7 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
-        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
+        <div v-if="isCalendarTrigger && form.actionService === 'Gmail'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
@@ -1145,6 +1145,7 @@ const getIconUrl = (file: string) =>
 
 const priorityServices = [
   'Google Calendar',
+  'Date Timer',
   'Gmail',
   'Weather',
   'Discord',
@@ -1160,6 +1161,11 @@ const priorityServices = [
 const intermediateServices = [
   'OpenAI'
 ]
+
+const CALENDAR_SERVICES = ['Google Calendar', 'Date Timer']
+
+const isCalendarService = (service?: string | null) =>
+  CALENDAR_SERVICES.includes(service ?? '')
 
 const services = ref<ServiceInfo[]>([])
 const serviceIcons = ref<Record<string, string>>({})
@@ -1192,6 +1198,7 @@ const fetchServices = async () => {
       'Google Sheets': 'google-sheets.png',
       'Google Drive': 'google-drive.png',
       Timer: 'google-calendar.png',
+      'Date Timer': 'google-calendar.png',
       Telegram: 'telegram.png',
       OpenAI: 'openai.png'
     }
@@ -1236,6 +1243,7 @@ const getFallbackIcon = (serviceName: string) => {
     github: 'github.png',
     weather: 'weather.png',
     'google calendar': 'google-calendar.png',
+    'date timer': 'google-calendar.png',
     discord: 'discord.png',
     'google sheets': 'google-sheets.png',
     'google drive': 'google-drive.png',
@@ -1302,6 +1310,8 @@ const form = reactive({
   } as any,
 })
 
+const isCalendarTrigger = computed(() => isCalendarService(form.triggerService))
+
 const repositories = ref<GitHubRepository[]>([])
 const isLoadingRepositories = ref(false)
 const isTestingGoogleSheets = ref(false)
@@ -1315,7 +1325,7 @@ watch(() => props.template, (newTemplate) => {
     form.triggerService = newTemplate.triggerService
     form.actionService = newTemplate.actionService
 
-    if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
+    if (isCalendarService(newTemplate.triggerService) && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
         eventTitle: '',
@@ -1383,7 +1393,7 @@ const isFormValid = computed(() => {
                       form.triggerService !== '' &&
                       form.actionService !== ''
 
-  if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
+  if (isCalendarService(form.triggerService) && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
@@ -1528,7 +1538,7 @@ const selectTrigger = (serviceId: string) => {
   sheetsTestResult.value = null
   sheetsTestError.value = null
 
-  if (serviceId === 'Google Calendar') {
+  if (isCalendarService(serviceId)) {
     form.triggerConfig = {
       eventTime: '',
       eventTitle: '',
@@ -1654,7 +1664,7 @@ const getMissingFields = () => {
   const missing = []
   if (!form.areaName.trim()) missing.push('Area Name')
 
-  if (form.triggerService === 'Google Calendar') {
+  if (isCalendarService(form.triggerService)) {
     if (!form.triggerConfig.eventTime) missing.push('Event Time')
   }
 
@@ -1781,7 +1791,7 @@ const sendTestEmail = async () => {
       body: form.actionConfig.body
     }
 
-    const response = await fetch(`${API_BASE_URL}/test/email`, {
+    const response = await fetch('http://localhost:8080/test/email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2041,11 +2051,11 @@ const createArea = async () => {
     } else {
       let triggerConfig = { ...form.triggerConfig }
 
-      if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
+      if (isCalendarService(form.triggerService) && form.triggerConfig.eventTime) {
         const eventDateTime = new Date(form.triggerConfig.eventTime)
         const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
 
-        const [datePart, timePart] = formattedDateTime.split('T')
+        const [datePart] = formattedDateTime.split('T')
 
         triggerConfig = {
           eventDate: datePart,
@@ -2059,7 +2069,7 @@ const createArea = async () => {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: form.triggerService === 'Google Calendar'
+        triggerType: isCalendarService(form.triggerService)
           ? 'Event'
           : form.triggerService === 'Spotify'
           ? 'Playback'
