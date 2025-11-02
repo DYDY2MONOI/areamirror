@@ -4,6 +4,7 @@ import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import GitHubCallbackPage from '../views/GitHubCallbackPage.vue'
+import GitHubLinkPage from '../views/GitHubLinkPage.vue'
 import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
@@ -53,6 +54,12 @@ const router = createRouter({
       name: 'github-callback',
       component: GitHubCallbackPage,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/github-link',
+      name: 'github-link',
+      component: GitHubLinkPage,
+      meta: { requiresAuth: false }
     },
     {
       path: '/auth/google/callback',

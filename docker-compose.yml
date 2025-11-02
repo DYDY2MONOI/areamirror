@@ -57,10 +57,13 @@ services:
       ONEDRIVE_REDIRECT_URI: ${ONEDRIVE_REDIRECT_URI:-http://localhost:8080/onedrive/callback}
       GOOGLE_SHEETS_API_KEY: ${GOOGLE_SHEETS_API_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-https://overeasily-superable-catarina.ngrok-free.dev/webhooks/telegram}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
       SPOTIFY_LINK_REDIRECT_URI: ${SPOTIFY_LINK_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
     ports:
       - "8080:8080"
     depends_on:

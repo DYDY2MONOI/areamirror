@@ -38,6 +38,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { oauth2AuthService } from '@/services/oauth2-auth'
+import { API_BASE_URL } from '@/config/api'
 
 const router = useRouter()
 const loading = ref(true)
@@ -74,7 +75,7 @@ onMounted(async () => {
     message.value = 'Authenticating with Google...'
     
     // Use the new OAuth2 direct login endpoint
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/oauth2/google/callback?code=${code}`)
+    const response = await fetch(`${API_BASE_URL}/oauth2/google/callback?code=${code}`)
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }))

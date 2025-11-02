@@ -15,14 +15,17 @@ import (
 )
 
 type CreateAreaRequest struct {
-	Name           string      `json:"name" binding:"required"`
-	Description    string      `json:"description"`
-	TriggerService string      `json:"triggerService" binding:"required"`
-	TriggerType    string      `json:"triggerType" binding:"required"`
-	ActionService  string      `json:"actionService" binding:"required"`
-	ActionType     string      `json:"actionType" binding:"required"`
-	TriggerConfig  interface{} `json:"triggerConfig"`
-	ActionConfig   interface{} `json:"actionConfig"`
+	Name                        string      `json:"name" binding:"required"`
+	Description                 string      `json:"description"`
+	TriggerService              string      `json:"triggerService" binding:"required"`
+	TriggerType                 string      `json:"triggerType" binding:"required"`
+	ActionService               string      `json:"actionService" binding:"required"`
+	ActionType                  string      `json:"actionType" binding:"required"`
+	TriggerConfig               interface{} `json:"triggerConfig"`
+	ActionConfig                interface{} `json:"actionConfig"`
+	IntermediateActionService   string      `json:"intermediateActionService"`
+	IntermediateActionType      string      `json:"intermediateActionType"`
+	IntermediateActionConfig    interface{} `json:"intermediateActionConfig"`
 }
 
 func GetAreas(c *gin.Context) {
@@ -81,21 +84,25 @@ func CreateArea(c *gin.Context) {
 
 	triggerConfigJSON, _ := json.Marshal(req.TriggerConfig)
 	actionConfigJSON, _ := json.Marshal(req.ActionConfig)
+	intermediateActionConfigJSON, _ := json.Marshal(req.IntermediateActionConfig)
 
 	area := models.Area{
-		UserID:         user.ID,
-		Name:           req.Name,
-		Description:    req.Description,
-		TriggerService: req.TriggerService,
-		TriggerType:    req.TriggerType,
-		ActionService:  req.ActionService,
-		ActionType:     req.ActionType,
-		IsActive:       true,
-		IsPublic:       true,
-		TriggerConfig:  datatypes.JSON(triggerConfigJSON),
-		ActionConfig:   datatypes.JSON(actionConfigJSON),
-		TriggerIconURL: getIconUrlForService(req.TriggerService),
-		ActionIconURL:  getIconUrlForService(req.ActionService),
+		UserID:                      user.ID,
+		Name:                        req.Name,
+		Description:                 req.Description,
+		TriggerService:              req.TriggerService,
+		TriggerType:                 req.TriggerType,
+		ActionService:               req.ActionService,
+		ActionType:                  req.ActionType,
+		IsActive:                    true,
+		IsPublic:                    true,
+		TriggerConfig:               datatypes.JSON(triggerConfigJSON),
+		ActionConfig:                datatypes.JSON(actionConfigJSON),
+		IntermediateActionService:   req.IntermediateActionService,
+		IntermediateActionType:      req.IntermediateActionType,
+		IntermediateActionConfig:    datatypes.JSON(intermediateActionConfigJSON),
+		TriggerIconURL:              getIconUrlForService(req.TriggerService),
+		ActionIconURL:               getIconUrlForService(req.ActionService),
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -173,7 +180,7 @@ func UpdateArea(c *gin.Context) {
 
 	log.Printf("Input data: %+v", req)
 
-	var triggerConfigJSON, actionConfigJSON datatypes.JSON
+	var triggerConfigJSON, actionConfigJSON, intermediateActionConfigJSON datatypes.JSON
 	if req.TriggerConfig != nil {
 		triggerConfigBytes, _ := json.Marshal(req.TriggerConfig)
 		triggerConfigJSON = datatypes.JSON(triggerConfigBytes)
@@ -181,6 +188,10 @@ func UpdateArea(c *gin.Context) {
 	if req.ActionConfig != nil {
 		actionConfigBytes, _ := json.Marshal(req.ActionConfig)
 		actionConfigJSON = datatypes.JSON(actionConfigBytes)
+	}
+	if req.IntermediateActionConfig != nil {
+		intermediateActionConfigBytes, _ := json.Marshal(req.IntermediateActionConfig)
+		intermediateActionConfigJSON = datatypes.JSON(intermediateActionConfigBytes)
 	}
 
 	updates := map[string]interface{}{
@@ -197,6 +208,15 @@ func UpdateArea(c *gin.Context) {
 	}
 	if req.ActionConfig != nil {
 		updates["action_config"] = actionConfigJSON
+	}
+	if req.IntermediateActionConfig != nil {
+		updates["intermediate_action_config"] = intermediateActionConfigJSON
+	}
+	if req.IntermediateActionService != "" {
+		updates["intermediate_action_service"] = req.IntermediateActionService
+	}
+	if req.IntermediateActionType != "" {
+		updates["intermediate_action_type"] = req.IntermediateActionType
 	}
 
 	if req.TriggerService != "" {
