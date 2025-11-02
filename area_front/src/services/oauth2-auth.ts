@@ -27,6 +27,9 @@ export interface OAuth2User {
   spotify_email?: string | null
   twitter_id?: string | null
   twitter_username?: string | null
+  slack_id?: string | null
+  slack_team_id?: string | null
+  onedrive_id?: string | null
   profile_image?: string | null
 }
 

@@ -9,6 +9,7 @@ import GoogleCallbackPage from '../views/GoogleCallbackPage.vue'
 import GoogleOAuthCallback from '../views/GoogleOAuthCallback.vue'
 import FacebookCallbackPage from '../views/FacebookCallbackPage.vue'
 import OneDriveCallbackPage from '../views/OneDriveCallbackPage.vue'
+import SlackCallbackPage from '../views/SlackCallbackPage.vue'
 import TwitterCallbackPage from '../views/TwitterCallbackPage.vue'
 import HomeCallback from '../views/HomeCallback.vue'
 import EditProfilePage from '../views/EditProfilePage.vue'
@@ -77,6 +78,12 @@ const router = createRouter({
       path: '/auth/onedrive/callback',
       name: 'onedrive-callback',
       component: OneDriveCallbackPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/auth/slack/callback',
+      name: 'slack-callback',
+      component: SlackCallbackPage,
       meta: { requiresAuth: true }
     },
     {

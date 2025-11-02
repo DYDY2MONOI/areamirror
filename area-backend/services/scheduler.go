@@ -124,6 +124,14 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking Spotify triggers: %v", err)
 	}
 
+	if err := s.checkSlackTriggers(); err != nil {
+		log.Printf("Error checking Slack triggers: %v", err)
+	}
+
+	if err := s.checkOneDriveTriggers(); err != nil {
+		log.Printf("Error checking OneDrive triggers: %v", err)
+	}
+
 	if err := s.checkTimerTriggers(); err != nil {
 		log.Printf("Error checking timer triggers: %v", err)
 	}
@@ -611,6 +619,10 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 		return s.executeDiscordAction(&area, actionConfig, metadata)
 	case "Telegram":
 		return s.executeTelegramAction(&area, actionConfig, metadata)
+	case "Slack":
+		return s.executeSlackAction(&area, actionConfig, metadata)
+	case "OneDrive":
+		return s.executeOneDriveAction(&area, actionConfig, metadata)
 	case "Spotify":
 		return s.executeSpotifyAction(&area, actionConfig, metadata)
 	default:
@@ -1021,6 +1033,12 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		"durationMs":          "",
 		"coverImageUrl":       "",
 		"startedAt":           "",
+		"fileName":            "",
+		"fileID":              "",
+		"fileSize":            "",
+		"createdTime":         "",
+		"modifiedTime":        "",
+		"previousTime":        "",
 	}
 
 	if metadata == nil {
@@ -1118,6 +1136,27 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 
 	if openaiText, ok := metadata["openaiGeneratedText"].(string); ok {
 		vars["openaiGeneratedText"] = openaiText
+	}
+
+	if fileName, ok := metadata["fileName"].(string); ok {
+		vars["fileName"] = fileName
+		vars["eventTitle"] = fileName
+	}
+	if fileID, ok := metadata["fileID"].(string); ok {
+		vars["fileID"] = fileID
+	}
+	if fileSize, ok := extractInt(metadata["fileSize"]); ok {
+		vars["fileSize"] = strconv.Itoa(fileSize)
+	}
+	if createdTime, ok := metadata["createdTime"].(string); ok {
+		vars["createdTime"] = createdTime
+	}
+	if modifiedTime, ok := metadata["modifiedTime"].(string); ok {
+		vars["modifiedTime"] = modifiedTime
+		vars["eventTime"] = modifiedTime
+	}
+	if previousTime, ok := metadata["previousTime"].(string); ok {
+		vars["previousTime"] = previousTime
 	}
 
 	return vars
@@ -1383,4 +1422,303 @@ func (s *SchedulerService) TestScheduler(areaID string) error {
 	database.DB.Save(&area)
 
 	return s.executeArea(area, nil)
+}
+
+type slackTriggerConfig struct {
+	Channel         string `json:"channel"`
+	LastMessageTime string `json:"lastMessageTime"`
+	LastMessageTS   string `json:"lastMessageTs"`
+}
+
+func (s *SchedulerService) checkSlackTriggers() error {
+	var areas []models.Area
+	if err := database.DB.Where("trigger_service = ? AND is_active = ?", "Slack", true).Find(&areas).Error; err != nil {
+		return fmt.Errorf("failed to fetch slack areas: %v", err)
+	}
+
+	for _, area := range areas {
+		var user models.User
+		if err := database.DB.First(&user, area.UserID).Error; err != nil {
+			log.Printf("Failed to fetch user for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if user.SlackBotToken == nil || *user.SlackBotToken == "" {
+			log.Printf("User %d has no Slack bot token for area %s", area.UserID, area.Name)
+			continue
+		}
+
+		var cfg slackTriggerConfig
+		if len(area.TriggerConfig) > 0 {
+			if err := json.Unmarshal(area.TriggerConfig, &cfg); err != nil {
+				log.Printf("Failed to parse Slack trigger config for area %s: %v", area.Name, err)
+				cfg = slackTriggerConfig{}
+			}
+		}
+
+		if cfg.Channel == "" {
+			log.Printf("No channel configured for Slack area %s", area.Name)
+			continue
+		}
+
+		oldest := "0"
+		if cfg.LastMessageTS != "" {
+			oldest = cfg.LastMessageTS
+		}
+
+		slackService := NewSlackOAuthService()
+		messagesResp, err := slackService.GetChannelMessages(*user.SlackBotToken, cfg.Channel, oldest)
+		if err != nil {
+			log.Printf("Failed to fetch Slack messages for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if len(messagesResp.Messages) == 0 {
+			continue
+		}
+
+		for _, message := range messagesResp.Messages {
+			if message.Type != "message" {
+				continue
+			}
+
+			if message.BotID != "" || message.Subtype == "bot_message" {
+				log.Printf("Skipping bot message in area %s", area.Name)
+				continue
+			}
+
+			if cfg.LastMessageTS != "" && message.Timestamp <= cfg.LastMessageTS {
+				continue
+			}
+
+			metadata := map[string]interface{}{
+				"channel":   cfg.Channel,
+				"user":      message.User,
+				"text":      message.Text,
+				"timestamp": message.Timestamp,
+			}
+
+			if err := s.executeArea(area, metadata); err != nil {
+				log.Printf("Failed to execute Slack area %s: %v", area.Name, err)
+			}
+
+			cfg.LastMessageTS = message.Timestamp
+			cfg.LastMessageTime = time.Now().UTC().Format(time.RFC3339)
+		}
+
+		cfgBytes, err := json.Marshal(cfg)
+		if err != nil {
+			log.Printf("Failed to marshal Slack trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
+			log.Printf("Failed to persist Slack trigger config for area %s: %v", area.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) executeSlackAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
+	var user models.User
+	if err := database.DB.First(&user, area.UserID).Error; err != nil {
+		return fmt.Errorf("failed to fetch user: %v", err)
+	}
+
+	if user.SlackBotToken == nil || *user.SlackBotToken == "" {
+		return fmt.Errorf("user has no Slack bot token")
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+
+	channel := getString(actionConfig["channel"])
+	if channel == "" {
+		return fmt.Errorf("channel not specified in action config")
+	}
+	channel = applyTemplateVariables(channel, templateVars)
+
+	message := getString(actionConfig["message"])
+	if message == "" {
+		return fmt.Errorf("message not specified in action config")
+	}
+	message = applyTemplateVariables(message, templateVars)
+
+	slackService := NewSlackOAuthService()
+	if err := slackService.SendMessage(*user.SlackBotToken, channel, message); err != nil {
+		return fmt.Errorf("failed to send Slack message: %v", err)
+	}
+
+	log.Printf("Slack message sent successfully to channel %s", channel)
+	return nil
+}
+
+type oneDriveTriggerConfig struct {
+	LastCheckTime string            `json:"lastCheckTime"`
+	TrackedFiles  map[string]string `json:"trackedFiles"` // fileID -> lastModifiedTime
+}
+
+func (s *SchedulerService) checkOneDriveTriggers() error {
+	var areas []models.Area
+	if err := database.DB.Where("trigger_service = ? AND is_active = ?", "OneDrive", true).Find(&areas).Error; err != nil {
+		return fmt.Errorf("failed to fetch OneDrive areas: %v", err)
+	}
+
+	for _, area := range areas {
+		var user models.User
+		if err := database.DB.First(&user, area.UserID).Error; err != nil {
+			log.Printf("Failed to fetch user for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if user.OneDriveToken == nil || *user.OneDriveToken == "" {
+			log.Printf("User %d has no OneDrive access token for area %s", area.UserID, area.Name)
+			continue
+		}
+
+		var cfg oneDriveTriggerConfig
+		if len(area.TriggerConfig) > 0 {
+			if err := json.Unmarshal(area.TriggerConfig, &cfg); err != nil {
+				log.Printf("Failed to parse OneDrive trigger config for area %s: %v", area.Name, err)
+				cfg = oneDriveTriggerConfig{TrackedFiles: make(map[string]string)}
+			}
+		}
+		if cfg.TrackedFiles == nil {
+			cfg.TrackedFiles = make(map[string]string)
+		}
+
+		onedriveService, err := NewOneDriveService()
+		if err != nil {
+			log.Printf("Failed to create OneDrive service for area %s: %v", area.Name, err)
+			continue
+		}
+
+		listResp, err := onedriveService.ListFiles(*user.OneDriveToken, "root")
+		if err != nil {
+			log.Printf("Failed to list OneDrive files for area %s: %v", area.Name, err)
+			continue
+		}
+
+		for _, file := range listResp.Value {
+			if file.Folder != nil {
+				continue
+			}
+
+			lastModified := file.ModifiedDateTime.Format(time.RFC3339)
+			trackedTime, exists := cfg.TrackedFiles[file.ID]
+
+			if !exists && (area.TriggerType == "Nouveau fichier" || area.TriggerType == "NewFile") {
+				log.Printf("New file detected in area %s: %s", area.Name, file.Name)
+
+				metadata := map[string]interface{}{
+					"fileName":     file.Name,
+					"fileID":       file.ID,
+					"fileSize":     file.Size,
+					"createdTime":  file.CreatedDateTime.Format(time.RFC3339),
+					"modifiedTime": lastModified,
+				}
+
+				if err := s.executeArea(area, metadata); err != nil {
+					log.Printf("Failed to execute OneDrive area %s: %v", area.Name, err)
+				}
+
+				cfg.TrackedFiles[file.ID] = lastModified
+			}
+
+			if exists && trackedTime != lastModified && (area.TriggerType == "Fichier modifié" || area.TriggerType == "FileModified") {
+				log.Printf("Modified file detected in area %s: %s", area.Name, file.Name)
+
+				metadata := map[string]interface{}{
+					"fileName":     file.Name,
+					"fileID":       file.ID,
+					"fileSize":     file.Size,
+					"modifiedTime": lastModified,
+					"previousTime": trackedTime,
+				}
+
+				if err := s.executeArea(area, metadata); err != nil {
+					log.Printf("Failed to execute OneDrive area %s: %v", area.Name, err)
+				}
+
+				cfg.TrackedFiles[file.ID] = lastModified
+			}
+
+			if exists && trackedTime == lastModified {
+				cfg.TrackedFiles[file.ID] = lastModified
+			}
+
+			if !exists {
+				cfg.TrackedFiles[file.ID] = lastModified
+			}
+		}
+
+		cfg.LastCheckTime = time.Now().UTC().Format(time.RFC3339)
+
+		cfgBytes, err := json.Marshal(cfg)
+		if err != nil {
+			log.Printf("Failed to marshal OneDrive trigger config for area %s: %v", area.Name, err)
+			continue
+		}
+
+		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
+			log.Printf("Failed to persist OneDrive trigger config for area %s: %v", area.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) executeOneDriveAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
+	var user models.User
+	if err := database.DB.First(&user, area.UserID).Error; err != nil {
+		return fmt.Errorf("failed to fetch user: %v", err)
+	}
+
+	if user.OneDriveToken == nil || *user.OneDriveToken == "" {
+		return fmt.Errorf("user has no OneDrive access token")
+	}
+
+	onedriveService, err := NewOneDriveService()
+	if err != nil {
+		return fmt.Errorf("failed to create OneDrive service: %v", err)
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+
+	if area.ActionType == "Upload fichier" || area.ActionType == "UploadFile" {
+		fileName := getString(actionConfig["fileName"])
+		if fileName == "" {
+			return fmt.Errorf("fileName not specified in action config")
+		}
+		fileName = applyTemplateVariables(fileName, templateVars)
+
+		content := getString(actionConfig["content"])
+		content = applyTemplateVariables(content, templateVars)
+
+		_, err := onedriveService.UploadFile(*user.OneDriveToken, fileName, []byte(content))
+		if err != nil {
+			return fmt.Errorf("failed to upload file to OneDrive: %v", err)
+		}
+
+		log.Printf("OneDrive file uploaded successfully: %s", fileName)
+		return nil
+	}
+
+	if area.ActionType == "Créer dossier" || area.ActionType == "CreateFolder" || area.ActionType == "createFolder" {
+		folderName := getString(actionConfig["folderName"])
+		if folderName == "" {
+			return fmt.Errorf("folderName not specified in action config")
+		}
+		folderName = applyTemplateVariables(folderName, templateVars)
+
+		_, err := onedriveService.CreateFolder(*user.OneDriveToken, folderName)
+		if err != nil {
+			return fmt.Errorf("failed to create folder on OneDrive: %v", err)
+		}
+
+		log.Printf("OneDrive folder created successfully: %s", folderName)
+		return nil
+	}
+
+	return fmt.Errorf("unknown OneDrive action type: %s", area.ActionType)
 }
