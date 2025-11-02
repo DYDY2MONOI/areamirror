@@ -1299,12 +1299,19 @@ const actionIsValid = computed(() => {
       const slackMessage = (form.actionConfig.message || '').trim()
       return !!channel && !!slackMessage
     case 'OneDrive':
-      const actionType = template.value.actionName || oneDriveActionType.value
-      if (actionType === 'Upload fichier') {
-        return !!form.actionConfig.fileName && !!form.actionConfig.content
-      } else if (actionType === 'Créer dossier') {
-        return !!form.actionConfig.folderName
+      const actionType = oneDriveActionType.value || template.value.actionName
+      console.log('OneDrive actionType:', actionType, 'oneDriveActionType.value:', oneDriveActionType.value)
+      console.log('form.actionConfig:', form.actionConfig)
+      if (actionType === 'Upload fichier' || actionType === 'UploadFile') {
+        const isValid = !!form.actionConfig.fileName && !!form.actionConfig.content
+        console.log('Upload fichier validation:', isValid, 'fileName:', form.actionConfig.fileName, 'content:', form.actionConfig.content)
+        return isValid
+      } else if (actionType === 'Créer dossier' || actionType === 'CreateFolder' || actionType === 'createFolder') {
+        const isValid = !!form.actionConfig.folderName
+        console.log('Créer dossier validation:', isValid, 'folderName:', form.actionConfig.folderName)
+        return isValid
       }
+      console.log('OneDrive validation failed: unknown actionType')
       return false
     default:
       return true
@@ -1414,11 +1421,24 @@ onMounted(async () => {
       }
 
       if (existingArea.value.actionService === 'OneDrive' && existingArea.value.actionType) {
-        oneDriveActionType.value = existingArea.value.actionType
+        const actionTypeMapping: { [key: string]: string } = {
+          'UploadFile': 'Upload fichier',
+          'CreateFolder': 'Créer dossier',
+          'createFolder': 'Créer dossier',
+          'Upload fichier': 'Upload fichier',
+          'Créer dossier': 'Créer dossier'
+        }
+        oneDriveActionType.value = actionTypeMapping[existingArea.value.actionType] || existingArea.value.actionType
         console.log('OneDrive action type initialized:', oneDriveActionType.value)
       }
       if (existingArea.value.triggerService === 'OneDrive' && existingArea.value.triggerType) {
-        oneDriveTriggerType.value = existingArea.value.triggerType
+        const triggerTypeMapping: { [key: string]: string } = {
+          'NewFile': 'Nouveau fichier',
+          'FileModified': 'Fichier modifié',
+          'Nouveau fichier': 'Nouveau fichier',
+          'Fichier modifié': 'Fichier modifié'
+        }
+        oneDriveTriggerType.value = triggerTypeMapping[existingArea.value.triggerType] || existingArea.value.triggerType
         console.log('OneDrive trigger type initialized:', oneDriveTriggerType.value)
       }
 
@@ -1481,13 +1501,16 @@ const getTodayDate = () => {
 
 const updateOneDriveActionType = () => {
   if (oneDriveActionType.value === 'Upload fichier') {
+    const fileName = form.actionConfig.fileName || ''
+    const content = form.actionConfig.content || ''
     form.actionConfig = {
-      fileName: '',
-      content: ''
+      fileName,
+      content
     }
   } else if (oneDriveActionType.value === 'Créer dossier') {
+    const folderName = form.actionConfig.folderName || ''
     form.actionConfig = {
-      folderName: ''
+      folderName
     }
   }
 }
@@ -1912,14 +1935,22 @@ const createArea = async () => {
 
     let actionType = resolveActionType(template.value.actionService || 'Unknown')
     if (template.value.actionService === 'OneDrive' && oneDriveActionType.value) {
-      actionType = oneDriveActionType.value
+      const actionTypeFrToEn: { [key: string]: string } = {
+        'Upload fichier': 'UploadFile',
+        'Créer dossier': 'CreateFolder'
+      }
+      actionType = actionTypeFrToEn[oneDriveActionType.value] || oneDriveActionType.value
     } else if (template.value.actionName) {
       actionType = template.value.actionName
     }
 
     let triggerType = resolveTriggerType(template.value.triggerService || 'Unknown')
     if (template.value.triggerService === 'OneDrive' && oneDriveTriggerType.value) {
-      triggerType = oneDriveTriggerType.value
+      const triggerTypeFrToEn: { [key: string]: string } = {
+        'Nouveau fichier': 'NewFile',
+        'Fichier modifié': 'FileModified'
+      }
+      triggerType = triggerTypeFrToEn[oneDriveTriggerType.value] || oneDriveTriggerType.value
     }
 
     const areaData = {
