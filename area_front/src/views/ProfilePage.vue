@@ -330,7 +330,7 @@ import { authService } from '@/services/auth'
 import { SERVICES_CONFIG, getEnabledServices, type ServiceConfig } from '@/config/services'
 
 const router = useRouter()
-const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkOneDriveAccount, unlinkOneDriveAccount, linkSpotifyAccount, unlinkSpotifyAccount, linkTwitterAccount, unlinkTwitterAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
+const { currentUser, isAuthenticated, linkGitHubAccount, unlinkGitHubAccount, linkGoogleAccount, unlinkGoogleAccount, linkFacebookAccount, unlinkFacebookAccount, linkOneDriveAccount, unlinkOneDriveAccount, linkSpotifyAccount, unlinkSpotifyAccount, linkTwitterAccount, unlinkTwitterAccount, linkSlackAccount, unlinkSlackAccount, uploadProfileImage, getProfileImageUrl, refreshProfile } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const profileImageUrl = ref<string | null>(null)
@@ -403,6 +403,8 @@ const isServiceLinked = (serviceId: string): boolean => {
       return !!currentUser.value.spotify_id
     case 'twitter':
       return !!currentUser.value.twitter_username
+    case 'slack':
+      return !!currentUser.value.slack_id
     default:
       return false
   }
@@ -472,8 +474,7 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      const fallbackRedirect = 'https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback'
-      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || fallbackRedirect
+      const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || `${window.location.origin}${service.callbackPath}`
       const redirectUri = encodeURIComponent(overrideRedirect)
       const scopeParam = encodeURIComponent(service.scopes.join(' '))
       const spotifyAuthUrl = `${service.authUrl}?client_id=${spotifyClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopeParam}&show_dialog=true&state=link`
@@ -498,6 +499,15 @@ const linkService = async (serviceId: string) => {
       const twitterAuthUrl = `${service.authUrl}?client_id=${twitterApiKey}&response_type=code&redirect_uri=${redirectUri}&scope=${encodeURIComponent(service.scopes.join(' '))}&state=link&code_challenge=${codeChallenge}&code_challenge_method=S256`
 
       window.location.href = twitterAuthUrl
+    } else if (serviceId === 'slack') {
+      const response = await fetch(service.authUrl!)
+      const data = await response.json()
+
+      if (data.authUrl) {
+        window.location.href = data.authUrl
+      } else {
+        errorMessages.value = { ...errorMessages.value, [serviceId]: 'Failed to get Slack authorization URL' }
+      }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${service.name} integration is not yet implemented.` }
     }
@@ -533,6 +543,9 @@ const unlinkService = async (serviceId: string) => {
     } else if (serviceId === 'twitter') {
       await unlinkTwitterAccount()
       successMessages.value = { ...successMessages.value, [serviceId]: 'Twitter account unlinked successfully' }
+    } else if (serviceId === 'slack') {
+      await unlinkSlackAccount()
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Slack workspace unlinked successfully' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} unlinking is not yet implemented.` }
     }
@@ -575,9 +588,14 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
       const result = await linkTwitterAccount(code, codeVerifier)
       sessionStorage.removeItem('twitter_code_verifier')
       successMessages.value = { ...successMessages.value, [serviceId]: 'Twitter account linked successfully!' }
+    } else if (serviceId === 'slack') {
+      const result = await linkSlackAccount(code)
+      successMessages.value = { ...successMessages.value, [serviceId]: 'Slack workspace linked successfully!' }
     } else {
       errorMessages.value = { ...errorMessages.value, [serviceId]: `${serviceId} linking is not yet implemented.` }
     }
+
+    await refreshProfile()
   } catch (error) {
     errorMessages.value = { ...errorMessages.value, [serviceId]: `Failed to link ${serviceId} account` }
     console.error(`Link ${serviceId} error:`, error)
@@ -1659,6 +1677,8 @@ onMounted(async () => {
   }
 }
 </style>
+
+
 
 
 

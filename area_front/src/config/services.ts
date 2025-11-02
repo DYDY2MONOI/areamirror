@@ -103,6 +103,17 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     callbackPath: '/oauth2/twitter/callback',
     scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
     isEnabled: true
+  },
+  {
+    id: 'slack',
+    name: 'Slack',
+    icon: 'slack',
+    color: '#4A154B',
+    description: 'Connect your Slack workspace to send and receive messages',
+    authUrl: 'http://localhost:8080/slack/auth/start',
+    callbackPath: '/auth/slack/callback',
+    scopes: ['channels:read', 'channels:history', 'chat:write', 'users:read'],
+    isEnabled: true
   }
 ]
 

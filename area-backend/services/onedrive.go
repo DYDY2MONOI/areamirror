@@ -84,7 +84,7 @@ func (o *OneDriveService) GetAuthorizationURL(state string) string {
 	params.Add("client_id", o.clientID)
 	params.Add("response_type", "code")
 	params.Add("redirect_uri", o.redirectURI)
-	params.Add("scope", "User.Read Files.ReadWrite Files.ReadWrite.All offline_access")
+	params.Add("scope", "User.Read Files.ReadWrite offline_access")
 	params.Add("state", state)
 
 	return microsoftAuthURL + "?" + params.Encode()

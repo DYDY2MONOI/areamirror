@@ -337,6 +337,73 @@
           </div>
         </div>
 
+        <div v-if="template && template.triggerService === 'Slack'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-slack</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">💬 Slack Channel Monitor</h4>
+              <p class="config-subtitle">Configure which Slack channel to monitor for new messages</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label class="form-label">🔗 Channel ID</label>
+                <input
+                  v-model="form.triggerConfig.channel"
+                  type="text"
+                  class="form-input"
+                  placeholder="C08012ABCDE"
+                  required
+                />
+                <small class="form-hint">Slack channel ID (visible in channel details). Bot needs to be invited in the channel.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="template && template.triggerService === 'OneDrive'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">☁️ OneDrive File Trigger</h4>
+              <p class="config-subtitle">Choose which file event should trigger this area</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-group">
+              <label class="form-label">📁 Trigger Type</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input
+                    v-model="oneDriveTriggerType"
+                    type="radio"
+                    value="Nouveau fichier"
+                    @change="updateOneDriveTriggerType"
+                  />
+                  <p class="config-subtitle">📄 New File</p>
+                </label>
+                <label class="radio-item">
+                  <input
+                    v-model="oneDriveTriggerType"
+                    type="radio"
+                    value="Fichier modifié"
+                    @change="updateOneDriveTriggerType"
+                  />
+                  <p class="config-subtitle">✏️ Modified File</p>
+                </label>
+              </div>
+              <small class="form-hint">Choose a type of file event for this AREA</small>
+            </div>
+          </div>
+        </div>
+
         <div v-if="template && template.actionService === 'Gmail'" class="config-card">
           <div class="config-header">
             <div class="config-icon">
@@ -424,6 +491,124 @@
                   required
                 ></textarea>
                 <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;, &#123;&#123;changeType&#125;&#125;, &#123;&#123;sheetName&#125;&#125;, &#123;&#123;rowNumber&#125;&#125;, &#123;&#123;rowData&#125;&#125; as placeholders</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="template && template.actionService === 'Slack'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-slack</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">💬 Slack Message</h4>
+              <p class="config-subtitle">Configure the channel and content for your Slack notification</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label class="form-label">🔗 Channel ID</label>
+                <input
+                  v-model="form.actionConfig.channel"
+                  type="text"
+                  class="form-input"
+                  placeholder="C08012ABCDE"
+                  required
+                />
+                <small class="form-hint">Slack channel ID (visible in channel details).</small>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">💬 Message Content</label>
+                <textarea
+                  v-model="form.actionConfig.message"
+                  class="form-input"
+                  rows="4"
+                  placeholder="Your message here..."
+                  required
+                ></textarea>
+                <small class="form-hint">Use &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125; as placeholders</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="template && template.actionService === 'OneDrive'" class="config-card">
+          <div class="config-header">
+            <div class="config-icon">
+              <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
+            </div>
+            <div class="config-info">
+              <h4 class="config-title">☁️ OneDrive Action</h4>
+              <p class="config-subtitle">Choose what to do on OneDrive</p>
+            </div>
+          </div>
+
+          <div class="config-content">
+            <div class="form-group">
+              <label class="form-label">⚡ Action Type</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input
+                    v-model="oneDriveActionType"
+                    type="radio"
+                    value="Upload fichier"
+                    @change="updateOneDriveActionType"
+                  />
+                  <p class="config-subtitle">📄 Upload File</p>
+                </label>
+                <label class="radio-item">
+                  <input
+                    v-model="oneDriveActionType"
+                    type="radio"
+                    value="Créer dossier"
+                    @change="updateOneDriveActionType"
+                  />
+                  <p class="config-subtitle">📁 Create Folder</p>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="oneDriveActionType === 'Upload fichier'" class="form-grid">
+              <div class="form-group full-width">
+                <label class="form-label">📄 File Name</label>
+                <input
+                  v-model="form.actionConfig.fileName"
+                  type="text"
+                  class="form-input"
+                  placeholder="document.txt"
+                  required
+                />
+                <small class="form-hint">Le nom du fichier à créer sur OneDrive</small>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">📝 File Content</label>
+                <textarea
+                  v-model="form.actionConfig.content"
+                  class="form-input"
+                  rows="4"
+                  placeholder="File content here..."
+                  required
+                ></textarea>
+                <small class="form-hint">Le contenu du fichier. Vous pouvez utiliser des placeholders comme &#123;&#123;areaName&#125;&#125;, &#123;&#123;eventTime&#125;&#125;</small>
+              </div>
+            </div>
+
+            <div v-if="oneDriveActionType === 'Créer dossier'" class="form-grid">
+              <div class="form-group full-width">
+                <label class="form-label">📁 Folder Name</label>
+                <input
+                  v-model="form.actionConfig.folderName"
+                  type="text"
+                  class="form-input"
+                  placeholder="My New Folder"
+                  required
+                />
+                <small class="form-hint">Le nom du dossier à créer sur OneDrive</small>
               </div>
             </div>
           </div>
@@ -829,6 +1014,7 @@ interface AreaTemplate {
   gradientClass: string
   triggerService: string
   actionService: string
+  actionName?: string
   isActive: boolean
 }
 
@@ -839,6 +1025,8 @@ const { currentUser } = useAuth()
 const template = ref<AreaTemplate | null>(null)
 const existingArea = ref<Area | null>(null)
 const isEditingExisting = ref(false)
+const oneDriveActionType = ref('')
+const oneDriveTriggerType = ref('')
 const form = reactive({
   triggerConfig: {
   } as any,
@@ -847,12 +1035,7 @@ const form = reactive({
     subject: '',
     body: '',
     webhookUrl: '',
-    message: '',
-    playlistId: '',
-    spreadsheetId: '',
-    range: '',
-    urlColumn: 'SpotifyLink',
-    hasHeader: true
+    message: ''
   } as any,
 })
 
@@ -860,9 +1043,12 @@ const isLoading = ref(false)
 const isSendingTest = ref(false)
 const isSendingDiscordTest = ref(false)
 const isTestingTrigger = ref(false)
+const isTestingSpotifyPlaylist = ref(false)
 const error = ref<string | null>(null)
 const triggerError = ref<string | null>(null)
 const discordTestError = ref<string | null>(null)
+const spotifyPlaylistTestMessage = ref<string | null>(null)
+const spotifyPlaylistTestError = ref<string | null>(null)
 const discordLogs = ref<DiscordLog[]>([])
 const isLoadingLogs = ref(false)
 const logsError = ref<string | null>(null)
@@ -872,9 +1058,6 @@ const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
 const isTestingSpotify = ref(false)
 const spotifyTestError = ref<string | null>(null)
 const spotifyTestResult = ref<any | null>(null)
-const isTestingSpotifyPlaylist = ref(false)
-const spotifyPlaylistTestMessage = ref<string | null>(null)
-const spotifyPlaylistTestError = ref<string | null>(null)
 
 const loadDiscordLogs = async (areaId: string | undefined) => {
   if (!areaId) return
@@ -949,6 +1132,10 @@ watch(() => template.value, (newTemplate) => {
         temperature: 30,
         condition: ''
       }
+    } else if (newTemplate.triggerService === 'Slack') {
+      form.triggerConfig = {
+        channel: ''
+      }
     } else {
       form.triggerConfig = {}
     }
@@ -970,6 +1157,26 @@ watch(() => template.value, (newTemplate) => {
         message: defaultMessage
       }
       discordTestError.value = null
+    } else if (newTemplate.actionService === 'Slack') {
+      const defaultMessage = '📢 Notification from {{areaName}} at {{eventTime}}'
+
+      form.actionConfig = {
+        channel: '',
+        message: defaultMessage
+      }
+    } else if (newTemplate.actionService === 'OneDrive') {
+      if (newTemplate.actionName === 'Upload fichier') {
+        form.actionConfig = {
+          fileName: '',
+          content: ''
+        }
+      } else if (newTemplate.actionName === 'Créer dossier') {
+        form.actionConfig = {
+          folderName: ''
+        }
+      } else {
+        form.actionConfig = {}
+      }
     } else if (newTemplate.actionService === 'Spotify') {
       const fallbackRange = form.triggerConfig?.range || 'Sheet1!A2:C'
       const fallbackSheetId = form.triggerConfig?.spreadsheetId || ''
@@ -1019,13 +1226,16 @@ watch(() => existingArea.value, (newArea) => {
     if (newArea.actionConfig) {
       form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
       console.log('Action config loaded:', form.actionConfig)
+    }
 
-      if (newArea.actionService === 'Spotify') {
-        form.actionConfig.urlColumn = form.actionConfig.urlColumn || 'SpotifyLink'
-        if (typeof form.actionConfig.hasHeader !== 'boolean') {
-          form.actionConfig.hasHeader = true
-        }
-      }
+    if (newArea.actionService === 'OneDrive' && newArea.actionType) {
+      oneDriveActionType.value = newArea.actionType
+      console.log('OneDrive action type set:', oneDriveActionType.value)
+    }
+
+    if (newArea.triggerService === 'OneDrive' && newArea.triggerType) {
+      oneDriveTriggerType.value = newArea.triggerType
+      console.log('OneDrive trigger type set:', oneDriveTriggerType.value)
     }
 
     if (newArea.actionService === 'Discord') {
@@ -1050,39 +1260,6 @@ watch(
   }
 )
 
-watch(
-  () => form.triggerConfig?.spreadsheetId,
-  (newValue, oldValue) => {
-    if (template.value?.actionService === 'Spotify') {
-      const current = (form.actionConfig?.spreadsheetId || '').toString().trim()
-      if (!current || current === (oldValue || '').toString().trim()) {
-        form.actionConfig.spreadsheetId = (newValue || '').toString().trim()
-      }
-    }
-  }
-)
-
-watch(
-  () => form.triggerConfig?.range,
-  (newValue, oldValue) => {
-    if (template.value?.actionService === 'Spotify') {
-      const current = (form.actionConfig?.range || '').toString().trim()
-      if (!current || current === (oldValue || '').toString().trim()) {
-        form.actionConfig.range = (newValue || '').toString().trim()
-      }
-    }
-  }
-)
-
-watch(
-  () => form.triggerConfig?.hasHeader,
-  (newValue) => {
-    if (template.value?.actionService === 'Spotify' && typeof newValue === 'boolean') {
-      form.actionConfig.hasHeader = newValue
-    }
-  }
-)
-
 const triggerIsValid = computed(() => {
   if (!template.value) return false
 
@@ -1097,6 +1274,10 @@ const triggerIsValid = computed(() => {
     case 'Google Sheets':
       return !!form.triggerConfig.spreadsheetId &&
              !!form.triggerConfig.range
+    case 'Slack':
+      return !!form.triggerConfig.channel
+    case 'OneDrive':
+      return !!oneDriveTriggerType.value
     default:
       return true
   }
@@ -1113,12 +1294,25 @@ const actionIsValid = computed(() => {
       const webhookUrl = (form.actionConfig.webhookUrl || form.actionConfig.webhookURL || '').trim()
       const message = (form.actionConfig.message || '').trim()
       return !!webhookUrl && !!message
-    case 'Spotify':
-      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
-      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
-      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
-      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim()
-      return !!playlistId && !!sheetId && !!range && !!urlColumn
+    case 'Slack':
+      const channel = (form.actionConfig.channel || '').trim()
+      const slackMessage = (form.actionConfig.message || '').trim()
+      return !!channel && !!slackMessage
+    case 'OneDrive':
+      const actionType = oneDriveActionType.value || template.value.actionName
+      console.log('OneDrive actionType:', actionType, 'oneDriveActionType.value:', oneDriveActionType.value)
+      console.log('form.actionConfig:', form.actionConfig)
+      if (actionType === 'Upload fichier' || actionType === 'UploadFile') {
+        const isValid = !!form.actionConfig.fileName && !!form.actionConfig.content
+        console.log('Upload fichier validation:', isValid, 'fileName:', form.actionConfig.fileName, 'content:', form.actionConfig.content)
+        return isValid
+      } else if (actionType === 'Créer dossier' || actionType === 'CreateFolder' || actionType === 'createFolder') {
+        const isValid = !!form.actionConfig.folderName
+        console.log('Créer dossier validation:', isValid, 'folderName:', form.actionConfig.folderName)
+        return isValid
+      }
+      console.log('OneDrive validation failed: unknown actionType')
+      return false
     default:
       return true
   }
@@ -1222,7 +1416,30 @@ onMounted(async () => {
         gradientClass: '',
         triggerService: existingArea.value.triggerService,
         actionService: existingArea.value.actionService,
+        actionName: existingArea.value.actionType,
         isActive: existingArea.value.isActive
+      }
+
+      if (existingArea.value.actionService === 'OneDrive' && existingArea.value.actionType) {
+        const actionTypeMapping: { [key: string]: string } = {
+          'UploadFile': 'Upload fichier',
+          'CreateFolder': 'Créer dossier',
+          'createFolder': 'Créer dossier',
+          'Upload fichier': 'Upload fichier',
+          'Créer dossier': 'Créer dossier'
+        }
+        oneDriveActionType.value = actionTypeMapping[existingArea.value.actionType] || existingArea.value.actionType
+        console.log('OneDrive action type initialized:', oneDriveActionType.value)
+      }
+      if (existingArea.value.triggerService === 'OneDrive' && existingArea.value.triggerType) {
+        const triggerTypeMapping: { [key: string]: string } = {
+          'NewFile': 'Nouveau fichier',
+          'FileModified': 'Fichier modifié',
+          'Nouveau fichier': 'Nouveau fichier',
+          'Fichier modifié': 'Fichier modifié'
+        }
+        oneDriveTriggerType.value = triggerTypeMapping[existingArea.value.triggerType] || existingArea.value.triggerType
+        console.log('OneDrive trigger type initialized:', oneDriveTriggerType.value)
       }
 
       console.log('Template created:', template.value)
@@ -1282,6 +1499,26 @@ const getTodayDate = () => {
   return new Date().toISOString().split('T')[0]
 }
 
+const updateOneDriveActionType = () => {
+  if (oneDriveActionType.value === 'Upload fichier') {
+    const fileName = form.actionConfig.fileName || ''
+    const content = form.actionConfig.content || ''
+    form.actionConfig = {
+      fileName,
+      content
+    }
+  } else if (oneDriveActionType.value === 'Créer dossier') {
+    const folderName = form.actionConfig.folderName || ''
+    form.actionConfig = {
+      folderName
+    }
+  }
+}
+
+const updateOneDriveTriggerType = () => {
+  console.log('OneDrive trigger type changed to:', oneDriveTriggerType.value)
+}
+
 const resolveTriggerType = (service: string) => {
   switch (service) {
     case 'Google Calendar':
@@ -1305,8 +1542,6 @@ const resolveActionType = (service: string) => {
       return 'SendEmail'
     case 'Discord':
       return 'SendDiscordMessage'
-    case 'Spotify':
-      return 'UpdatePlaylist'
     default:
       return 'Action'
   }
@@ -1461,31 +1696,6 @@ const testSpotifyConnection = async () => {
     alert('❌ Échec du test Spotify: ' + errorMessage)
   } finally {
     isTestingSpotify.value = false
-  }
-}
-
-const testSpotifyPlaylist = async () => {
-  if (!canTestSpotifyPlaylist.value) {
-    return
-  }
-
-  isTestingSpotifyPlaylist.value = true
-  spotifyPlaylistTestError.value = null
-  spotifyPlaylistTestMessage.value = null
-
-  try {
-    const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
-    const result = await areaService.testSpotifyPlaylist(playlistId)
-    const message = result?.message || 'Playlist accessible'
-    spotifyPlaylistTestMessage.value = message
-    alert('✅ ' + message)
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify playlist'
-    spotifyPlaylistTestError.value = errorMessage
-    console.error('Error testing Spotify playlist:', err)
-    alert('❌ Test playlist: ' + errorMessage)
-  } finally {
-    isTestingSpotifyPlaylist.value = false
   }
 }
 
@@ -1665,6 +1875,31 @@ const testGoogleSheets = async () => {
   }
 }
 
+const testSpotifyPlaylist = async () => {
+  if (!canTestSpotifyPlaylist.value) {
+    return
+  }
+
+  isTestingSpotifyPlaylist.value = true
+  spotifyPlaylistTestError.value = null
+  spotifyPlaylistTestMessage.value = null
+
+  try {
+    const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
+    const result = await areaService.testSpotifyPlaylist(playlistId)
+    const message = result?.message || 'Playlist accessible'
+    spotifyPlaylistTestMessage.value = message
+    alert('✅ ' + message)
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify playlist'
+    spotifyPlaylistTestError.value = errorMessage
+    console.error('Error testing Spotify playlist:', err)
+    alert('❌ Test playlist: ' + errorMessage)
+  } finally {
+    isTestingSpotifyPlaylist.value = false
+  }
+}
+
 const createArea = async () => {
   if (!isFormValid.value || !template.value) return
 
@@ -1698,35 +1933,35 @@ const createArea = async () => {
       console.log('Weather trigger config:', triggerConfig)
     }
 
-    let actionConfig = { ...form.actionConfig }
-
-    if (template.value.actionService === 'Spotify') {
-      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
-      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
-      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
-      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink'
-      const hasHeader = typeof form.actionConfig.hasHeader === 'boolean'
-        ? form.actionConfig.hasHeader
-        : !!form.triggerConfig?.hasHeader
-
-      actionConfig = {
-        playlistId,
-        spreadsheetId: sheetId,
-        range,
-        urlColumn,
-        hasHeader,
+    let actionType = resolveActionType(template.value.actionService || 'Unknown')
+    if (template.value.actionService === 'OneDrive' && oneDriveActionType.value) {
+      const actionTypeFrToEn: { [key: string]: string } = {
+        'Upload fichier': 'UploadFile',
+        'Créer dossier': 'CreateFolder'
       }
+      actionType = actionTypeFrToEn[oneDriveActionType.value] || oneDriveActionType.value
+    } else if (template.value.actionName) {
+      actionType = template.value.actionName
+    }
+
+    let triggerType = resolveTriggerType(template.value.triggerService || 'Unknown')
+    if (template.value.triggerService === 'OneDrive' && oneDriveTriggerType.value) {
+      const triggerTypeFrToEn: { [key: string]: string } = {
+        'Nouveau fichier': 'NewFile',
+        'Fichier modifié': 'FileModified'
+      }
+      triggerType = triggerTypeFrToEn[oneDriveTriggerType.value] || oneDriveTriggerType.value
     }
 
     const areaData = {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
       triggerService: template.value.triggerService || 'Unknown',
-      triggerType: resolveTriggerType(template.value.triggerService || 'Unknown'),
+      triggerType: triggerType,
       actionService: template.value.actionService || 'Unknown',
-      actionType: resolveActionType(template.value.actionService || 'Unknown'),
+      actionType: actionType,
       triggerConfig: triggerConfig,
-      actionConfig
+      actionConfig: form.actionConfig
     }
 
     if (isEditingExisting.value && existingArea.value) {
@@ -1782,7 +2017,6 @@ const getActionIcon = (service: string) => {
     case "Slack": return "mdi-slack"
     case "Discord": return "mdi-discord"
     case "GitHub": return "mdi-github"
-    case "Spotify": return "mdi-music"
     default: return "mdi-cog"
   }
 }
@@ -2523,47 +2757,5 @@ const getActionIcon = (service: string) => {
   padding: 0.35rem 0.55rem;
   border-radius: 999px;
   font-size: 0.75rem;
-}
-
-.test-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.test-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.test-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.test-button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.test-message {
-  font-size: 0.9rem;
-}
-
-.test-message.success {
-  color: var(--color-success);
-}
-
-.test-message.error {
-  color: var(--color-danger);
 }
 </style>

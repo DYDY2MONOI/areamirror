@@ -62,6 +62,9 @@ func buildUserResponse(user models.User) gin.H {
 		"spotify_email":    user.SpotifyEmail,
 		"twitter_id":       user.TwitterID,
 		"twitter_username": user.TwitterUsername,
+		"slack_id":         user.SlackID,
+		"slack_team_id":    user.SlackTeamID,
+		"onedrive_id":      user.OneDriveID,
 	}
 }
 

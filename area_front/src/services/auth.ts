@@ -26,6 +26,8 @@ export interface User {
   twitter_id?: string | null
   twitter_username?: string | null
   onedrive_id?: string | null
+  slack_id?: string | null
+  slack_team_id?: string | null
   profile_image?: string | null
 }
 
@@ -266,14 +268,10 @@ class AuthService {
     }
   }
 
-  async linkGitHubAccount(code: string, redirectUri?: string): Promise<{ github_username: string }> {
+  async linkGitHubAccount(code: string): Promise<{ github_username: string }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
-    }
-
-    if (!redirectUri) {
-      redirectUri = `${window.location.origin}/auth/github/callback`
     }
 
     const response = await fetch(`${API_BASE_URL}/profile/github/link`, {
@@ -282,7 +280,7 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ code, redirect_uri: redirectUri })
+      body: JSON.stringify({ code })
     })
 
     if (!response.ok) {
@@ -555,6 +553,52 @@ class AuthService {
     if (!response.ok) {
       const errorData = await response.json()
       throw new Error(errorData.error || 'Failed to unlink Spotify account')
+    }
+
+    await this.fetchProfile()
+  }
+
+  async linkSlackAccount(code: string): Promise<{ slack_id: string }> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/slack/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ code })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to link Slack account')
+    }
+
+    const data = await response.json()
+    await this.fetchProfile()
+    return data
+  }
+
+  async unlinkSlackAccount(): Promise<void> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/slack/unlink`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Failed to unlink Slack account')
     }
 
     await this.fetchProfile()

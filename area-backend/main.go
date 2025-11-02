@@ -85,6 +85,8 @@ func main() {
 	r.DELETE("/profile/spotify/unlink", controllers.AuthMiddleware(), controllers.UnlinkSpotifyAccount)
 	r.POST("/profile/twitter/link", controllers.AuthMiddleware(), controllers.LinkTwitterAccount)
 	r.DELETE("/profile/twitter/unlink", controllers.AuthMiddleware(), controllers.UnlinkTwitterAccount)
+	r.POST("/profile/slack/link", controllers.AuthMiddleware(), controllers.LinkSlackAccount)
+	r.DELETE("/profile/slack/unlink", controllers.AuthMiddleware(), controllers.UnlinkSlackAccount)
 
 	r.GET("/gmail/oauth2/setup", controllers.AuthMiddleware(), controllers.SetupGmailOAuth2)
 	r.POST("/gmail/oauth2/token", controllers.AuthMiddleware(), controllers.StoreGmailToken)
@@ -101,6 +103,10 @@ func main() {
 	r.POST("/onedrive/folder", controllers.OneDriveCreateFolder)
 	r.GET("/onedrive/user", controllers.OneDriveUserInfo)
 
+	r.GET("/slack/auth/start", controllers.SlackAuthStart)
+	r.GET("/slack/callback", controllers.SlackCallback)
+
+	// Google Agenda routes
 	googleAgendaController := controllers.NewGoogleAgendaController()
 	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
 	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)
