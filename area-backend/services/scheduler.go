@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,6 +27,7 @@ type SchedulerService struct {
 	telegramService *TelegramService
 	openaiService   *OpenAIService
 	spotifyService  *SpotifyService
+	twitterService  *TwitterService
 }
 
 type googleSheetsTriggerConfig struct {
@@ -48,6 +50,22 @@ type spotifyTriggerConfig struct {
 	LastProgressMs  int    `json:"lastProgressMs"`
 	HasProgress     bool   `json:"hasProgress"`
 	LastTriggeredAt string `json:"lastTriggeredAt"`
+}
+
+type twitterTriggerConfig struct {
+	MonitorType      string                       `json:"monitorType"`
+	Keyword          string                       `json:"keyword"`
+	LastItemID       string                       `json:"lastItemId"`
+	IncludeRetweets  bool                         `json:"includeRetweets"`
+	TargetUsername   string                       `json:"targetUsername"`
+	TargetUserID     string                       `json:"targetUserId"`
+	LastTweetStats   map[string]twitterTweetStats `json:"lastTweetStats"`
+	KnownFollowerIDs map[string]bool              `json:"knownFollowerIds"`
+}
+
+type twitterTweetStats struct {
+	LikeCount    int `json:"likeCount"`
+	RetweetCount int `json:"retweetCount"`
 }
 
 func NewSchedulerService() (*SchedulerService, error) {
@@ -91,6 +109,11 @@ func NewSchedulerService() (*SchedulerService, error) {
 		log.Printf("Warning: Spotify service not available: %v", err)
 	}
 
+	twitterService, err := NewTwitterService()
+	if err != nil {
+		log.Printf("Warning: Twitter service not available: %v", err)
+	}
+
 	return &SchedulerService{
 		emailService:    emailService,
 		discordService:  discordService,
@@ -100,6 +123,7 @@ func NewSchedulerService() (*SchedulerService, error) {
 		telegramService: telegramService,
 		openaiService:   openaiService,
 		spotifyService:  spotifyService,
+		twitterService:  twitterService,
 	}, nil
 }
 
@@ -124,12 +148,8 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking Spotify triggers: %v", err)
 	}
 
-	if err := s.checkSlackTriggers(); err != nil {
-		log.Printf("Error checking Slack triggers: %v", err)
-	}
-
-	if err := s.checkOneDriveTriggers(); err != nil {
-		log.Printf("Error checking OneDrive triggers: %v", err)
+	if err := s.checkTwitterTriggers(); err != nil {
+		log.Printf("Error checking Twitter triggers: %v", err)
 	}
 
 	if err := s.checkTimerTriggers(); err != nil {
@@ -323,6 +343,315 @@ func (s *SchedulerService) checkSpotifyTriggers() error {
 
 		if err := database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error; err != nil {
 			log.Printf("Failed to persist Spotify trigger config for area %s: %v", area.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *SchedulerService) checkTwitterTriggers() error {
+	if s.twitterService == nil {
+		return nil
+	}
+
+	var areas []models.Area
+	if err := database.DB.Where("trigger_service = ? AND is_active = ?", "Twitter", true).Find(&areas).Error; err != nil {
+		return fmt.Errorf("failed to fetch twitter areas: %v", err)
+	}
+
+	for _, area := range areas {
+		var cfg twitterTriggerConfig
+		if len(area.TriggerConfig) > 0 {
+			if err := json.Unmarshal(area.TriggerConfig, &cfg); err != nil {
+				log.Printf("Failed to parse Twitter trigger config for area %s: %v", area.Name, err)
+				cfg = twitterTriggerConfig{}
+			}
+		}
+
+		monitorType := strings.ToLower(strings.TrimSpace(cfg.MonitorType))
+		if monitorType == "" {
+			monitorType = "mentions"
+		}
+		cfg.MonitorType = monitorType
+
+		skipArea := false
+		handleAPIError := func(err error, context string) {
+			skipArea = true
+			if apiErr, ok := err.(*TwitterAPIError); ok {
+				switch apiErr.StatusCode {
+				case http.StatusTooManyRequests:
+					log.Printf("Twitter rate limit for area %s (%s); will retry on next cycle", area.Name, context)
+				case http.StatusForbidden:
+					errMsg := apiErr.Message
+					if strings.TrimSpace(errMsg) == "" {
+						errMsg = "Twitter API returned 403 Forbidden"
+					}
+					s.recordAreaFailure(&area, fmt.Errorf("twitter access forbidden for %s: %s", context, errMsg))
+				default:
+					log.Printf("Twitter API error while %s for area %s: %v", context, area.Name, err)
+				}
+				return
+			}
+			log.Printf("Failed to %s for area %s: %v", context, area.Name, err)
+		}
+
+		var user models.User
+		if err := database.DB.First(&user, area.UserID).Error; err != nil {
+			log.Printf("Failed to load user %d for twitter area %s: %v", area.UserID, area.Name, err)
+			continue
+		}
+
+		twitterUserID := strings.TrimSpace(cfg.TargetUserID)
+		if twitterUserID == "" && user.TwitterID != nil {
+			twitterUserID = strings.TrimSpace(*user.TwitterID)
+		}
+		if twitterUserID == "" {
+			log.Printf("Skipping twitter area %s: user %d has no linked twitter account", area.Name, area.UserID)
+			continue
+		}
+
+		cfgDirty := false
+		if cfg.TargetUserID == "" {
+			cfg.TargetUserID = twitterUserID
+			cfgDirty = true
+		}
+		if cfg.TargetUsername == "" && user.TwitterUsername != nil {
+			cfg.TargetUsername = *user.TwitterUsername
+			cfgDirty = true
+		}
+
+		switch monitorType {
+		case "followers":
+			if cfg.KnownFollowerIDs == nil {
+				cfg.KnownFollowerIDs = make(map[string]bool)
+				cfgDirty = true
+			}
+
+			followers, err := s.twitterService.FetchFollowers(area.UserID, twitterUserID, 100)
+			if err != nil {
+				handleAPIError(err, "fetch twitter followers")
+				break
+			}
+
+			for _, follower := range followers {
+				if cfg.KnownFollowerIDs[follower.ID] {
+					continue
+				}
+
+				metadata := map[string]interface{}{
+					"followerId":         follower.ID,
+					"followerUsername":   follower.Username,
+					"followerName":       follower.Name,
+					"followerBio":        follower.Description,
+					"followerCreatedAt":  follower.CreatedAt.Format(time.RFC3339),
+					"twitterMonitorType": monitorType,
+				}
+				if user.TwitterUsername != nil {
+					metadata["accountUsername"] = *user.TwitterUsername
+				}
+
+				if err := s.executeArea(area, metadata); err != nil {
+					log.Printf("Failed to execute twitter follower area %s for follower %s: %v", area.Name, follower.ID, err)
+					continue
+				}
+
+				cfg.KnownFollowerIDs[follower.ID] = true
+				cfgDirty = true
+			}
+
+			if len(cfg.KnownFollowerIDs) > 2000 && len(followers) > 0 {
+				trimmed := make(map[string]bool, len(followers))
+				for _, follower := range followers {
+					trimmed[follower.ID] = true
+				}
+				cfg.KnownFollowerIDs = trimmed
+				cfgDirty = true
+			}
+		case "likes", "retweets":
+			if cfg.LastTweetStats == nil {
+				cfg.LastTweetStats = make(map[string]twitterTweetStats)
+				cfgDirty = true
+			}
+
+			tweets, err := s.twitterService.FetchUserTweetsWithMetrics(area.UserID, twitterUserID, 50)
+			if err != nil {
+				handleAPIError(err, "fetch twitter tweet metrics")
+				break
+			}
+
+			currentIDs := make(map[string]bool, len(tweets))
+			username := ""
+			if user.TwitterUsername != nil {
+				username = *user.TwitterUsername
+			}
+
+			fullName := strings.TrimSpace(strings.TrimSpace(user.FirstName + " " + user.LastName))
+			for _, tweet := range tweets {
+				currentIDs[tweet.ID] = true
+				prev := cfg.LastTweetStats[tweet.ID]
+
+				if monitorType == "likes" {
+					newLikes := tweet.LikeCount - prev.LikeCount
+					if newLikes > 0 {
+						metadata := map[string]interface{}{
+							"tweetId":            tweet.ID,
+							"tweetText":          tweet.Text,
+							"tweetCreatedAt":     tweet.CreatedAt.Format(time.RFC3339),
+							"tweetLikeCount":     tweet.LikeCount,
+							"tweetNewLikes":      newLikes,
+							"twitterMonitorType": monitorType,
+							"eventTitle":         tweet.Text,
+						}
+						if username != "" {
+							metadata["accountUsername"] = username
+							metadata["tweetAuthorUsername"] = username
+							metadata["tweetUrl"] = buildTweetURL(username, tweet.ID)
+						}
+						if user.TwitterID != nil {
+							metadata["tweetAuthorId"] = *user.TwitterID
+						}
+						if fullName != "" {
+							metadata["tweetAuthorName"] = fullName
+						}
+						if err := s.executeArea(area, metadata); err != nil {
+							log.Printf("Failed to execute twitter like area %s for tweet %s: %v", area.Name, tweet.ID, err)
+						}
+					}
+				} else if monitorType == "retweets" {
+					newRetweets := tweet.RetweetCount - prev.RetweetCount
+					if newRetweets > 0 {
+						metadata := map[string]interface{}{
+							"tweetId":            tweet.ID,
+							"tweetText":          tweet.Text,
+							"tweetCreatedAt":     tweet.CreatedAt.Format(time.RFC3339),
+							"tweetRetweetCount":  tweet.RetweetCount,
+							"tweetNewRetweets":   newRetweets,
+							"twitterMonitorType": monitorType,
+							"eventTitle":         tweet.Text,
+						}
+						if username != "" {
+							metadata["accountUsername"] = username
+							metadata["tweetAuthorUsername"] = username
+							metadata["tweetUrl"] = buildTweetURL(username, tweet.ID)
+						}
+						if user.TwitterID != nil {
+							metadata["tweetAuthorId"] = *user.TwitterID
+						}
+						if fullName != "" {
+							metadata["tweetAuthorName"] = fullName
+						}
+						if err := s.executeArea(area, metadata); err != nil {
+							log.Printf("Failed to execute twitter retweet area %s for tweet %s: %v", area.Name, tweet.ID, err)
+						}
+					}
+				}
+
+				cfg.LastTweetStats[tweet.ID] = twitterTweetStats{
+					LikeCount:    tweet.LikeCount,
+					RetweetCount: tweet.RetweetCount,
+				}
+				cfgDirty = true
+			}
+
+			// avoid unbounded growth: keep only tweets seen recently
+			if len(cfg.LastTweetStats) > 0 {
+				for id := range cfg.LastTweetStats {
+					if !currentIDs[id] && len(cfg.LastTweetStats) > 200 {
+						delete(cfg.LastTweetStats, id)
+						cfgDirty = true
+					}
+				}
+			}
+		default: // mentions
+			tweets, newestID, err := s.twitterService.FetchMentions(area.UserID, twitterUserID, cfg.LastItemID)
+			if err != nil {
+				handleAPIError(err, "fetch twitter mentions")
+				break
+			}
+
+			if len(tweets) == 0 {
+				if newestID != "" && newestID != cfg.LastItemID {
+					cfg.LastItemID = newestID
+					cfgDirty = true
+				}
+				break
+			}
+
+			keyword := strings.ToLower(strings.TrimSpace(cfg.Keyword))
+			includeRetweets := cfg.IncludeRetweets
+			lastProcessedID := cfg.LastItemID
+
+			for _, tweet := range tweets {
+				lastProcessedID = tweet.ID
+
+				if !includeRetweets && strings.HasPrefix(strings.TrimSpace(tweet.Text), "RT ") {
+					continue
+				}
+
+				if keyword != "" && !strings.Contains(strings.ToLower(tweet.Text), keyword) {
+					continue
+				}
+
+				tweetURL := tweet.URL
+				if tweetURL == "" {
+					username := tweet.AuthorUsername
+					if username == "" && user.TwitterUsername != nil {
+						username = *user.TwitterUsername
+					}
+					tweetURL = buildTweetURL(username, tweet.ID)
+				}
+
+				metadata := map[string]interface{}{
+					"tweetId":             tweet.ID,
+					"tweetText":           tweet.Text,
+					"tweetAuthorId":       tweet.AuthorID,
+					"tweetAuthorUsername": tweet.AuthorUsername,
+					"tweetAuthorName":     tweet.AuthorName,
+					"tweetCreatedAt":      tweet.CreatedAt.Format(time.RFC3339),
+					"tweetUrl":            tweetURL,
+					"twitterMonitorType":  monitorType,
+					"eventTitle":          tweet.Text,
+				}
+
+				if tweet.InReplyToUserID != "" {
+					metadata["tweetInReplyToUserId"] = tweet.InReplyToUserID
+				}
+				if tweet.ConversationID != "" {
+					metadata["tweetConversationId"] = tweet.ConversationID
+				}
+				if user.TwitterUsername != nil {
+					metadata["accountUsername"] = *user.TwitterUsername
+				}
+
+				if err := s.executeArea(area, metadata); err != nil {
+					log.Printf("Failed to execute twitter area %s for tweet %s: %v", area.Name, tweet.ID, err)
+					continue
+				}
+			}
+
+			if newestID != "" {
+				lastProcessedID = newestID
+			}
+
+			if lastProcessedID != cfg.LastItemID {
+				cfg.LastItemID = lastProcessedID
+				cfgDirty = true
+			}
+		}
+
+		if skipArea {
+			if cfgDirty {
+				if err := s.persistTwitterConfig(area, cfg); err != nil {
+					log.Printf("Failed to persist Twitter config for area %s: %v", area.Name, err)
+				}
+			}
+			continue
+		}
+
+		if cfgDirty {
+			if err := s.persistTwitterConfig(area, cfg); err != nil {
+				log.Printf("Failed to persist Twitter config for area %s: %v", area.Name, err)
+			}
 		}
 	}
 
@@ -625,6 +954,8 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 		return s.executeOneDriveAction(&area, actionConfig, metadata)
 	case "Spotify":
 		return s.executeSpotifyAction(&area, actionConfig, metadata)
+	case "Twitter":
+		return s.executeTwitterAction(&area, actionConfig, metadata)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -804,6 +1135,133 @@ func (s *SchedulerService) executeTelegramAction(area *models.Area, actionConfig
 	log.Printf("Telegram message sent successfully for AREA: %s", area.Name)
 	log.Printf("Successfully executed area: %s", area.Name)
 	return nil
+}
+
+func (s *SchedulerService) executeTwitterAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
+	if s.twitterService == nil {
+		return fmt.Errorf("Twitter service not available")
+	}
+
+	templateVars := buildTemplateVars(area, metadata)
+	modeValue := strings.ToLower(strings.TrimSpace(getString(actionConfig["actionMode"])))
+	if modeValue == "" {
+		modeFromArea := strings.ToLower(strings.TrimSpace(area.ActionType))
+		switch {
+		case strings.Contains(modeFromArea, "retweet"):
+			modeValue = "retweet"
+		case strings.Contains(modeFromArea, "tweet"):
+			modeValue = "tweet"
+		default:
+			modeValue = "tweet"
+		}
+	}
+
+	if metadata != nil {
+		metadata["twitterActionMode"] = modeValue
+	}
+
+	var user models.User
+	userErr := database.DB.First(&user, area.UserID).Error
+
+	switch modeValue {
+	case "retweet":
+		if userErr != nil {
+			errMsg := fmt.Errorf("failed to load user for twitter retweet: %w", userErr)
+			s.recordAreaFailure(area, errMsg)
+			return errMsg
+		}
+		if user.TwitterID == nil || strings.TrimSpace(*user.TwitterID) == "" {
+			errMsg := fmt.Errorf("twitter account not linked for retweet action")
+			s.recordAreaFailure(area, errMsg)
+			return errMsg
+		}
+
+		tweetID := strings.TrimSpace(getString(actionConfig["tweetId"]))
+		if tweetID != "" {
+			tweetID = applyTemplateVariables(tweetID, templateVars)
+		}
+		if tweetID == "" && metadata != nil {
+			tweetID = strings.TrimSpace(getString(metadata["tweetId"]))
+		}
+		if tweetID == "" {
+			errMsg := fmt.Errorf("tweetId not found in action config or metadata")
+			s.recordAreaFailure(area, errMsg)
+			return errMsg
+		}
+
+		if err := s.twitterService.Retweet(area.UserID, *user.TwitterID, tweetID); err != nil {
+			errMsg := fmt.Errorf("failed to retweet tweet: %w", err)
+			s.recordAreaFailure(area, errMsg)
+			return errMsg
+		}
+
+		if metadata != nil {
+			metadata["tweetId"] = tweetID
+			if user.TwitterUsername != nil {
+				metadata["retweetPerformedBy"] = *user.TwitterUsername
+				if strings.TrimSpace(getString(metadata["tweetUrl"])) == "" {
+					metadata["tweetUrl"] = buildTweetURL(*user.TwitterUsername, tweetID)
+				}
+			}
+		}
+
+		s.recordAreaSuccess(area)
+		log.Printf("Retweeted tweet %s for AREA: %s", tweetID, area.Name)
+		return nil
+	default:
+		tweetText := strings.TrimSpace(getString(actionConfig["tweetText"]))
+		if tweetText == "" {
+			return fmt.Errorf("tweetText not found in action config")
+		}
+
+		tweetText = applyTemplateVariables(tweetText, templateVars)
+
+		replyID := strings.TrimSpace(getString(actionConfig["replyToTweetId"]))
+		if replyID != "" {
+			replyID = applyTemplateVariables(replyID, templateVars)
+		}
+
+		tweet, err := s.twitterService.PostTweet(area.UserID, tweetText, replyID)
+		if err != nil {
+			s.recordAreaFailure(area, fmt.Errorf("failed to post tweet: %w", err))
+			return fmt.Errorf("failed to post tweet: %v", err)
+		}
+
+		if userErr == nil {
+			if user.TwitterUsername != nil && tweet.URL == "" {
+				tweet.URL = buildTweetURL(*user.TwitterUsername, tweet.ID)
+			}
+			if metadata != nil {
+				if user.TwitterUsername != nil {
+					metadata["tweetAuthorUsername"] = *user.TwitterUsername
+					metadata["accountUsername"] = *user.TwitterUsername
+				}
+				if user.TwitterID != nil {
+					metadata["tweetAuthorId"] = *user.TwitterID
+				}
+				fullName := strings.TrimSpace(strings.TrimSpace(user.FirstName + " " + user.LastName))
+				if fullName != "" {
+					metadata["tweetAuthorName"] = fullName
+				}
+			}
+		}
+
+		if metadata != nil {
+			metadata["tweetId"] = tweet.ID
+			metadata["tweetText"] = tweet.Text
+			metadata["tweetCreatedAt"] = tweet.CreatedAt.Format(time.RFC3339)
+			if tweet.URL != "" {
+				metadata["tweetUrl"] = tweet.URL
+			}
+			if replyID != "" {
+				metadata["replyToTweetId"] = replyID
+			}
+		}
+
+		s.recordAreaSuccess(area)
+		log.Printf("Tweet posted successfully for AREA: %s (tweet ID: %s)", area.Name, tweet.ID)
+		return nil
+	}
 }
 
 func (s *SchedulerService) executeSpotifyAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
@@ -1000,45 +1458,62 @@ func (s *SchedulerService) persistDiscordLog(area *models.Area, message string, 
 
 func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[string]string {
 	vars := map[string]string{
-		"areaName":            area.Name,
-		"triggerService":      area.TriggerService,
-		"actionService":       area.ActionService,
-		"eventTitle":          "Scheduled Event",
-		"eventTime":           time.Now().Format("2006-01-02 15:04:05"),
-		"changeType":          "",
-		"sheetName":           "",
-		"rowNumber":           "",
-		"rowData":             "",
-		"rowValues":           "",
-		"rowJson":             "",
-		"spreadsheetUrl":      "",
-		"triggerTime":         "",
-		"timerName":           "",
-		"interval":            "",
-		"messageText":         "",
-		"chatId":              "",
-		"username":            "",
-		"firstName":           "",
-		"messageId":           "",
-		"openaiGeneratedText": "",
-		"trackId":             "",
-		"trackName":           "",
-		"artistNames":         "",
-		"albumName":           "",
-		"trackUrl":            "",
-		"previewUrl":          "",
-		"deviceName":          "",
-		"isPlaying":           "",
-		"progressMs":          "",
-		"durationMs":          "",
-		"coverImageUrl":       "",
-		"startedAt":           "",
-		"fileName":            "",
-		"fileID":              "",
-		"fileSize":            "",
-		"createdTime":         "",
-		"modifiedTime":        "",
-		"previousTime":        "",
+		"areaName":             area.Name,
+		"triggerService":       area.TriggerService,
+		"actionService":        area.ActionService,
+		"eventTitle":           "Scheduled Event",
+		"eventTime":            time.Now().Format("2006-01-02 15:04:05"),
+		"changeType":           "",
+		"sheetName":            "",
+		"rowNumber":            "",
+		"rowData":              "",
+		"rowValues":            "",
+		"rowJson":              "",
+		"spreadsheetUrl":       "",
+		"triggerTime":          "",
+		"timerName":            "",
+		"interval":             "",
+		"messageText":          "",
+		"chatId":               "",
+		"username":             "",
+		"firstName":            "",
+		"messageId":            "",
+		"openaiGeneratedText":  "",
+		"trackId":              "",
+		"trackName":            "",
+		"artistNames":          "",
+		"albumName":            "",
+		"trackUrl":             "",
+		"previewUrl":           "",
+		"deviceName":           "",
+		"isPlaying":            "",
+		"progressMs":           "",
+		"durationMs":           "",
+		"coverImageUrl":        "",
+		"startedAt":            "",
+		"tweetId":              "",
+		"tweetText":            "",
+		"tweetUrl":             "",
+		"tweetAuthorUsername":  "",
+		"tweetAuthorName":      "",
+		"tweetAuthorId":        "",
+		"tweetCreatedAt":       "",
+		"tweetLikeCount":       "",
+		"tweetNewLikes":        "",
+		"tweetRetweetCount":    "",
+		"tweetNewRetweets":     "",
+		"twitterMonitorType":   "",
+		"accountUsername":      "",
+		"replyToTweetId":       "",
+		"tweetConversationId":  "",
+		"tweetInReplyToUserId": "",
+		"twitterActionMode":    "",
+		"retweetPerformedBy":   "",
+		"followerId":           "",
+		"followerUsername":     "",
+		"followerName":         "",
+		"followerBio":          "",
+		"followerCreatedAt":    "",
 	}
 
 	if metadata == nil {
@@ -1138,25 +1613,78 @@ func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[s
 		vars["openaiGeneratedText"] = openaiText
 	}
 
-	if fileName, ok := metadata["fileName"].(string); ok {
-		vars["fileName"] = fileName
-		vars["eventTitle"] = fileName
+	if tweetID, ok := metadata["tweetId"].(string); ok {
+		vars["tweetId"] = tweetID
 	}
-	if fileID, ok := metadata["fileID"].(string); ok {
-		vars["fileID"] = fileID
+	if tweetText, ok := metadata["tweetText"].(string); ok {
+		vars["tweetText"] = tweetText
 	}
-	if fileSize, ok := extractInt(metadata["fileSize"]); ok {
-		vars["fileSize"] = strconv.Itoa(fileSize)
+	if tweetURL, ok := metadata["tweetUrl"].(string); ok {
+		vars["tweetUrl"] = tweetURL
 	}
-	if createdTime, ok := metadata["createdTime"].(string); ok {
-		vars["createdTime"] = createdTime
+	if authorUsername, ok := metadata["tweetAuthorUsername"].(string); ok {
+		vars["tweetAuthorUsername"] = authorUsername
 	}
-	if modifiedTime, ok := metadata["modifiedTime"].(string); ok {
-		vars["modifiedTime"] = modifiedTime
-		vars["eventTime"] = modifiedTime
+	if authorName, ok := metadata["tweetAuthorName"].(string); ok {
+		vars["tweetAuthorName"] = authorName
 	}
-	if previousTime, ok := metadata["previousTime"].(string); ok {
-		vars["previousTime"] = previousTime
+	if authorID, ok := metadata["tweetAuthorId"].(string); ok {
+		vars["tweetAuthorId"] = authorID
+	}
+	if createdAt, ok := metadata["tweetCreatedAt"].(string); ok {
+		vars["tweetCreatedAt"] = createdAt
+		vars["eventTime"] = createdAt
+	}
+	if likeCount, ok := extractInt(metadata["tweetLikeCount"]); ok {
+		vars["tweetLikeCount"] = strconv.Itoa(likeCount)
+	}
+	if newLikes, ok := extractInt(metadata["tweetNewLikes"]); ok {
+		vars["tweetNewLikes"] = strconv.Itoa(newLikes)
+	}
+	if retweetCount, ok := extractInt(metadata["tweetRetweetCount"]); ok {
+		vars["tweetRetweetCount"] = strconv.Itoa(retweetCount)
+	}
+	if newRetweets, ok := extractInt(metadata["tweetNewRetweets"]); ok {
+		vars["tweetNewRetweets"] = strconv.Itoa(newRetweets)
+	}
+	if monitorType, ok := metadata["twitterMonitorType"].(string); ok {
+		vars["twitterMonitorType"] = monitorType
+	}
+	if accountUsername, ok := metadata["accountUsername"].(string); ok {
+		vars["accountUsername"] = accountUsername
+	}
+	if actionMode, ok := metadata["twitterActionMode"].(string); ok {
+		vars["twitterActionMode"] = actionMode
+	}
+	if retweetBy, ok := metadata["retweetPerformedBy"].(string); ok {
+		vars["retweetPerformedBy"] = retweetBy
+	}
+	if followerID, ok := metadata["followerId"].(string); ok {
+		vars["followerId"] = followerID
+	}
+	if followerUsername, ok := metadata["followerUsername"].(string); ok {
+		vars["followerUsername"] = followerUsername
+	}
+	if followerName, ok := metadata["followerName"].(string); ok {
+		vars["followerName"] = followerName
+		if followerName != "" {
+			vars["eventTitle"] = followerName
+		}
+	}
+	if followerBio, ok := metadata["followerBio"].(string); ok {
+		vars["followerBio"] = followerBio
+	}
+	if followerCreatedAt, ok := metadata["followerCreatedAt"].(string); ok {
+		vars["followerCreatedAt"] = followerCreatedAt
+	}
+	if replyTo, ok := metadata["replyToTweetId"].(string); ok {
+		vars["replyToTweetId"] = replyTo
+	}
+	if convoID, ok := metadata["tweetConversationId"].(string); ok {
+		vars["tweetConversationId"] = convoID
+	}
+	if replyUserID, ok := metadata["tweetInReplyToUserId"].(string); ok {
+		vars["tweetInReplyToUserId"] = replyUserID
 	}
 
 	return vars
@@ -1250,6 +1778,15 @@ func buildRowMap(headers []string, values []string) map[string]string {
 	return rowData
 }
 
+func (s *SchedulerService) persistTwitterConfig(area models.Area, cfg twitterTriggerConfig) error {
+	cfgBytes, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	return database.DB.Model(&area).Update("trigger_config", datatypes.JSON(cfgBytes)).Error
+}
+
 func (s *SchedulerService) persistGoogleSheetsConfig(area models.Area, cfg googleSheetsTriggerConfig) error {
 	cfgBytes, err := json.Marshal(cfg)
 	if err != nil {
@@ -1299,6 +1836,15 @@ func formatRowData(row map[string]string) string {
 	}
 
 	return strings.Join(parts, ", ")
+}
+
+func buildTweetURL(username, tweetID string) string {
+	username = strings.TrimSpace(username)
+	tweetID = strings.TrimSpace(tweetID)
+	if username == "" || tweetID == "" {
+		return ""
+	}
+	return fmt.Sprintf("https://twitter.com/%s/status/%s", username, tweetID)
 }
 
 func getString(value interface{}) string {
