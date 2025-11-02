@@ -19,7 +19,6 @@ struct HomeView: View {
             }
         }
     }
-    @State private var selectedTab = 0
     let onLogout: () -> Void
 
     init(onLogout: @escaping () -> Void) {
@@ -44,21 +43,6 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
 
-                    HStack(spacing: 0) {
-                        TabButton(title: "All", isSelected: selectedTab == 0) {
-                            selectedTab = 0
-                        }
-                        TabButton(title: "My AREAs", isSelected: selectedTab == 1) {
-                            selectedTab = 1
-                        }
-                        TabButton(title: "Popular", isSelected: selectedTab == 2) {
-                            selectedTab = 2
-                        }
-                        TabButton(title: "Create", isSelected: selectedTab == 3) {
-                            selectedTab = 3
-                        }
-                    }
-                    .padding(.horizontal, 20)
                 }
 
                 VStack(spacing: 32) {
@@ -67,21 +51,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .padding()
                     } else {
-                        if areaService.userAreasLoaded {
-                            if !areaService.popularAreas.isEmpty {
-                                AppletSection(
-                                    title: "Popular AREAs",
-                                    applets: areaService.popularAreas.map { convertAreaToApplet($0) }
-                                )
-                            }
-
-                            if !areaService.recommendedAreas.isEmpty {
-                                AppletSection(
-                                    title: "Recommended for you",
-                                    applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
-                                )
-                            }
-                        } else {
+                        if !areaService.userAreasLoaded {
                             VStack {
                                 ProgressView("Loading your areas...")
                                     .foregroundColor(.white)
@@ -92,7 +62,7 @@ struct HomeView: View {
                             .padding()
                         }
 
-                        if selectedTab == 1 && !areaService.userAreas.isEmpty {
+                        if !areaService.userAreas.isEmpty {
                             AppletSection(
                                 title: "My AREAs",
                                 applets: areaService.userAreas.map { area in
@@ -159,7 +129,7 @@ struct HomeView: View {
         }
         .onAppear {
             Task {
-                await areaService.fetchAllAreas()
+                await areaService.fetchUserAreas()
             }
         }
     }
@@ -221,26 +191,6 @@ struct HomeView: View {
         case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
         case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
         default: return Color.blue
-        }
-    }
-}
-
-struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : .gray)
-            .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(isSelected ? Color.green : Color.clear)
-                )
         }
     }
 }

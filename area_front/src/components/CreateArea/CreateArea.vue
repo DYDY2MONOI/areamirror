@@ -235,13 +235,13 @@
           </div>
         </div>
 
-        <div v-if="form.triggerService" class="form-section">
+        <div v-if="form.triggerService && form.actionService" class="form-section">
           <div class="section-label">
             <v-icon class="label-icon" size="20">mdi-cog-outline</v-icon>
             <span class="label-text">Configuration</span>
           </div>
 
-          <div v-if="isCalendarTrigger" class="config-section">
+          <div v-if="form.triggerService === 'Google Calendar'" class="config-section">
             <div class="config-header">
               <div class="config-icon">
                 <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
@@ -276,7 +276,7 @@
                   <small class="input-hint">This will be used in the email subject and body</small>
                 </div>
 
-                <div class="input-container" v-if="form.triggerService === 'Google Calendar'">
+                <div class="input-container">
                   <label class="input-label">🗓️ Calendar ID</label>
                   <input
                     v-model="form.triggerConfig.calendarId"
@@ -1006,7 +1006,7 @@
             </div>
           </div>
 
-          <div v-if="isCalendarTrigger && form.actionService === 'Gmail'" class="preview-section">
+          <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="preview-section">
             <div class="preview-header">
               <v-icon class="preview-icon" size="20">mdi-eye-outline</v-icon>
               <span class="preview-title">Email Preview</span>
@@ -1070,7 +1070,7 @@
         </button>
 
         <button
-          v-if="isCalendarTrigger && form.actionService === 'Gmail'"
+          v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'"
           class="action-btn test-email-btn"
           @click="sendTestEmail"
           :disabled="!canSendTestEmail || isSendingTest"
@@ -1089,7 +1089,7 @@
           {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
         </button>
 
-        <div v-if="isCalendarTrigger && form.actionService === 'Gmail'" class="debug-info">
+        <div v-if="form.triggerService === 'Google Calendar' && form.actionService === 'Gmail'" class="debug-info">
           <small style="color: #666; font-size: 0.75rem;">
             Debug: {{ isFormValid ? 'Ready to create' : 'Missing: ' + getMissingFields() }}
           </small>
@@ -1145,7 +1145,6 @@ const getIconUrl = (file: string) =>
 
 const priorityServices = [
   'Google Calendar',
-  'Date Timer',
   'Gmail',
   'Weather',
   'Discord',
@@ -1161,11 +1160,6 @@ const priorityServices = [
 const intermediateServices = [
   'OpenAI'
 ]
-
-const CALENDAR_SERVICES = ['Google Calendar', 'Date Timer']
-
-const isCalendarService = (service?: string | null) =>
-  CALENDAR_SERVICES.includes(service ?? '')
 
 const services = ref<ServiceInfo[]>([])
 const serviceIcons = ref<Record<string, string>>({})
@@ -1198,7 +1192,6 @@ const fetchServices = async () => {
       'Google Sheets': 'google-sheets.png',
       'Google Drive': 'google-drive.png',
       Timer: 'google-calendar.png',
-      'Date Timer': 'google-calendar.png',
       Telegram: 'telegram.png',
       OpenAI: 'openai.png'
     }
@@ -1243,13 +1236,13 @@ const getFallbackIcon = (serviceName: string) => {
     github: 'github.png',
     weather: 'weather.png',
     'google calendar': 'google-calendar.png',
-    'date timer': 'google-calendar.png',
     discord: 'discord.png',
     'google sheets': 'google-sheets.png',
     'google drive': 'google-drive.png',
     timer: 'google-calendar.png',
     telegram: 'telegram.png',
-    openai: 'openai.png'
+    openai: 'openai.png',
+    spotify: 'spotify.png'
   }
 
   const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
@@ -1309,8 +1302,6 @@ const form = reactive({
   } as any,
 })
 
-const isCalendarTrigger = computed(() => isCalendarService(form.triggerService))
-
 const repositories = ref<GitHubRepository[]>([])
 const isLoadingRepositories = ref(false)
 const isTestingGoogleSheets = ref(false)
@@ -1324,7 +1315,7 @@ watch(() => props.template, (newTemplate) => {
     form.triggerService = newTemplate.triggerService
     form.actionService = newTemplate.actionService
 
-    if (isCalendarService(newTemplate.triggerService) && newTemplate.actionService === 'Gmail') {
+    if (newTemplate.triggerService === 'Google Calendar' && newTemplate.actionService === 'Gmail') {
       form.triggerConfig = {
         eventTime: '',
         eventTitle: '',
@@ -1374,6 +1365,15 @@ watch(() => props.template, (newTemplate) => {
         subject: 'GitHub Activity: {{repository_name}}',
         body: 'New {{event_type}} activity detected in repository {{repository_name}}.\n\nDetails: {{event_details}}\n\nArea: {{areaName}}'
       }
+    } else if (newTemplate.actionService === 'Spotify') {
+      const hasHeader = typeof form.triggerConfig?.hasHeader === 'boolean' ? form.triggerConfig.hasHeader : true
+      form.actionConfig = {
+        playlistId: '',
+        spreadsheetId: form.triggerConfig?.spreadsheetId || '',
+        range: form.triggerConfig?.range || 'Sheet1!A2:C',
+        urlColumn: 'SpotifyLink',
+        hasHeader
+      }
     }
   }
 }, { immediate: true })
@@ -1383,7 +1383,7 @@ const isFormValid = computed(() => {
                       form.triggerService !== '' &&
                       form.actionService !== ''
 
-  if (isCalendarService(form.triggerService) && form.actionService === 'Gmail') {
+  if (form.triggerService === 'Google Calendar' && form.actionService === 'Gmail') {
     return hasBasicInfo &&
            form.triggerConfig.eventTime &&
            form.actionConfig.toEmail &&
@@ -1439,6 +1439,15 @@ const isFormValid = computed(() => {
            form.actionConfig.message
   }
 
+  if (form.actionService === 'Spotify') {
+    const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+    const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+    const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+    const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim()
+
+    return hasBasicInfo && playlistId && sheetId && range && urlColumn
+  }
+
   if (form.actionService === 'Telegram') {
     return hasBasicInfo &&
            form.actionConfig.chatId &&
@@ -1479,6 +1488,39 @@ watch(
   }
 )
 
+watch(
+  () => form.triggerConfig?.spreadsheetId,
+  (newValue, oldValue) => {
+    if (form.actionService === 'Spotify') {
+      const current = (form.actionConfig?.spreadsheetId || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.spreadsheetId = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.range,
+  (newValue, oldValue) => {
+    if (form.actionService === 'Spotify') {
+      const current = (form.actionConfig?.range || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.range = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.hasHeader,
+  (newValue) => {
+    if (form.actionService === 'Spotify' && typeof newValue === 'boolean') {
+      form.actionConfig.hasHeader = newValue
+    }
+  }
+)
+
 
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
@@ -1486,7 +1528,7 @@ const selectTrigger = (serviceId: string) => {
   sheetsTestResult.value = null
   sheetsTestError.value = null
 
-  if (isCalendarService(serviceId)) {
+  if (serviceId === 'Google Calendar') {
     form.triggerConfig = {
       eventTime: '',
       eventTitle: '',
@@ -1571,6 +1613,18 @@ const selectAction = (serviceId: string) => {
       webhookUrl: '',
       message: defaultMessage
     }
+  } else if (serviceId === 'Spotify') {
+    const fallbackRange = form.triggerConfig?.range || 'Sheet1!A2:C'
+    const fallbackSheetId = form.triggerConfig?.spreadsheetId || ''
+    const hasHeader = typeof form.triggerConfig?.hasHeader === 'boolean' ? form.triggerConfig.hasHeader : true
+
+    form.actionConfig = {
+      playlistId: '',
+      spreadsheetId: fallbackSheetId,
+      range: fallbackRange,
+      urlColumn: 'SpotifyLink',
+      hasHeader
+    }
   } else if (serviceId === 'Telegram') {
     const defaultMessage = form.triggerService === 'Timer'
       ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
@@ -1600,7 +1654,7 @@ const getMissingFields = () => {
   const missing = []
   if (!form.areaName.trim()) missing.push('Area Name')
 
-  if (isCalendarService(form.triggerService)) {
+  if (form.triggerService === 'Google Calendar') {
     if (!form.triggerConfig.eventTime) missing.push('Event Time')
   }
 
@@ -1633,6 +1687,18 @@ const getMissingFields = () => {
   if (form.actionService === 'Discord') {
     if (!form.actionConfig.webhookUrl) missing.push('Discord Webhook URL')
     if (!form.actionConfig.message) missing.push('Discord Message')
+  }
+
+  if (form.actionService === 'Spotify') {
+    const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+    const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+    const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+    const urlColumn = (form.actionConfig.urlColumn || '').toString().trim()
+
+    if (!playlistId) missing.push('Spotify Playlist ID')
+    if (!sheetId) missing.push('Spreadsheet ID')
+    if (!range) missing.push('Sheet Range')
+    if (!urlColumn) missing.push('Spotify Column')
   }
 
   if (form.actionService === 'Telegram') {
@@ -1715,7 +1781,7 @@ const sendTestEmail = async () => {
       body: form.actionConfig.body
     }
 
-    const response = await fetch('http://localhost:8080/test/email', {
+    const response = await fetch(`${API_BASE_URL}/test/email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1841,20 +1907,37 @@ const createArea = async () => {
         form.triggerConfig.notificationTypes
       )
     } else if (form.triggerService === 'Google Sheets') {
+      const isSpotifyAction = form.actionService === 'Spotify'
+      const sanitizedActionConfig = isSpotifyAction
+        ? {
+            playlistId: (form.actionConfig.playlistId || '').toString().trim(),
+            spreadsheetId: (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim(),
+            range: (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim(),
+            urlColumn: (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink',
+            hasHeader: typeof form.actionConfig.hasHeader === 'boolean'
+              ? form.actionConfig.hasHeader
+              : !!form.triggerConfig?.hasHeader
+          }
+        : form.actionConfig
+
       const areaData: any = {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
         triggerType: 'SpreadsheetChange',
         actionService: form.actionService!,
-        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        actionType: form.actionService === 'Gmail'
+          ? 'SendEmail'
+          : isSpotifyAction
+          ? 'UpdatePlaylist'
+          : 'Action',
         triggerConfig: {
           spreadsheetId: form.triggerConfig.spreadsheetId,
           sheetName: form.triggerConfig.sheetName,
           range: form.triggerConfig.range,
           hasHeader: !!form.triggerConfig.hasHeader
         },
-        actionConfig: form.actionConfig
+        actionConfig: sanitizedActionConfig
       }
 
       if (form.intermediateActionService === 'OpenAI') {
@@ -1876,9 +1959,23 @@ const createArea = async () => {
         triggerService: form.triggerService!,
         triggerType: 'Webhook',
         actionService: form.actionService!,
-        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        actionType: form.actionService === 'Gmail'
+          ? 'SendEmail'
+          : form.actionService === 'Spotify'
+          ? 'UpdatePlaylist'
+          : 'Action',
         triggerConfig: form.triggerConfig,
-        actionConfig: form.actionConfig
+        actionConfig: form.actionService === 'Spotify'
+          ? {
+              playlistId: (form.actionConfig.playlistId || '').toString().trim(),
+              spreadsheetId: (form.actionConfig.spreadsheetId || '').toString().trim(),
+              range: (form.actionConfig.range || '').toString().trim(),
+              urlColumn: (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink',
+              hasHeader: typeof form.actionConfig.hasHeader === 'boolean'
+                ? form.actionConfig.hasHeader
+                : true
+            }
+          : form.actionConfig
       }
 
       if (form.intermediateActionService === 'OpenAI') {
@@ -1910,9 +2007,23 @@ const createArea = async () => {
         triggerService: form.triggerService!,
         triggerType: form.triggerConfig.triggerType || 'message_received',
         actionService: form.actionService!,
-        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        actionType: form.actionService === 'Gmail'
+          ? 'SendEmail'
+          : form.actionService === 'Spotify'
+          ? 'UpdatePlaylist'
+          : 'Action',
         triggerConfig: triggerConfig,
-        actionConfig: form.actionConfig
+        actionConfig: form.actionService === 'Spotify'
+          ? {
+              playlistId: (form.actionConfig.playlistId || '').toString().trim(),
+              spreadsheetId: (form.actionConfig.spreadsheetId || '').toString().trim(),
+              range: (form.actionConfig.range || '').toString().trim(),
+              urlColumn: (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink',
+              hasHeader: typeof form.actionConfig.hasHeader === 'boolean'
+                ? form.actionConfig.hasHeader
+                : true
+            }
+          : form.actionConfig
       }
 
       if (form.intermediateActionService === 'OpenAI') {
@@ -1930,11 +2041,11 @@ const createArea = async () => {
     } else {
       let triggerConfig = { ...form.triggerConfig }
 
-      if (isCalendarService(form.triggerService) && form.triggerConfig.eventTime) {
+      if (form.triggerService === 'Google Calendar' && form.triggerConfig.eventTime) {
         const eventDateTime = new Date(form.triggerConfig.eventTime)
         const formattedDateTime = formatDateTimeWithTimezone(eventDateTime)
 
-        const [datePart] = formattedDateTime.split('T')
+        const [datePart, timePart] = formattedDateTime.split('T')
 
         triggerConfig = {
           eventDate: datePart,
@@ -1948,15 +2059,29 @@ const createArea = async () => {
         name: form.areaName,
         description: form.description,
         triggerService: form.triggerService!,
-        triggerType: isCalendarService(form.triggerService)
+        triggerType: form.triggerService === 'Google Calendar'
           ? 'Event'
           : form.triggerService === 'Spotify'
           ? 'Playback'
           : 'Webhook',
         actionService: form.actionService!,
-        actionType: form.actionService === 'Gmail' ? 'SendEmail' : 'Action',
+        actionType: form.actionService === 'Gmail'
+          ? 'SendEmail'
+          : form.actionService === 'Spotify'
+          ? 'UpdatePlaylist'
+          : 'Action',
         triggerConfig: triggerConfig,
-        actionConfig: form.actionConfig
+        actionConfig: form.actionService === 'Spotify'
+          ? {
+              playlistId: (form.actionConfig.playlistId || '').toString().trim(),
+              spreadsheetId: (form.actionConfig.spreadsheetId || '').toString().trim(),
+              range: (form.actionConfig.range || '').toString().trim(),
+              urlColumn: (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink',
+              hasHeader: typeof form.actionConfig.hasHeader === 'boolean'
+                ? form.actionConfig.hasHeader
+                : true
+            }
+          : form.actionConfig
       }
 
       if (form.intermediateActionService === 'OpenAI') {
