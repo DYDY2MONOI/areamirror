@@ -1450,12 +1450,8 @@ const isFormValid = computed(() => {
   }
 
   if (form.actionService === 'Spotify') {
-    const playlistId = (form.actionConfig.playlistId || '').toString().trim()
-    const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
-    const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
-    const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim()
-
-    return hasBasicInfo && playlistId && sheetId && range && urlColumn
+    // Allow creation without config - will be configured later in ConfigureAreaPage
+    return hasBasicInfo
   }
 
   if (form.actionService === 'Telegram') {
