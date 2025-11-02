@@ -15,14 +15,17 @@ import (
 )
 
 type CreateAreaRequest struct {
-	Name           string      `json:"name" binding:"required"`
-	Description    string      `json:"description"`
-	TriggerService string      `json:"triggerService" binding:"required"`
-	TriggerType    string      `json:"triggerType" binding:"required"`
-	ActionService  string      `json:"actionService" binding:"required"`
-	ActionType     string      `json:"actionType" binding:"required"`
-	TriggerConfig  interface{} `json:"triggerConfig"`
-	ActionConfig   interface{} `json:"actionConfig"`
+	Name                      string      `json:"name" binding:"required"`
+	Description               string      `json:"description"`
+	TriggerService            string      `json:"triggerService" binding:"required"`
+	TriggerType               string      `json:"triggerType" binding:"required"`
+	ActionService             string      `json:"actionService" binding:"required"`
+	ActionType                string      `json:"actionType" binding:"required"`
+	TriggerConfig             interface{} `json:"triggerConfig"`
+	ActionConfig              interface{} `json:"actionConfig"`
+	IntermediateActionService string      `json:"intermediateActionService"`
+	IntermediateActionType    string      `json:"intermediateActionType"`
+	IntermediateActionConfig  interface{} `json:"intermediateActionConfig"`
 }
 
 func GetAreas(c *gin.Context) {
@@ -81,21 +84,25 @@ func CreateArea(c *gin.Context) {
 
 	triggerConfigJSON, _ := json.Marshal(req.TriggerConfig)
 	actionConfigJSON, _ := json.Marshal(req.ActionConfig)
+	intermediateActionConfigJSON, _ := json.Marshal(req.IntermediateActionConfig)
 
 	area := models.Area{
-		UserID:         user.ID,
-		Name:           req.Name,
-		Description:    req.Description,
-		TriggerService: req.TriggerService,
-		TriggerType:    req.TriggerType,
-		ActionService:  req.ActionService,
-		ActionType:     req.ActionType,
-		IsActive:       true,
-		IsPublic:       true,
-		TriggerConfig:  datatypes.JSON(triggerConfigJSON),
-		ActionConfig:   datatypes.JSON(actionConfigJSON),
-		TriggerIconURL: getIconUrlForService(req.TriggerService),
-		ActionIconURL:  getIconUrlForService(req.ActionService),
+		UserID:                    user.ID,
+		Name:                      req.Name,
+		Description:               req.Description,
+		TriggerService:            req.TriggerService,
+		TriggerType:               req.TriggerType,
+		ActionService:             req.ActionService,
+		ActionType:                req.ActionType,
+		IsActive:                  true,
+		IsPublic:                  true,
+		TriggerConfig:             datatypes.JSON(triggerConfigJSON),
+		ActionConfig:              datatypes.JSON(actionConfigJSON),
+		IntermediateActionService: req.IntermediateActionService,
+		IntermediateActionType:    req.IntermediateActionType,
+		IntermediateActionConfig:  datatypes.JSON(intermediateActionConfigJSON),
+		TriggerIconURL:            getIconUrlForService(req.TriggerService),
+		ActionIconURL:             getIconUrlForService(req.ActionService),
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -130,6 +137,10 @@ func getIconUrlForService(service string) string {
 		return "spotify.png"
 	case "Google Sheets":
 		return "google-sheets.png"
+	case "Timer":
+		return "google-calendar.png"
+	case "Date Timer":
+		return "google-calendar.png"
 	case "Telegram":
 		return "telegram.png"
 	case "Twitch":
@@ -173,7 +184,7 @@ func UpdateArea(c *gin.Context) {
 
 	log.Printf("Input data: %+v", req)
 
-	var triggerConfigJSON, actionConfigJSON datatypes.JSON
+	var triggerConfigJSON, actionConfigJSON, intermediateActionConfigJSON datatypes.JSON
 	if req.TriggerConfig != nil {
 		triggerConfigBytes, _ := json.Marshal(req.TriggerConfig)
 		triggerConfigJSON = datatypes.JSON(triggerConfigBytes)
@@ -181,6 +192,10 @@ func UpdateArea(c *gin.Context) {
 	if req.ActionConfig != nil {
 		actionConfigBytes, _ := json.Marshal(req.ActionConfig)
 		actionConfigJSON = datatypes.JSON(actionConfigBytes)
+	}
+	if req.IntermediateActionConfig != nil {
+		intermediateActionConfigBytes, _ := json.Marshal(req.IntermediateActionConfig)
+		intermediateActionConfigJSON = datatypes.JSON(intermediateActionConfigBytes)
 	}
 
 	updates := map[string]interface{}{
@@ -197,6 +212,15 @@ func UpdateArea(c *gin.Context) {
 	}
 	if req.ActionConfig != nil {
 		updates["action_config"] = actionConfigJSON
+	}
+	if req.IntermediateActionConfig != nil {
+		updates["intermediate_action_config"] = intermediateActionConfigJSON
+	}
+	if req.IntermediateActionService != "" {
+		updates["intermediate_action_service"] = req.IntermediateActionService
+	}
+	if req.IntermediateActionType != "" {
+		updates["intermediate_action_type"] = req.IntermediateActionType
 	}
 
 	if req.TriggerService != "" {
@@ -586,6 +610,62 @@ func TestSpotify(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func TestSpotifyPlaylist(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var req struct {
+		PlaylistID string `json:"playlistId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	req.PlaylistID = strings.TrimSpace(req.PlaylistID)
+	if req.PlaylistID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "playlistId is required"})
+		return
+	}
+
+	spotifyService, err := services.NewSpotifyService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify service not available: " + err.Error()})
+		return
+	}
+
+	if err := spotifyService.CheckPlaylistExists(uid, req.PlaylistID); err != nil {
+		if apiErr, ok := err.(*services.SpotifyAPIError); ok {
+			response := gin.H{
+				"error":   "Failed to access Spotify playlist",
+				"details": gin.H{"status": apiErr.Status, "message": apiErr.Message},
+			}
+			if apiErr.RequiresReauth {
+				response["details"].(gin.H)["requiresRelink"] = true
+			}
+			c.JSON(http.StatusBadRequest, response)
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to access Spotify playlist", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Playlist accessible",
+		"playlistId": req.PlaylistID,
+	})
 }
 
 func TestScheduler(c *gin.Context) {

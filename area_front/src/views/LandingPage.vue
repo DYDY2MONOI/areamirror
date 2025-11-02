@@ -75,9 +75,8 @@
 
         <v-divider class="my-2"></v-divider>
 
-        <div class="sidebar-theme-toggle">
-          <ThemeToggle />
-          <HighContrastToggle @open="openDaltonismModal" />
+        <div class="sidebar-settings">
+          <SettingsMenu @open-daltonism="openDaltonismModal" />
         </div>
       </v-list>
     </v-navigation-drawer>
@@ -329,8 +328,7 @@ import AppFooter from '../components/AppFooter.vue'
 import AppModal from '../components/AppModal.vue'
 import AnimatedBackground from '../components/AnimatedBackground.vue'
 import OnboardingTutorial from '../components/OnboardingTutorial.vue'
-import ThemeToggle from '../components/ThemeToggle.vue'
-import HighContrastToggle from '../components/HighContrastToggle.vue'
+import SettingsMenu from '../components/SettingsMenu.vue'
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useAreas } from '@/composables/useAreas'
@@ -389,10 +387,7 @@ const userDisplayName = computed(() => {
 
 const userStatus = computed(() => 'Premium Member')
 
-const actionButtons = computed(() => [
-  { id: 'search', icon: 'mdi-magnify', tooltip: 'Search' },
-  { id: 'notifications', icon: 'mdi-bell-outline', tooltip: 'Notifications' }
-])
+const actionButtons = computed(() => [])
 
 const filteredAreas = computed(() => {
   if (!searchQuery.value.trim()) {
@@ -767,11 +762,10 @@ watch(showCreateModal, (isOpen) => {
   text-overflow: ellipsis;
 }
 
-.sidebar-theme-toggle {
+.sidebar-settings {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  align-items: center;
   padding: 8px 12px;
 }
 

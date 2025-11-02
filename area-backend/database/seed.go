@@ -36,6 +36,8 @@ func SeedData() {
 		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
 		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
+		{Name: "Timer", Description: "Déclenche des automatisations à intervalles réguliers", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
+		{Name: "Date Timer", Description: "Planifie des rappels d'événements à des dates précises", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -45,7 +47,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -55,6 +57,8 @@ func SeedData() {
 	DB.Where("name = ?", "OneDrive").First(&onedrive)
 	DB.Where("name = ?", "Google Sheets").First(&sheets)
 	DB.Where("name = ?", "Spotify").First(&spotify)
+	DB.Where("name = ?", "Timer").First(&timer)
+	DB.Where("name = ?", "Date Timer").First(&dateTimer)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -67,6 +71,8 @@ func SeedData() {
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
 		{ServiceID: spotify.ID, Name: "Nouvelle lecture Spotify", Description: "Se déclenche lorsqu'une nouvelle musique démarre sur Spotify", Parameters: `{}`},
 		{ServiceID: slack.ID, Name: "Nouveau message dans un channel", Description: "Se déclenche quand un nouveau message est posté dans un channel", Parameters: `{"channel": ""}`},
+		{ServiceID: timer.ID, Name: "Intervalle écoulé", Description: "Se déclenche après un intervalle défini", Parameters: `{"interval": "15m"}`},
+		{ServiceID: dateTimer.ID, Name: "Rappel d'événement programmé", Description: "Se déclenche à la date et l'heure configurées", Parameters: `{"eventTime": "", "eventTitle": "", "calendarId": ""}`},
 	}
 
 	for _, action := range actions {
@@ -84,6 +90,7 @@ func SeedData() {
 		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
 		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
 		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
+		{ServiceID: spotify.ID, Name: "Mettre à jour playlist", Description: "Synchronise une playlist Spotify avec une feuille Google Sheets", Parameters: `{"playlistId": "", "spreadsheetId": "", "range": "", "urlColumn": "SpotifyLink", "hasHeader": true}`},
 	}
 
 	for _, reaction := range reactions {
