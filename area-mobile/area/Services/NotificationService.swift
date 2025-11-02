@@ -2,7 +2,7 @@
 //  NotificationService.swift
 //  area
 //
-//  Created by Codex on 02/11/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -29,19 +29,17 @@ final class NotificationService: NSObject, ObservableObject {
 
         center.requestAuthorization(options: [.alert, .badge, .sound]) { [weak self] granted, error in
             if let error = error {
-                print("🔔 Notification permission error: \(error.localizedDescription)")
+                print("Notification permission error: \(error.localizedDescription)")
             }
-            print("🔔 Notification permission granted: \(granted)")
+            print("Notification permission granted: \(granted)")
             if granted {
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             }
-            // Keep a convenient in-app notification when permission is asked
             Task { @MainActor in
                 self?.appendInternalNotice(title: granted ? "Notifications enabled" : "Notifications disabled",
                                             body: granted ? "You’ll receive alerts when areas trigger." : "Enable notifications in Settings to get alerts.")
-                // Try to import delivered notifications as a fallback (e.g., when app was backgrounded)
                 await self?.importDeliveredNotifications()
             }
         }
@@ -50,7 +48,7 @@ final class NotificationService: NSObject, ObservableObject {
     func didRegisterForRemoteNotifications(deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         UserDefaults.standard.set(tokenString, forKey: deviceTokenKey)
-        print("📲 APNs device token: \(tokenString)")
+        print("APNs device token: \(tokenString)")
 
         Task { @MainActor in
             await registerDeviceTokenWithBackend(tokenString)
@@ -58,11 +56,10 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     func didFailToRegisterForRemoteNotifications(error: Error) {
-        print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+        print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
 
     func handleIncoming(userInfo: [AnyHashable: Any]) {
-        // Parse standard APNs payload: { aps: { alert: { title, body } } }
         var title = AppConfig.appName
         var body = "New notification"
         var source: String? = nil
@@ -133,7 +130,7 @@ final class NotificationService: NSObject, ObservableObject {
             let data = try JSONEncoder().encode(notifications)
             UserDefaults.standard.set(data, forKey: storageKey)
         } catch {
-            print("❌ Failed to persist notifications: \(error.localizedDescription)")
+            print("Failed to persist notifications: \(error.localizedDescription)")
         }
     }
 
@@ -143,13 +140,11 @@ final class NotificationService: NSObject, ObservableObject {
             let saved = try JSONDecoder().decode([AppNotification].self, from: data)
             notifications = saved
         } catch {
-            print("❌ Failed to load saved notifications: \(error.localizedDescription)")
+            print("Failed to load saved notifications: \(error.localizedDescription)")
         }
     }
 
     private func registerDeviceTokenWithBackend(_ tokenString: String) async {
-        // Best-effort: try to register token with backend if endpoint exists.
-        // Expected endpoint: POST /mobile/push/register { device_token: String, platform: "ios" }
         guard let header = AuthService.shared.authorizationHeader() else { return }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/push/register")) else { return }
 
@@ -167,24 +162,22 @@ final class NotificationService: NSObject, ObservableObject {
             request.httpBody = try JSONSerialization.data(withJSONObject: payload)
             let (data, response) = try await URLSession.shared.data(for: request)
             if let http = response as? HTTPURLResponse {
-                print("📡 /mobile/push/register status: \(http.statusCode)")
+                print("/mobile/push/register status: \(http.statusCode)")
                 if !(200...299).contains(http.statusCode) {
                     let body = String(data: data, encoding: .utf8) ?? "<no-body>"
-                    print("❌ Failed to register device token: \(body)")
+                    print("Failed to register device token: \(body)")
                 }
             }
         } catch {
-            print("❌ Register device token request failed: \(error.localizedDescription)")
+            print("Register device token request failed: \(error.localizedDescription)")
         }
     }
 }
 
 extension NotificationService: UNUserNotificationCenterDelegate {
-    // Called when a notification arrives in foreground
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // Show banner + sound in foreground, and record it
         completionHandler([.banner, .sound, .badge])
 
         let content = notification.request.content
@@ -201,11 +194,9 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         }
     }
 
-    // Called when the user taps the notification
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
-        // Record the tapped notification into the feed and mark as read
         let content = response.notification.request.content
         let info = content.userInfo
         Task { @MainActor in

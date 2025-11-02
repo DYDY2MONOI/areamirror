@@ -545,7 +545,6 @@ onMounted(() => {
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
-/* Stats Grid */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  area
 //
-//  Created by Codex on 02/11/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import UIKit
@@ -11,7 +11,6 @@ import UserNotifications
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // Configure notifications
         NotificationService.shared.configure()
         return true
     }
@@ -30,7 +29,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
     }
 
-    // Fallback handling for silent/background notifications (if needed)
     func application(_ application: UIApplication,
                      didReceiveRemoteNotification userInfo: [AnyHashable : Any],
                      fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {

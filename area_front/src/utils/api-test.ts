@@ -1,7 +1,7 @@
 const API_BASE_URL = 'http://localhost:8080'
 
 async function testProfileAPI() {
-  console.log('🧪 Test de l\'API Profile...')
+  console.log(' Test de l\'API Profile...')
 
   try {
     const response = await fetch(`${API_BASE_URL}/profile`, {
@@ -12,7 +12,7 @@ async function testProfileAPI() {
       }
     })
 
-    console.log('✅ Serveur accessible:', response.status)
+    console.log(' Serveur accessible:', response.status)
 
     const endpoints = [
       '/profile',
@@ -29,19 +29,19 @@ async function testProfileAPI() {
             'Content-Type': 'application/json'
           }
         })
-        console.log(`✅ Endpoint ${endpoint}: ${testResponse.status}`)
+        console.log(` Endpoint ${endpoint}: ${testResponse.status}`)
       } catch (error) {
-        console.log(`❌ Endpoint ${endpoint}: Erreur`)
+        console.log(` Endpoint ${endpoint}: Erreur`)
       }
     }
 
   } catch (error) {
-    console.error('❌ Erreur lors du test:', error)
+    console.error(' Erreur lors du test:', error)
   }
 }
 
 async function testImageUpload() {
-  console.log('🧪 Test de l\'upload d\'image...')
+  console.log(' Test de l\'upload d\'image...')
 
   const canvas = document.createElement('canvas')
   canvas.width = 100
@@ -66,9 +66,9 @@ async function testImageUpload() {
             body: formData
           })
 
-          console.log('✅ Upload test:', response.status)
+          console.log(' Upload test:', response.status)
         } catch (error) {
-          console.log('❌ Upload test failed:', error)
+          console.log(' Upload test failed:', error)
         }
       }
     }, 'image/png')
@@ -78,6 +78,6 @@ async function testImageUpload() {
 export { testProfileAPI, testImageUpload }
 
 if (import.meta.env.DEV) {
-  console.log('🚀 Démarrage des tests d\'intégration...')
+  console.log(' Démarrage des tests d\'intégration...')
   testProfileAPI()
 }

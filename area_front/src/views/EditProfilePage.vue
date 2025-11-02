@@ -521,7 +521,6 @@ onMounted(async () => {
   gap: 2rem;
 }
 
-/* Cards */
 .photo-card,
 .info-card,
 .password-card {
@@ -819,7 +818,6 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .page-header {
     padding: 1rem;

@@ -3,7 +3,7 @@
     <v-card class="onboarding-card">
       <div v-if="!startedTutorial" class="welcome-modal">
       <div class="welcome-content">
-        <div class="welcome-icon">🎉</div>
+        <div class="welcome-icon"></div>
         <h1 class="welcome-title">Welcome to AREA!</h1>
         <p class="welcome-subtitle">Connect your favorite services with intelligent automation</p>
         
@@ -106,7 +106,7 @@ const currentSlide = ref(0)
 const slideDirection = ref('slide-left')
 
 watch(() => props.isOpen, (newValue) => {
-  console.log('🎭 OnboardingTutorial isOpen changed:', newValue)
+  console.log(' OnboardingTutorial isOpen changed:', newValue)
   if (newValue) {
     startedTutorial.value = false
     currentSlide.value = 0
@@ -462,7 +462,7 @@ const handleClose = (value: boolean) => {
 }
 
 .slide-points li::before {
-  content: '✓';
+  content: '';
   position: absolute;
   left: 0;
   color: #3b82f6;

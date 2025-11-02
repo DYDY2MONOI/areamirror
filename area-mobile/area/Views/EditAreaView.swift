@@ -26,7 +26,7 @@ struct EditAreaView: View {
     @State private var errorMessage: String?
     
     init(area: Area, isEditing: Bool = true) {
-        print("📱 EditAreaView init with area: \(area.name) (ID: \(area.id)), isEditing: \(isEditing)")
+        print("EditAreaView init with area: \(area.name) (ID: \(area.id)), isEditing: \(isEditing)")
         self.area = area
         self.isEditing = isEditing
         
@@ -34,8 +34,8 @@ struct EditAreaView: View {
         _description = State(initialValue: area.description)
         
         if let triggerConfig = area.triggerConfig {
-            print("📱 Loading trigger config for existing area: \(area.name)")
-            print("📱 Trigger service name: '\(area.triggerService)'")
+            print("Loading trigger config for existing area: \(area.name)")
+            print("Trigger service name: '\(area.triggerService)'")
             triggerConfigValues = anyCodableToConfigValues(triggerConfig)
             
             let normalizedTriggerService = area.triggerService.lowercased().trimmingCharacters(in: .whitespaces)
@@ -56,8 +56,8 @@ struct EditAreaView: View {
         }
         
         if let actionConfig = area.actionConfig {
-            print("📱 Loading action config for existing area: \(area.name)")
-            print("📱 Action service name: '\(area.actionService)'")
+            print("Loading action config for existing area: \(area.name)")
+            print("Action service name: '\(area.actionService)'")
             actionConfigValues = anyCodableToConfigValues(actionConfig)
         } else {
             let actionFields = ServiceConfigMetadata.actionConfigFields(for: area.actionService)
@@ -314,13 +314,13 @@ struct EditAreaView: View {
                 )
                 
                 if isEditing {
-                    print("🔄 Updating existing area with ID: \(area.id)")
+                    print("Updating existing area with ID: \(area.id)")
                     _ = try await areaService.updateArea(areaId: area.id, payload: fullPayload)
-                    print("✅ Area updated successfully")
+                    print("Area updated successfully")
                 } else {
-                    print("➕ Creating new area")
+                    print("Creating new area")
                     _ = try await areaService.createArea(payload: fullPayload)
-                    print("✅ Area created successfully")
+                    print("Area created successfully")
                 }
                 
                 DispatchQueue.main.async {

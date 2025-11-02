@@ -2,7 +2,7 @@
 //  ServiceConfigMetadata.swift
 //  area
 //
-//  Created by Codex on 04/12/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -79,7 +79,6 @@ struct ServiceConfigField: Identifiable, Equatable {
 
 struct ServiceConfigMetadata {
     static func triggerConfigFields(for serviceName: String) -> [ServiceConfigField] {
-        // Normalize service name for matching (case-insensitive)
         let normalized = serviceName.lowercased().trimmingCharacters(in: .whitespaces)
         switch normalized {
         case "google calendar", "date timer":
@@ -307,7 +306,6 @@ struct ServiceConfigMetadata {
     }
     
     static func actionConfigFields(for serviceName: String) -> [ServiceConfigField] {
-        // Normalize service name for matching (case-insensitive)
         let normalized = serviceName.lowercased().trimmingCharacters(in: .whitespaces)
         switch normalized {
         case "gmail":
@@ -399,11 +397,11 @@ struct ServiceConfigMetadata {
                 ServiceConfigField(
                     key: "tweetText",
                     label: "Tweet Text",
-                    placeholder: "Thanks for the mention @{{tweetAuthorUsername}}! 🚀",
+                    placeholder: "Thanks for the mention @{{tweetAuthorUsername}}! ",
                     helperText: "Tweet content (max 280 chars). Use {{tweetText}}, {{tweetAuthorUsername}}, etc.",
                     fieldType: .multiline,
                     isRequired: false,
-                    defaultValue: .string("Thanks for the mention @{{tweetAuthorUsername}}! 🚀")
+                    defaultValue: .string("Thanks for the mention @{{tweetAuthorUsername}}! ")
                 ),
                 ServiceConfigField(
                     key: "replyToTweetId",
@@ -438,7 +436,7 @@ struct ServiceConfigMetadata {
                 ServiceConfigField(
                     key: "message",
                     label: "Message",
-                    placeholder: "🤖 Notification from {{areaName}}",
+                    placeholder: " Notification from {{areaName}}",
                     helperText: "Message to send. Use {{areaName}}, {{triggerTime}}, etc. Supports Markdown (*bold*, _italic_)",
                     fieldType: .multiline,
                     isRequired: true,

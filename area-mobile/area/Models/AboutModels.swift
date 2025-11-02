@@ -2,7 +2,7 @@
 //  AboutModels.swift
 //  area
 //
-//  Created to mirror backend /about.json for services/actions/reactions
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -34,12 +34,11 @@ struct AboutAction: Decodable, Identifiable, Hashable {
     let description: String
     let identifier: String?
     
-    // Initialize identifier as nil since backend doesn't provide it
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decode(String.self, forKey: .description)
-        identifier = nil // Backend doesn't send identifier
+        identifier = nil
     }
     
     enum CodingKeys: String, CodingKey {
@@ -54,12 +53,11 @@ struct AboutReaction: Decodable, Identifiable, Hashable {
     let description: String
     let identifier: String?
     
-    // Initialize identifier as nil since backend doesn't provide it
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decode(String.self, forKey: .description)
-        identifier = nil // Backend doesn't send identifier
+        identifier = nil
     }
     
     enum CodingKeys: String, CodingKey {

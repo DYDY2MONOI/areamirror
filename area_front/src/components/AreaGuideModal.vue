@@ -7,7 +7,7 @@
             <v-icon size="32" color="#3b82f6">mdi-information</v-icon>
           </div>
           <div class="header-text">
-            <h2 class="guide-title">📚 Guide: Creating an Area</h2>
+            <h2 class="guide-title"> Guide: Creating an Area</h2>
             <p class="guide-subtitle">Step {{ currentSlide + 1 }} of {{ slides.length }}</p>
           </div>
         </div>

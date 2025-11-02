@@ -12,10 +12,10 @@ struct AppletCard: View {
     
     var body: some View {
         Button(action: {
-            print("🔘 AppletCard tapped: \(applet.title)")
-            print("🔘 About to call applet.action()")
+            print("AppletCard tapped: \(applet.title)")
+            print("About to call applet.action()")
             applet.action()
-            print("🔘 applet.action() completed")
+            print("applet.action() completed")
         }) {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack {

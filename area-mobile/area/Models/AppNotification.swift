@@ -2,7 +2,7 @@
 //  AppNotification.swift
 //  area
 //
-//  Created by Codex on 02/11/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation

@@ -717,7 +717,7 @@ func TestSlack(c *gin.Context) {
 
 	message := strings.TrimSpace(req.Message)
 	if message == "" {
-		message = "🚀 This is a test message from AREAmirror!"
+		message = " This is a test message from AREAmirror!"
 	}
 
 	messageType := req.MessageType
@@ -738,7 +738,7 @@ func TestSlack(c *gin.Context) {
 			"AREA Bot",
 			"https://github.com/test/repo/commit/abc123",
 		)
-		sendErr = slackService.SendRichMessage(webhookURL, "📬 Notification enrichie", []services.Attachment{attachment})
+		sendErr = slackService.SendRichMessage(webhookURL, " Notification enrichie", []services.Attachment{attachment})
 
 	case "custom":
 		customMsg := services.SlackWebhookMessage{
