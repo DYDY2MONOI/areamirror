@@ -137,6 +137,10 @@ func getIconUrlForService(service string) string {
 		return "spotify.png"
 	case "Google Sheets":
 		return "google-sheets.png"
+	case "Timer":
+		return "google-calendar.png"
+	case "Date Timer":
+		return "google-calendar.png"
 	case "Telegram":
 		return "telegram.png"
 	case "Twitch":

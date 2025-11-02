@@ -324,7 +324,7 @@ func (s *SchedulerService) checkSpotifyTriggers() error {
 func (s *SchedulerService) checkCalendarTriggers() error {
 	var areas []models.Area
 
-	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Calendar", true).Find(&areas).Error
+	err := database.DB.Where("trigger_service IN ? AND is_active = ?", []string{"Google Calendar", "Date Timer"}, true).Find(&areas).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch calendar areas: %v", err)
 	}
