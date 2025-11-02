@@ -38,6 +38,7 @@ func SeedData() {
 		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
 		{Name: "Timer", Description: "Déclenche des automatisations à intervalles réguliers", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Date Timer", Description: "Planifie des rappels d'événements à des dates précises", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
+		{Name: "Twitter", Description: "Automatise les interactions avec Twitter/X", IconURL: "https://twitter.com/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -47,7 +48,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer, twitter models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -59,6 +60,7 @@ func SeedData() {
 	DB.Where("name = ?", "Spotify").First(&spotify)
 	DB.Where("name = ?", "Timer").First(&timer)
 	DB.Where("name = ?", "Date Timer").First(&dateTimer)
+	DB.Where("name = ?", "Twitter").First(&twitter)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
@@ -70,6 +72,10 @@ func SeedData() {
 		{ServiceID: onedrive.ID, Name: "Fichier modifié", Description: "Se déclenche quand un fichier est modifié", Parameters: `{"folder": "", "fileName": ""}`},
 		{ServiceID: sheets.ID, Name: "Modification de feuille", Description: "Se déclenche lorsqu'un tableau Google Sheets est modifié", Parameters: `{"spreadsheetId": "", "range": "Feuille1!A1:D", "hasHeader": true}`},
 		{ServiceID: spotify.ID, Name: "Nouvelle lecture Spotify", Description: "Se déclenche lorsqu'une nouvelle musique démarre sur Spotify", Parameters: `{}`},
+		{ServiceID: twitter.ID, Name: "Nouvelle mention Twitter", Description: "Se déclenche lorsque votre compte est mentionné sur Twitter/X", Parameters: `{"monitorType": "mentions", "keyword": "", "includeRetweets": false}`},
+		{ServiceID: twitter.ID, Name: "Nouveau like Twitter", Description: "Se déclenche lorsqu'un tweet reçoit un nouveau like", Parameters: `{"monitorType": "likes"}`},
+		{ServiceID: twitter.ID, Name: "Nouveau retweet Twitter", Description: "Se déclenche lorsqu'un tweet est retweeté", Parameters: `{"monitorType": "retweets"}`},
+		{ServiceID: twitter.ID, Name: "Nouveau follower Twitter", Description: "Se déclenche lorsqu'un nouvel utilisateur vous suit", Parameters: `{"monitorType": "followers"}`},
 		{ServiceID: timer.ID, Name: "Intervalle écoulé", Description: "Se déclenche après un intervalle défini", Parameters: `{"interval": "15m"}`},
 		{ServiceID: dateTimer.ID, Name: "Rappel d'événement programmé", Description: "Se déclenche à la date et l'heure configurées", Parameters: `{"eventTime": "", "eventTitle": "", "calendarId": ""}`},
 	}
@@ -90,6 +96,8 @@ func SeedData() {
 		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
 		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
 		{ServiceID: spotify.ID, Name: "Mettre à jour playlist", Description: "Synchronise une playlist Spotify avec une feuille Google Sheets", Parameters: `{"playlistId": "", "spreadsheetId": "", "range": "", "urlColumn": "SpotifyLink", "hasHeader": true}`},
+		{ServiceID: twitter.ID, Name: "Publier un tweet", Description: "Publie un tweet sur votre compte Twitter/X", Parameters: `{"actionMode": "tweet", "tweetText": "", "replyToTweetId": ""}`},
+		{ServiceID: twitter.ID, Name: "Retweeter", Description: "Retweete automatiquement un tweet spécifique", Parameters: `{"actionMode": "retweet", "tweetId": "{{tweetId}}"}`},
 	}
 
 	for _, reaction := range reactions {
