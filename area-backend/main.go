@@ -174,6 +174,7 @@ func main() {
 	r.POST("/test/discord", controllers.TestDiscord)
 	r.POST("/test/slack", controllers.TestSlack)
 	r.GET("/test/spotify", controllers.AuthMiddleware(), controllers.TestSpotify)
+	r.POST("/test/spotify/playlist", controllers.AuthMiddleware(), controllers.TestSpotifyPlaylist)
 	r.POST("/test/google-sheets", controllers.TestGoogleSheets)
 	r.POST("/test/weather", controllers.TestWeatherTrigger)
 	r.GET("/weather", controllers.GetWeatherData)

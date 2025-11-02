@@ -56,6 +56,11 @@ export interface GoogleSheetsTestResponse {
   previewRows: string[][]
 }
 
+export interface SpotifyPlaylistTestResponse {
+  message: string
+  playlistId: string
+}
+
 export interface AreaTemplate {
   id: string
   title: string
@@ -367,6 +372,30 @@ class AreaService {
       console.error('Error testing Google Sheets trigger:', error)
       throw error
     }
+  }
+
+  async testSpotifyPlaylist(playlistId: string): Promise<SpotifyPlaylistTestResponse> {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/test/spotify/playlist`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ playlistId }),
+    })
+
+    const data = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Failed to test Spotify playlist')
+    }
+
+    return data
   }
 }
 

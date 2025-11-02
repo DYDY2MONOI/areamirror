@@ -44,29 +44,29 @@
       <div class="card-content">
 
         <div class="card-body">
-          <div class="service-icons">
-            <div class="service-icon trigger-icon">
-              <img
-                v-if="area.triggerIconUrl"
-                :src="getIconUrl(area.triggerIconUrl)"
-                :alt="area.triggerService"
-                class="service-logo"
-              />
-              <v-icon v-else :size="36" color="white">{{ getTriggerIcon(area.triggerService) }}</v-icon>
-              <div v-if="!area.triggerIconUrl" class="icon-fallback">{{ getTriggerEmoji(area.triggerService) }}</div>
-            </div>
-            <div class="service-arrow">
-              <v-icon size="20" color="white">mdi-arrow-right</v-icon>
-            </div>
-            <div class="service-icon action-icon">
-              <img
-                v-if="area.actionIconUrl"
-                :src="getIconUrl(area.actionIconUrl)"
-                :alt="area.actionService"
-                class="service-logo"
-              />
-              <v-icon v-else :size="36" color="white">{{ getActionIcon(area.actionService) }}</v-icon>
-              <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
+        <div class="service-icons">
+          <div class="service-icon trigger-icon">
+            <img
+              v-if="area.triggerIconUrl"
+              :src="getIconUrl(area.triggerIconUrl)"
+              :alt="area.triggerService"
+              class="service-logo"
+            />
+            <v-icon v-else :size="36" color="white">{{ getTriggerIcon(area.triggerService) }}</v-icon>
+            <div v-if="!area.triggerIconUrl" class="icon-fallback">{{ getTriggerEmoji(area.triggerService) }}</div>
+          </div>
+          <div class="service-arrow">
+            <v-icon size="20" color="white">mdi-arrow-right</v-icon>
+          </div>
+          <div class="service-icon action-icon">
+            <img
+              v-if="area.actionIconUrl"
+              :src="getIconUrl(area.actionIconUrl)"
+              :alt="area.actionService"
+              class="service-logo"
+            />
+            <v-icon v-else :size="36" color="white">{{ getActionIcon(area.actionService) }}</v-icon>
+            <div v-if="!area.actionIconUrl" class="icon-fallback">{{ getActionEmoji(area.actionService) }}</div>
             </div>
           </div>
         </div>

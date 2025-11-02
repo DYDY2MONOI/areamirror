@@ -791,7 +791,12 @@ const form = reactive({
     subject: '',
     body: '',
     webhookUrl: '',
-    message: ''
+    message: '',
+    playlistId: '',
+    spreadsheetId: '',
+    range: '',
+    urlColumn: 'SpotifyLink',
+    hasHeader: true
   } as any,
 })
 
@@ -811,6 +816,9 @@ const sheetsTestResult = ref<GoogleSheetsTestResponse | null>(null)
 const isTestingSpotify = ref(false)
 const spotifyTestError = ref<string | null>(null)
 const spotifyTestResult = ref<any | null>(null)
+const isTestingSpotifyPlaylist = ref(false)
+const spotifyPlaylistTestMessage = ref<string | null>(null)
+const spotifyPlaylistTestError = ref<string | null>(null)
 
 const CALENDAR_SERVICES = ['Google Calendar', 'Date Timer']
 const isCalendarTrigger = computed(() => CALENDAR_SERVICES.includes(template.value?.triggerService || ''))
@@ -850,6 +858,9 @@ watch(() => template.value, (newTemplate) => {
   spotifyTestResult.value = null
   spotifyTestError.value = null
   isTestingSpotify.value = false
+  spotifyPlaylistTestMessage.value = null
+  spotifyPlaylistTestError.value = null
+  isTestingSpotifyPlaylist.value = false
 
   if (newTemplate && !isEditingExisting.value) {
     console.log('Initializing form for new template:', newTemplate)
@@ -951,6 +962,13 @@ watch(() => existingArea.value, (newArea) => {
     if (newArea.actionConfig) {
       form.actionConfig = { ...form.actionConfig, ...newArea.actionConfig }
       console.log('Action config loaded:', form.actionConfig)
+
+      if (newArea.actionService === 'Spotify') {
+        form.actionConfig.urlColumn = form.actionConfig.urlColumn || 'SpotifyLink'
+        if (typeof form.actionConfig.hasHeader !== 'boolean') {
+          form.actionConfig.hasHeader = true
+        }
+      }
     }
 
     if (newArea.actionService === 'Discord') {
@@ -971,6 +989,39 @@ watch(
     if (template.value?.triggerService === 'Google Sheets') {
       sheetsTestResult.value = null
       sheetsTestError.value = null
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.spreadsheetId,
+  (newValue, oldValue) => {
+    if (template.value?.actionService === 'Spotify') {
+      const current = (form.actionConfig?.spreadsheetId || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.spreadsheetId = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.range,
+  (newValue, oldValue) => {
+    if (template.value?.actionService === 'Spotify') {
+      const current = (form.actionConfig?.range || '').toString().trim()
+      if (!current || current === (oldValue || '').toString().trim()) {
+        form.actionConfig.range = (newValue || '').toString().trim()
+      }
+    }
+  }
+)
+
+watch(
+  () => form.triggerConfig?.hasHeader,
+  (newValue) => {
+    if (template.value?.actionService === 'Spotify' && typeof newValue === 'boolean') {
+      form.actionConfig.hasHeader = newValue
     }
   }
 )
@@ -1035,6 +1086,15 @@ const canTestGoogleSheets = computed(() => {
   const spreadsheetId = (form.triggerConfig?.spreadsheetId || '').toString().trim()
   const range = (form.triggerConfig?.range || '').toString().trim()
   return !!spreadsheetId && !!range
+})
+
+const canTestSpotifyPlaylist = computed(() => {
+  if (template.value?.actionService !== 'Spotify') {
+    return false
+  }
+
+  const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
+  return !!playlistId
 })
 
 const canTestTrigger = computed(() => {
@@ -1185,6 +1245,8 @@ const resolveActionType = (service: string) => {
       return 'SendEmail'
     case 'Discord':
       return 'SendDiscordMessage'
+    case 'Spotify':
+      return 'UpdatePlaylist'
     default:
       return 'Action'
   }
@@ -1339,6 +1401,31 @@ const testSpotifyConnection = async () => {
     alert('❌ Échec du test Spotify: ' + errorMessage)
   } finally {
     isTestingSpotify.value = false
+  }
+}
+
+const testSpotifyPlaylist = async () => {
+  if (!canTestSpotifyPlaylist.value) {
+    return
+  }
+
+  isTestingSpotifyPlaylist.value = true
+  spotifyPlaylistTestError.value = null
+  spotifyPlaylistTestMessage.value = null
+
+  try {
+    const playlistId = (form.actionConfig?.playlistId || '').toString().trim()
+    const result = await areaService.testSpotifyPlaylist(playlistId)
+    const message = result?.message || 'Playlist accessible'
+    spotifyPlaylistTestMessage.value = message
+    alert('✅ ' + message)
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify playlist'
+    spotifyPlaylistTestError.value = errorMessage
+    console.error('Error testing Spotify playlist:', err)
+    alert('❌ Test playlist: ' + errorMessage)
+  } finally {
+    isTestingSpotifyPlaylist.value = false
   }
 }
 
@@ -1551,6 +1638,26 @@ const createArea = async () => {
       console.log('Weather trigger config:', triggerConfig)
     }
 
+    let actionConfig = { ...form.actionConfig }
+
+    if (template.value.actionService === 'Spotify') {
+      const playlistId = (form.actionConfig.playlistId || '').toString().trim()
+      const sheetId = (form.actionConfig.spreadsheetId || form.triggerConfig?.spreadsheetId || '').toString().trim()
+      const range = (form.actionConfig.range || form.triggerConfig?.range || '').toString().trim()
+      const urlColumn = (form.actionConfig.urlColumn || 'SpotifyLink').toString().trim() || 'SpotifyLink'
+      const hasHeader = typeof form.actionConfig.hasHeader === 'boolean'
+        ? form.actionConfig.hasHeader
+        : !!form.triggerConfig?.hasHeader
+
+      actionConfig = {
+        playlistId,
+        spreadsheetId: sheetId,
+        range,
+        urlColumn,
+        hasHeader,
+      }
+    }
+
     const areaData = {
       name: template.value.title || 'Untitled Area',
       description: template.value.description || '',
@@ -1559,7 +1666,7 @@ const createArea = async () => {
       actionService: template.value.actionService || 'Unknown',
       actionType: resolveActionType(template.value.actionService || 'Unknown'),
       triggerConfig: triggerConfig,
-      actionConfig: form.actionConfig
+      actionConfig
     }
 
     if (isEditingExisting.value && existingArea.value) {
@@ -1616,6 +1723,7 @@ const getActionIcon = (service: string) => {
     case "Discord": return "mdi-discord"
     case "Telegram": return "mdi-send"
     case "GitHub": return "mdi-github"
+    case "Spotify": return "mdi-music"
     default: return "mdi-cog"
   }
 }
@@ -2356,5 +2464,47 @@ const getActionIcon = (service: string) => {
   padding: 0.35rem 0.55rem;
   border-radius: 999px;
   font-size: 0.75rem;
+}
+
+.test-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.test-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.test-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.test-button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.test-message {
+  font-size: 0.9rem;
+}
+
+.test-message.success {
+  color: var(--color-success);
+}
+
+.test-message.error {
+  color: var(--color-danger);
 }
 </style>

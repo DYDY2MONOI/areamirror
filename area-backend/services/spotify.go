@@ -3,6 +3,7 @@ package services
 import (
 	"Golang-API-tutoriel/database"
 	"Golang-API-tutoriel/models"
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -18,6 +19,7 @@ import (
 const (
 	spotifyTokenURL            = "https://accounts.spotify.com/api/token"
 	spotifyCurrentlyPlayingURL = "https://api.spotify.com/v1/me/player/currently-playing"
+	spotifyPlaylistTracksURL   = "https://api.spotify.com/v1/playlists/%s/tracks"
 )
 
 type SpotifyService struct {
@@ -316,4 +318,242 @@ func (s *SpotifyService) fetchCurrentlyPlaying(token *models.OAuth2Token, allowR
 		StartedAt:     startedAt,
 		CoverImageURL: coverURL,
 	}, nil
+}
+
+func (s *SpotifyService) ReplacePlaylistTracks(userID uint, playlistID string, trackURIs []string) error {
+	playlistID = strings.TrimSpace(playlistID)
+	if playlistID == "" {
+		return fmt.Errorf("playlistID is required")
+	}
+
+	token, err := s.getSpotifyToken(userID)
+	if err != nil {
+		return err
+	}
+
+	return s.replacePlaylistTracks(token, playlistID, trackURIs, true)
+}
+
+func (s *SpotifyService) replacePlaylistTracks(token *models.OAuth2Token, playlistID string, trackURIs []string, allowRefresh bool) error {
+	chunks := chunkStrings(trackURIs, 100)
+	if len(chunks) == 0 {
+		chunks = [][]string{{}}
+	}
+
+	for idx, chunk := range chunks {
+		method := http.MethodPut
+		if idx > 0 {
+			method = http.MethodPost
+		}
+
+		if err := s.sendPlaylistTracksRequest(token, playlistID, chunk, method); err != nil {
+			if apiErr, ok := err.(*SpotifyAPIError); ok && apiErr.Status == http.StatusUnauthorized && allowRefresh {
+				if err := s.refreshSpotifyToken(token); err != nil {
+					return fmt.Errorf("failed to refresh spotify token: %w", err)
+				}
+				return s.replacePlaylistTracks(token, playlistID, trackURIs, false)
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *SpotifyService) sendPlaylistTracksRequest(token *models.OAuth2Token, playlistID string, uris []string, method string) error {
+	payload := map[string]interface{}{"uris": uris}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal spotify playlist payload: %w", err)
+	}
+
+	endpoint := fmt.Sprintf(spotifyPlaylistTracksURL, playlistID)
+	req, err := http.NewRequest(method, endpoint, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create spotify playlist request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(token.AccessToken))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to call spotify playlist endpoint: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read spotify playlist response: %w", err)
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return nil
+	}
+
+	raw := strings.TrimSpace(string(respBody))
+	message := raw
+	status := resp.StatusCode
+	requiresReauth := status == http.StatusUnauthorized
+
+	var apiErr struct {
+		Error struct {
+			Status  int    `json:"status"`
+			Message string `json:"message"`
+		} `json:"error"`
+		SnapshotID string `json:"snapshot_id"`
+	}
+
+	if err := json.Unmarshal(respBody, &apiErr); err == nil {
+		if apiErr.Error.Status != 0 {
+			status = apiErr.Error.Status
+		}
+		if strings.TrimSpace(apiErr.Error.Message) != "" {
+			message = apiErr.Error.Message
+		}
+	}
+
+	return &SpotifyAPIError{
+		Status:         status,
+		Message:        message,
+		Raw:            raw,
+		RequiresReauth: requiresReauth || status == http.StatusUnauthorized,
+	}
+}
+
+func chunkStrings(values []string, chunkSize int) [][]string {
+	if chunkSize <= 0 {
+		chunkSize = 100
+	}
+	if len(values) == 0 {
+		return nil
+	}
+
+	chunks := make([][]string, 0, (len(values)/chunkSize)+1)
+	for i := 0; i < len(values); i += chunkSize {
+		end := i + chunkSize
+		if end > len(values) {
+			end = len(values)
+		}
+		segment := make([]string, end-i)
+		copy(segment, values[i:end])
+		chunks = append(chunks, segment)
+	}
+	return chunks
+}
+
+func normalizeSpotifyTrackURI(value string) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "", nil
+	}
+
+	if strings.HasPrefix(trimmed, "spotify:track:") {
+		return trimmed, nil
+	}
+
+	if strings.HasPrefix(trimmed, "spotify:") {
+		parts := strings.Split(trimmed, ":")
+		if len(parts) >= 3 && parts[1] == "track" && parts[2] != "" {
+			return "spotify:track:" + parts[2], nil
+		}
+		return "", fmt.Errorf("unsupported spotify uri format: %s", value)
+	}
+
+	if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") {
+		parsed, err := url.Parse(trimmed)
+		if err != nil {
+			return "", fmt.Errorf("invalid spotify url: %w", err)
+		}
+		segments := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+		for i := 0; i < len(segments)-1; i++ {
+			if segments[i] == "track" {
+				id := segments[i+1]
+				if idx := strings.Index(id, "?"); idx >= 0 {
+					id = id[:idx]
+				}
+				if id != "" {
+					return "spotify:track:" + id, nil
+				}
+			}
+		}
+		return "", fmt.Errorf("unable to extract track id from url: %s", value)
+	}
+
+	if strings.HasPrefix(trimmed, "track/") {
+		trimmed = strings.TrimPrefix(trimmed, "track/")
+	}
+
+	if !strings.ContainsAny(trimmed, " \t\r\n/:") && len(trimmed) >= 10 {
+		return "spotify:track:" + trimmed, nil
+	}
+
+	return "", fmt.Errorf("unsupported spotify link: %s", value)
+}
+
+func (s *SpotifyService) CheckPlaylistExists(userID uint, playlistID string) error {
+	playlistID = strings.TrimSpace(playlistID)
+	if playlistID == "" {
+		return fmt.Errorf("playlistID is required")
+	}
+
+	token, err := s.getSpotifyToken(userID)
+	if err != nil {
+		return err
+	}
+
+	return s.checkPlaylist(token, playlistID, true)
+}
+
+func (s *SpotifyService) checkPlaylist(token *models.OAuth2Token, playlistID string, allowRefresh bool) error {
+	endpoint := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s", playlistID)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create spotify playlist info request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(token.AccessToken))
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to fetch spotify playlist info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read spotify playlist info response: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	if resp.StatusCode == http.StatusUnauthorized && allowRefresh {
+		if err := s.refreshSpotifyToken(token); err != nil {
+			return fmt.Errorf("failed to refresh spotify token: %w", err)
+		}
+		return s.checkPlaylist(token, playlistID, false)
+	}
+
+	raw := strings.TrimSpace(string(body))
+	message := raw
+
+	var apiErr struct {
+		Error struct {
+			Status  int    `json:"status"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.Unmarshal(body, &apiErr); err == nil && strings.TrimSpace(apiErr.Error.Message) != "" {
+		message = apiErr.Error.Message
+	}
+
+	return &SpotifyAPIError{
+		Status:         resp.StatusCode,
+		Message:        message,
+		Raw:            raw,
+		RequiresReauth: resp.StatusCode == http.StatusUnauthorized,
+	}
 }

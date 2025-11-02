@@ -89,6 +89,7 @@ func SeedData() {
 		{ServiceID: discord.ID, Name: "Envoyer message Discord", Description: "Envoie un message sur Discord", Parameters: `{"webhookUrl": "", "message": ""}`},
 		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
 		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
+		{ServiceID: spotify.ID, Name: "Mettre à jour playlist", Description: "Synchronise une playlist Spotify avec une feuille Google Sheets", Parameters: `{"playlistId": "", "spreadsheetId": "", "range": "", "urlColumn": "SpotifyLink", "hasHeader": true}`},
 	}
 
 	for _, reaction := range reactions {

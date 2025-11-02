@@ -26,22 +26,18 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                VStack(spacing: 20) {
-                    HStack {
-                        ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
+        GeometryReader { geometry in
+            ZStack {
+                Color.black
+                    .ignoresSafeArea()
 
-                        Spacer()
+                ScrollView {
+                    VStack(spacing: 0) {
+                        VStack(spacing: 20) {
+                            HStack {
+                                ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
 
-                        Button(action: { showTestView = true }) {
-                            Image(systemName: "testtube.2")
-                                .font(.system(size: 20))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
+                                Spacer()
 
                 }
 
@@ -55,12 +51,15 @@ struct HomeView: View {
                             VStack {
                                 ProgressView("Loading your areas...")
                                     .foregroundColor(.white)
-                                Text("Please wait while we check your existing areas")
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .font(.caption)
-                            }
-                            .padding()
-                        }
+                                    .padding()
+                            } else {
+                                if areaService.userAreasLoaded {
+                                    if !areaService.popularAreas.isEmpty {
+                                        AppletSection(
+                                            title: "Popular AREAs",
+                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
+                                        )
+                                    }
 
                         if !areaService.userAreas.isEmpty {
                             AppletSection(
@@ -76,48 +75,47 @@ struct HomeView: View {
                                         action: { selectedArea = area }
                                     )
                                 }
+                            }
+
+                            AppletSection(
+                                title: "Create new AREA",
+                                applets: [
+                                    Applet(
+                                        title: "New AREA",
+                                        subtitle: "Get started",
+                                        description: "Connect your favorite services",
+                                        icon: "plus.circle.fill",
+                                        gradient: OptimizedGradients.primaryGradient,
+                                        type: .create,
+                                        action: { showNewArea = true }
+                                    ),
+                                    Applet(
+                                        title: "Email Template",
+                                        subtitle: "Gmail automation",
+                                        description: "Automate your important emails",
+                                        icon: "envelope.badge.fill",
+                                        gradient: OptimizedGradients.blueGradient,
+                                        type: .create,
+                                        action: { print("Email Template") }
+                                    ),
+                                    Applet(
+                                        title: "Social Template",
+                                        subtitle: "Social networks",
+                                        description: "Automate your posts and shares",
+                                        icon: "share.and.arrow.up.fill",
+                                        gradient: OptimizedGradients.purpleGradient,
+                                        type: .create,
+                                        action: { print("Social Template") }
+                                    )
+                                ]
                             )
                         }
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
                     }
-
-                    AppletSection(
-                        title: "Create new AREA",
-                        applets: [
-                            Applet(
-                                title: "New AREA",
-                                subtitle: "Get started",
-                                description: "Connect your favorite services",
-                                icon: "plus.circle.fill",
-                                gradient: OptimizedGradients.primaryGradient,
-                                type: .create,
-                                action: { showNewArea = true }
-                            ),
-                            Applet(
-                                title: "Email Template",
-                                subtitle: "Gmail automation",
-                                description: "Automate your important emails",
-                                icon: "envelope.badge.fill",
-                                gradient: OptimizedGradients.blueGradient,
-                                type: .create,
-                                action: { print("Email Template") }
-                            ),
-                            Applet(
-                                title: "Social Template",
-                                subtitle: "Social networks",
-                                description: "Automate your posts and shares",
-                                icon: "share.and.arrow.up.fill",
-                                gradient: OptimizedGradients.purpleGradient,
-                                type: .create,
-                                action: { print("Social Template") }
-                            )
-                        ]
-                    )
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 40)
             }
         }
-        .background(Color.black.ignoresSafeArea())
         .fullScreenCover(isPresented: $showTestView) {
             TestView()
         }

@@ -611,6 +611,8 @@ func (s *SchedulerService) executeArea(area models.Area, metadata map[string]int
 		return s.executeDiscordAction(&area, actionConfig, metadata)
 	case "Telegram":
 		return s.executeTelegramAction(&area, actionConfig, metadata)
+	case "Spotify":
+		return s.executeSpotifyAction(&area, actionConfig, metadata)
 	default:
 		log.Printf("Unsupported action service: %s", area.ActionService)
 		return nil
@@ -789,6 +791,136 @@ func (s *SchedulerService) executeTelegramAction(area *models.Area, actionConfig
 	s.recordAreaSuccess(area)
 	log.Printf("Telegram message sent successfully for AREA: %s", area.Name)
 	log.Printf("Successfully executed area: %s", area.Name)
+	return nil
+}
+
+func (s *SchedulerService) executeSpotifyAction(area *models.Area, actionConfig map[string]interface{}, metadata map[string]interface{}) error {
+	if s.spotifyService == nil {
+		return fmt.Errorf("Spotify service not available")
+	}
+	if s.sheetsService == nil {
+		return fmt.Errorf("Google Sheets service not available")
+	}
+
+	playlistID := strings.TrimSpace(getString(actionConfig["playlistId"]))
+	if playlistID == "" {
+		playlistID = strings.TrimSpace(getString(actionConfig["playlistID"]))
+	}
+	if playlistID == "" {
+		return fmt.Errorf("playlistId not found in action config")
+	}
+
+	spreadsheetID := strings.TrimSpace(getString(actionConfig["spreadsheetId"]))
+	if spreadsheetID == "" {
+		spreadsheetID = strings.TrimSpace(getString(actionConfig["sheetId"]))
+	}
+	if spreadsheetID == "" && metadata != nil {
+		spreadsheetID = strings.TrimSpace(getString(metadata["spreadsheetId"]))
+	}
+	if spreadsheetID == "" {
+		return fmt.Errorf("spreadsheetId not found in action config or metadata")
+	}
+
+	readRange := strings.TrimSpace(getString(actionConfig["range"]))
+	if readRange == "" {
+		readRange = strings.TrimSpace(getString(actionConfig["sheetRange"]))
+	}
+	if readRange == "" && metadata != nil {
+		if name := strings.TrimSpace(getString(metadata["sheetName"])); name != "" {
+			readRange = name
+		}
+	}
+	if readRange == "" {
+		return fmt.Errorf("range not found in action config")
+	}
+
+	hasHeader := true
+	if val, ok := actionConfig["hasHeader"].(bool); ok {
+		hasHeader = val
+	} else if val, ok := actionConfig["has_header"].(bool); ok {
+		hasHeader = val
+	}
+
+	columnIndex := -1
+	if idx, ok := extractInt(actionConfig["urlColumnIndex"]); ok && idx >= 0 {
+		columnIndex = idx
+	} else if idx, ok := extractInt(actionConfig["linkColumnIndex"]); ok && idx >= 0 {
+		columnIndex = idx
+	}
+
+	columnIdentifier := strings.TrimSpace(getString(actionConfig["urlColumn"]))
+	if columnIdentifier == "" {
+		columnIdentifier = strings.TrimSpace(getString(actionConfig["spotifyColumn"]))
+	}
+	if columnIdentifier == "" {
+		columnIdentifier = "SpotifyLink"
+	}
+
+	rows, err := s.sheetsService.FetchValues(spreadsheetID, readRange)
+	if err != nil {
+		wrapped := fmt.Errorf("failed to fetch sheet values: %w", err)
+		s.recordAreaFailure(area, wrapped)
+		return wrapped
+	}
+
+	if hasHeader && len(rows) == 0 {
+		s.recordAreaFailure(area, fmt.Errorf("sheet range %s appears empty", readRange))
+		return fmt.Errorf("sheet range %s appears empty", readRange)
+	}
+
+	headers := []string{}
+	startRow := 0
+	if hasHeader && len(rows) > 0 {
+		headers = rows[0]
+		startRow = 1
+	}
+
+	if columnIndex < 0 {
+		columnIndex = resolveColumnIndex(headers, columnIdentifier)
+	}
+	if columnIndex < 0 {
+		if idx, err := parseColumnIdentifier(columnIdentifier); err == nil {
+			columnIndex = idx
+		}
+	}
+	if columnIndex < 0 && len(headers) > 0 {
+		// try fallback header that matches common variants
+		if idx := resolveColumnIndex(headers, "spotify url"); idx >= 0 {
+			columnIndex = idx
+		} else if idx := resolveColumnIndex(headers, "spotify"); idx >= 0 {
+			columnIndex = idx
+		}
+	}
+	if columnIndex < 0 {
+		wrapped := fmt.Errorf("could not locate Spotify link column '%s'", columnIdentifier)
+		s.recordAreaFailure(area, wrapped)
+		return wrapped
+	}
+
+	trackURIs := make([]string, 0, len(rows))
+	for _, row := range rows[startRow:] {
+		if columnIndex >= len(row) {
+			continue
+		}
+		rawValue := row[columnIndex]
+		uri, err := normalizeSpotifyTrackURI(rawValue)
+		if err != nil {
+			log.Printf("Skipping invalid Spotify link '%s' for area %s: %v", rawValue, area.Name, err)
+			continue
+		}
+		if uri != "" {
+			trackURIs = append(trackURIs, uri)
+		}
+	}
+
+	if err := s.spotifyService.ReplacePlaylistTracks(area.UserID, playlistID, trackURIs); err != nil {
+		wrapped := fmt.Errorf("failed to update Spotify playlist: %w", err)
+		s.recordAreaFailure(area, wrapped)
+		return wrapped
+	}
+
+	s.recordAreaSuccess(area)
+	log.Printf("Spotify playlist %s updated with %d tracks for area %s", playlistID, len(trackURIs), area.Name)
 	return nil
 }
 
@@ -1169,6 +1301,50 @@ func extractInt(value interface{}) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func resolveColumnIndex(headers []string, identifier string) int {
+	normalized := strings.TrimSpace(strings.ToLower(identifier))
+	if normalized == "" {
+		return -1
+	}
+
+	for idx, header := range headers {
+		if strings.ToLower(strings.TrimSpace(header)) == normalized {
+			return idx
+		}
+	}
+
+	if idx, err := parseColumnIdentifier(identifier); err == nil {
+		return idx
+	}
+
+	return -1
+}
+
+func parseColumnIdentifier(identifier string) (int, error) {
+	value := strings.TrimSpace(identifier)
+	if value == "" {
+		return -1, fmt.Errorf("empty column identifier")
+	}
+
+	if idx, err := strconv.Atoi(value); err == nil {
+		if idx <= 0 {
+			return -1, fmt.Errorf("column index must be positive")
+		}
+		return idx - 1, nil
+	}
+
+	value = strings.ToUpper(value)
+	total := 0
+	for _, r := range value {
+		if r < 'A' || r > 'Z' {
+			return -1, fmt.Errorf("invalid column identifier: %s", identifier)
+		}
+		total = total*26 + int(r-'A'+1)
+	}
+
+	return total - 1, nil
 }
 
 func (s *SchedulerService) StartScheduler(ctx context.Context) {

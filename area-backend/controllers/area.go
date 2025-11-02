@@ -612,6 +612,62 @@ func TestSpotify(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func TestSpotifyPlaylist(c *gin.Context) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	uid, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user context"})
+		return
+	}
+
+	var req struct {
+		PlaylistID string `json:"playlistId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	req.PlaylistID = strings.TrimSpace(req.PlaylistID)
+	if req.PlaylistID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "playlistId is required"})
+		return
+	}
+
+	spotifyService, err := services.NewSpotifyService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify service not available: " + err.Error()})
+		return
+	}
+
+	if err := spotifyService.CheckPlaylistExists(uid, req.PlaylistID); err != nil {
+		if apiErr, ok := err.(*services.SpotifyAPIError); ok {
+			response := gin.H{
+				"error":   "Failed to access Spotify playlist",
+				"details": gin.H{"status": apiErr.Status, "message": apiErr.Message},
+			}
+			if apiErr.RequiresReauth {
+				response["details"].(gin.H)["requiresRelink"] = true
+			}
+			c.JSON(http.StatusBadRequest, response)
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to access Spotify playlist", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Playlist accessible",
+		"playlistId": req.PlaylistID,
+	})
+}
+
 func TestScheduler(c *gin.Context) {
 	areaID := c.Param("id")
 
