@@ -324,7 +324,7 @@ func (s *SchedulerService) checkSpotifyTriggers() error {
 func (s *SchedulerService) checkCalendarTriggers() error {
 	var areas []models.Area
 
-	err := database.DB.Where("trigger_service = ? AND is_active = ?", "Google Calendar", true).Find(&areas).Error
+	err := database.DB.Where("trigger_service IN ? AND is_active = ?", []string{"Google Calendar", "Date Timer"}, true).Find(&areas).Error
 	if err != nil {
 		return fmt.Errorf("failed to fetch calendar areas: %v", err)
 	}
@@ -569,7 +569,7 @@ func (s *SchedulerService) shouldTriggerTimerArea(area models.Area, triggerConfi
 	if area.LastRunAt != nil {
 		timeSinceLastRun := now.Sub(*area.LastRunAt)
 		if timeSinceLastRun < interval {
-			log.Printf("Timer area %s not yet ready (last run %v ago, need %v)", 
+			log.Printf("Timer area %s not yet ready (last run %v ago, need %v)",
 				area.Name, timeSinceLastRun, interval)
 			return false
 		}
@@ -856,39 +856,39 @@ func (s *SchedulerService) persistDiscordLog(area *models.Area, message string, 
 
 func buildTemplateVars(area *models.Area, metadata map[string]interface{}) map[string]string {
 	vars := map[string]string{
-		"areaName":       area.Name,
-		"triggerService": area.TriggerService,
-		"actionService":  area.ActionService,
-		"eventTitle":     "Scheduled Event",
-		"eventTime":      time.Now().Format("2006-01-02 15:04:05"),
-		"changeType":     "",
-		"sheetName":      "",
-		"rowNumber":      "",
-		"rowData":        "",
-		"rowValues":      "",
-		"rowJson":        "",
-		"spreadsheetUrl": "",
-		"triggerTime":    "",
-		"timerName":      "",
-		"interval":       "",
-		"messageText":    "",
-		"chatId":         "",
-		"username":       "",
-		"firstName":      "",
-		"messageId":      "",
+		"areaName":            area.Name,
+		"triggerService":      area.TriggerService,
+		"actionService":       area.ActionService,
+		"eventTitle":          "Scheduled Event",
+		"eventTime":           time.Now().Format("2006-01-02 15:04:05"),
+		"changeType":          "",
+		"sheetName":           "",
+		"rowNumber":           "",
+		"rowData":             "",
+		"rowValues":           "",
+		"rowJson":             "",
+		"spreadsheetUrl":      "",
+		"triggerTime":         "",
+		"timerName":           "",
+		"interval":            "",
+		"messageText":         "",
+		"chatId":              "",
+		"username":            "",
+		"firstName":           "",
+		"messageId":           "",
 		"openaiGeneratedText": "",
-		"trackId":        "",
-		"trackName":      "",
-		"artistNames":    "",
-		"albumName":      "",
-		"trackUrl":       "",
-		"previewUrl":     "",
-		"deviceName":     "",
-		"isPlaying":      "",
-		"progressMs":     "",
-		"durationMs":     "",
-		"coverImageUrl":  "",
-		"startedAt":      "",
+		"trackId":             "",
+		"trackName":           "",
+		"artistNames":         "",
+		"albumName":           "",
+		"trackUrl":            "",
+		"previewUrl":          "",
+		"deviceName":          "",
+		"isPlaying":           "",
+		"progressMs":          "",
+		"durationMs":          "",
+		"coverImageUrl":       "",
+		"startedAt":           "",
 	}
 
 	if metadata == nil {

@@ -15,17 +15,17 @@ import (
 )
 
 type CreateAreaRequest struct {
-	Name                        string      `json:"name" binding:"required"`
-	Description                 string      `json:"description"`
-	TriggerService              string      `json:"triggerService" binding:"required"`
-	TriggerType                 string      `json:"triggerType" binding:"required"`
-	ActionService               string      `json:"actionService" binding:"required"`
-	ActionType                  string      `json:"actionType" binding:"required"`
-	TriggerConfig               interface{} `json:"triggerConfig"`
-	ActionConfig                interface{} `json:"actionConfig"`
-	IntermediateActionService   string      `json:"intermediateActionService"`
-	IntermediateActionType      string      `json:"intermediateActionType"`
-	IntermediateActionConfig    interface{} `json:"intermediateActionConfig"`
+	Name                      string      `json:"name" binding:"required"`
+	Description               string      `json:"description"`
+	TriggerService            string      `json:"triggerService" binding:"required"`
+	TriggerType               string      `json:"triggerType" binding:"required"`
+	ActionService             string      `json:"actionService" binding:"required"`
+	ActionType                string      `json:"actionType" binding:"required"`
+	TriggerConfig             interface{} `json:"triggerConfig"`
+	ActionConfig              interface{} `json:"actionConfig"`
+	IntermediateActionService string      `json:"intermediateActionService"`
+	IntermediateActionType    string      `json:"intermediateActionType"`
+	IntermediateActionConfig  interface{} `json:"intermediateActionConfig"`
 }
 
 func GetAreas(c *gin.Context) {
@@ -87,22 +87,22 @@ func CreateArea(c *gin.Context) {
 	intermediateActionConfigJSON, _ := json.Marshal(req.IntermediateActionConfig)
 
 	area := models.Area{
-		UserID:                      user.ID,
-		Name:                        req.Name,
-		Description:                 req.Description,
-		TriggerService:              req.TriggerService,
-		TriggerType:                 req.TriggerType,
-		ActionService:               req.ActionService,
-		ActionType:                  req.ActionType,
-		IsActive:                    true,
-		IsPublic:                    true,
-		TriggerConfig:               datatypes.JSON(triggerConfigJSON),
-		ActionConfig:                datatypes.JSON(actionConfigJSON),
-		IntermediateActionService:   req.IntermediateActionService,
-		IntermediateActionType:      req.IntermediateActionType,
-		IntermediateActionConfig:    datatypes.JSON(intermediateActionConfigJSON),
-		TriggerIconURL:              getIconUrlForService(req.TriggerService),
-		ActionIconURL:               getIconUrlForService(req.ActionService),
+		UserID:                    user.ID,
+		Name:                      req.Name,
+		Description:               req.Description,
+		TriggerService:            req.TriggerService,
+		TriggerType:               req.TriggerType,
+		ActionService:             req.ActionService,
+		ActionType:                req.ActionType,
+		IsActive:                  true,
+		IsPublic:                  true,
+		TriggerConfig:             datatypes.JSON(triggerConfigJSON),
+		ActionConfig:              datatypes.JSON(actionConfigJSON),
+		IntermediateActionService: req.IntermediateActionService,
+		IntermediateActionType:    req.IntermediateActionType,
+		IntermediateActionConfig:  datatypes.JSON(intermediateActionConfigJSON),
+		TriggerIconURL:            getIconUrlForService(req.TriggerService),
+		ActionIconURL:             getIconUrlForService(req.ActionService),
 	}
 
 	if err := database.DB.Create(&area).Error; err != nil {
@@ -137,6 +137,10 @@ func getIconUrlForService(service string) string {
 		return "spotify.png"
 	case "Google Sheets":
 		return "google-sheets.png"
+	case "Timer":
+		return "google-calendar.png"
+	case "Date Timer":
+		return "google-calendar.png"
 	case "Telegram":
 		return "telegram.png"
 	case "Twitch":
