@@ -10,15 +10,7 @@ struct HomeView: View {
     @StateObject private var areaService = AreaService.shared
     @State private var showTestView = false
     @State private var showNewArea = false
-    @State private var selectedArea: Area? {
-        didSet {
-            if let area = selectedArea {
-                print("🔄 selectedArea set to: \(area.name) (ID: \(area.id))")
-            } else {
-                print("🔄 selectedArea cleared")
-            }
-        }
-    }
+    @State private var selectedArea: Area? = nil
     let onLogout: () -> Void
 
     init(onLogout: @escaping () -> Void) {
@@ -32,56 +24,32 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 0) {
-                        VStack(spacing: 20) {
-                            HStack {
-                                ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
-
-                                Spacer()
-
-                                Button(action: { showTestView = true }) {
-                                    Image(systemName: "testtube.2")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 10)
-
+                    VStack(spacing: 32) {
+                        // Top bar
+                        HStack {
+                            ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
+                            Spacer()
                         }
 
-                        VStack(spacing: 32) {
-                            if areaService.isLoading {
-                                ProgressView("Loading areas...")
+                        // Content sections
+                        if areaService.isLoading {
+                            ProgressView("Loading areas...")
+                                .foregroundColor(.white)
+                                .padding()
+                        } else {
+                            if !areaService.userAreasLoaded {
+                                ProgressView("Loading your areas...")
                                     .foregroundColor(.white)
                                     .padding()
                             } else {
-                                if areaService.userAreasLoaded {
-                                    if !areaService.popularAreas.isEmpty {
-                                        AppletSection(
-                                            title: "Popular AREAs",
-                                            applets: areaService.popularAreas.map { convertAreaToApplet($0) }
-                                        )
-                                    }
-
-                                    if !areaService.recommendedAreas.isEmpty {
-                                        AppletSection(
-                                            title: "Recommended for you",
-                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
-                                        )
-                                    }
-                                } else {
-                                    VStack {
-                                        ProgressView("Loading your areas...")
-                                            .foregroundColor(.white)
-                                        Text("Please wait while we check your existing areas")
-                                            .foregroundColor(.white.opacity(0.7))
-                                            .font(.caption)
-                                    }
-                                    .padding()
+                                if !areaService.popularAreas.isEmpty {
+                                    AppletSection(
+                                        title: "Popular AREAs",
+                                        applets: areaService.popularAreas.map { convertAreaToApplet($0) }
+                                    )
                                 }
 
-                        if !areaService.userAreas.isEmpty {
+                                if !areaService.userAreas.isEmpty {
                                     AppletSection(
                                         title: "My AREAs",
                                         applets: areaService.userAreas.map { area in
@@ -97,44 +65,44 @@ struct HomeView: View {
                                         }
                                     )
                                 }
-                            }
 
-                            AppletSection(
-                                title: "Create new AREA",
-                                applets: [
-                                    Applet(
-                                        title: "New AREA",
-                                        subtitle: "Get started",
-                                        description: "Connect your favorite services",
-                                        icon: "plus.circle.fill",
-                                        gradient: OptimizedGradients.primaryGradient,
-                                        type: .create,
-                                        action: { showNewArea = true }
-                                    ),
-                                    Applet(
-                                        title: "Email Template",
-                                        subtitle: "Gmail automation",
-                                        description: "Automate your important emails",
-                                        icon: "envelope.badge.fill",
-                                        gradient: OptimizedGradients.blueGradient,
-                                        type: .create,
-                                        action: { print("Email Template") }
-                                    ),
-                                    Applet(
-                                        title: "Social Template",
-                                        subtitle: "Social networks",
-                                        description: "Automate your posts and shares",
-                                        icon: "share.and.arrow.up.fill",
-                                        gradient: OptimizedGradients.purpleGradient,
-                                        type: .create,
-                                        action: { print("Social Template") }
-                                    )
-                                ]
-                            )
+                                AppletSection(
+                                    title: "Create new AREA",
+                                    applets: [
+                                        Applet(
+                                            title: "New AREA",
+                                            subtitle: "Get started",
+                                            description: "Connect your favorite services",
+                                            icon: "plus.circle.fill",
+                                            gradient: OptimizedGradients.primaryGradient,
+                                            type: .create,
+                                            action: { showNewArea = true }
+                                        ),
+                                        Applet(
+                                            title: "Email Template",
+                                            subtitle: "Gmail automation",
+                                            description: "Automate your important emails",
+                                            icon: "envelope.badge.fill",
+                                            gradient: OptimizedGradients.blueGradient,
+                                            type: .create,
+                                            action: { print("Email Template") }
+                                        ),
+                                        Applet(
+                                            title: "Social Template",
+                                            subtitle: "Social networks",
+                                            description: "Automate your posts and shares",
+                                            icon: "share.and.arrow.up.fill",
+                                            gradient: OptimizedGradients.purpleGradient,
+                                            type: .create,
+                                            action: { print("Social Template") }
+                                        )
+                                    ]
+                                )
+                            }
                         }
-                        .padding(.top, 20)
-                        .padding(.bottom, 40)
                     }
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
             }
         }
@@ -149,7 +117,7 @@ struct HomeView: View {
         }
         .onAppear {
             Task {
-                await areaService.fetchAllAreas()
+                await areaService.fetchUserAreas()
             }
         }
     }
@@ -211,26 +179,6 @@ struct HomeView: View {
         case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
         case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
         default: return Color.blue
-        }
-    }
-}
-
-struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : .gray)
-            .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(isSelected ? Color.green : Color.clear)
-                )
         }
     }
 }

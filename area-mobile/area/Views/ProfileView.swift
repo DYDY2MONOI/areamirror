@@ -12,6 +12,7 @@ struct ProfileView: View {
     @State private var showLoginView = false
     @State private var showRegisterView = false
     @State private var showEditProfile = false
+    @State private var showNotifications = false
     
     var body: some View {
         NavigationView {
@@ -51,6 +52,7 @@ struct ProfileView: View {
                                     icon: "bell",
                                     title: "Notifications",
                                     action: {
+                                        showNotifications = true
                                     }
                                 )
                                 
@@ -182,6 +184,9 @@ struct ProfileView: View {
                     showEditProfile = false
                 }
             )
+        }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView()
         }
         .onAppear {
             if authService.isAuthenticated {
