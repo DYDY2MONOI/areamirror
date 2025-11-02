@@ -1450,7 +1450,6 @@ const isFormValid = computed(() => {
   }
 
   if (form.actionService === 'Spotify') {
-    // Allow creation without config - will be configured later in ConfigureAreaPage
     return hasBasicInfo
   }
 

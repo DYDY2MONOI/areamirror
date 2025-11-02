@@ -1320,12 +1320,10 @@ const actionIsValid = computed(() => {
       const playlistId = !!form.actionConfig.playlistId
       const urlColumn = !!form.actionConfig.urlColumn
 
-      // Si le trigger est Google Sheets, spreadsheetId et range sont optionnels
       if (template.value.triggerService === 'Google Sheets') {
         return playlistId && urlColumn
       }
 
-      // Sinon, spreadsheetId et range sont requis
       const spreadsheetId = !!form.actionConfig.spreadsheetId
       const range = !!form.actionConfig.range
       return playlistId && spreadsheetId && range && urlColumn
