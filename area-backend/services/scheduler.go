@@ -1607,7 +1607,7 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 			lastModified := file.ModifiedDateTime.Format(time.RFC3339)
 			trackedTime, exists := cfg.TrackedFiles[file.ID]
 
-			if !exists && area.TriggerType == "Nouveau fichier" {
+			if !exists && (area.TriggerType == "Nouveau fichier" || area.TriggerType == "NewFile") {
 				log.Printf("New file detected in area %s: %s", area.Name, file.Name)
 
 				metadata := map[string]interface{}{
@@ -1625,7 +1625,7 @@ func (s *SchedulerService) checkOneDriveTriggers() error {
 				cfg.TrackedFiles[file.ID] = lastModified
 			}
 
-			if exists && trackedTime != lastModified && area.TriggerType == "Fichier modifié" {
+			if exists && trackedTime != lastModified && (area.TriggerType == "Fichier modifié" || area.TriggerType == "FileModified") {
 				log.Printf("Modified file detected in area %s: %s", area.Name, file.Name)
 
 				metadata := map[string]interface{}{
@@ -1685,7 +1685,7 @@ func (s *SchedulerService) executeOneDriveAction(area *models.Area, actionConfig
 
 	templateVars := buildTemplateVars(area, metadata)
 
-	if area.ActionType == "Upload fichier" {
+	if area.ActionType == "Upload fichier" || area.ActionType == "UploadFile" {
 		fileName := getString(actionConfig["fileName"])
 		if fileName == "" {
 			return fmt.Errorf("fileName not specified in action config")
@@ -1704,7 +1704,7 @@ func (s *SchedulerService) executeOneDriveAction(area *models.Area, actionConfig
 		return nil
 	}
 
-	if area.ActionType == "Créer dossier" {
+	if area.ActionType == "Créer dossier" || area.ActionType == "CreateFolder" || area.ActionType == "createFolder" {
 		folderName := getString(actionConfig["folderName"])
 		if folderName == "" {
 			return fmt.Errorf("folderName not specified in action config")
