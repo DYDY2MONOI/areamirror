@@ -10,6 +10,8 @@ export interface ServiceConfig {
   isEnabled: boolean
 }
 
+import { API_BASE_URL } from '@/config/api'
+
 export const SERVICES_CONFIG: ServiceConfig[] = [
   {
     id: 'github',
@@ -88,7 +90,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'onedrive',
     color: '#0078D4',
     description: 'Connect your OneDrive account to manage files and folders',
-    authUrl: 'http://localhost:8080/onedrive/auth/start',
+    authUrl: `${API_BASE_URL}/onedrive/auth/start`,
     callbackPath: '/auth/onedrive/callback',
     scopes: ['Files.ReadWrite', 'Files.ReadWrite.All', 'offline_access'],
     isEnabled: true

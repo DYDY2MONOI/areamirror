@@ -201,6 +201,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { areaService } from '../../services/area'
 import { useAuth } from '@/composables/useAuth'
+import { API_BASE_URL } from '@/config/api'
 
 interface AreaTemplate {
   id: string
@@ -288,7 +289,7 @@ const sendTestEmail = async () => {
       body: form.actionConfig.body
     }
 
-    const response = await fetch('http://localhost:8080/test/email', {
+    const response = await fetch(`${API_BASE_URL}/test/email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

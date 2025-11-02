@@ -39,20 +39,17 @@ struct HomeView: View {
 
                                 Spacer()
 
-                                Button(action: { showTestView = true }) {
-                                    Image(systemName: "testtube.2")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 10)
+                }
 
-                        }
-
-                        VStack(spacing: 32) {
-                            if areaService.isLoading {
-                                ProgressView("Loading areas...")
+                VStack(spacing: 32) {
+                    if areaService.isLoading {
+                        ProgressView("Loading areas...")
+                            .foregroundColor(.white)
+                            .padding()
+                    } else {
+                        if !areaService.userAreasLoaded {
+                            VStack {
+                                ProgressView("Loading your areas...")
                                     .foregroundColor(.white)
                                     .padding()
                             } else {
@@ -64,37 +61,18 @@ struct HomeView: View {
                                         )
                                     }
 
-                                    if !areaService.recommendedAreas.isEmpty {
-                                        AppletSection(
-                                            title: "Recommended for you",
-                                            applets: areaService.recommendedAreas.map { convertAreaToApplet($0) }
-                                        )
-                                    }
-                                } else {
-                                    VStack {
-                                        ProgressView("Loading your areas...")
-                                            .foregroundColor(.white)
-                                        Text("Please wait while we check your existing areas")
-                                            .foregroundColor(.white.opacity(0.7))
-                                            .font(.caption)
-                                    }
-                                    .padding()
-                                }
-
                         if !areaService.userAreas.isEmpty {
-                                    AppletSection(
-                                        title: "My AREAs",
-                                        applets: areaService.userAreas.map { area in
-                                            Applet(
-                                                title: area.name,
-                                                subtitle: "\(area.triggerService) → \(area.actionService)",
-                                                description: area.description,
-                                                icon: getServiceIcon(area.triggerService),
-                                                gradient: getServiceGradient(area.triggerService, area.actionService),
-                                                type: .create,
-                                                action: { selectedArea = area }
-                                            )
-                                        }
+                            AppletSection(
+                                title: "My AREAs",
+                                applets: areaService.userAreas.map { area in
+                                    Applet(
+                                        title: area.name,
+                                        subtitle: "\(area.triggerService) → \(area.actionService)",
+                                        description: area.description,
+                                        icon: getServiceIcon(area.triggerService),
+                                        gradient: getServiceGradient(area.triggerService, area.actionService),
+                                        type: .create,
+                                        action: { selectedArea = area }
                                     )
                                 }
                             }
@@ -149,7 +127,7 @@ struct HomeView: View {
         }
         .onAppear {
             Task {
-                await areaService.fetchAllAreas()
+                await areaService.fetchUserAreas()
             }
         }
     }
@@ -211,26 +189,6 @@ struct HomeView: View {
         case "dropbox": return Color(red: 0.0, green: 0.5, blue: 0.8)
         case "notion": return Color(red: 0.2, green: 0.2, blue: 0.2)
         default: return Color.blue
-        }
-    }
-}
-
-struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : .gray)
-            .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(isSelected ? Color.green : Color.clear)
-                )
         }
     }
 }
