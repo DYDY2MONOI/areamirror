@@ -24,14 +24,12 @@ const (
 	defaultTwitterUA     = "AREA-Automation/1.0"
 )
 
-// TwitterService handles authenticated interactions with the Twitter/X API.
 type TwitterService struct {
 	clientID     string
 	clientSecret string
 	httpClient   *http.Client
 }
 
-// TwitterTweet represents a simplified tweet payload.
 type TwitterTweet struct {
 	ID              string
 	Text            string
@@ -157,7 +155,6 @@ type twitterTokenRefreshResponse struct {
 	Scope        string `json:"scope"`
 }
 
-// TwitterAPIError represents an HTTP error returned by the Twitter API.
 type TwitterAPIError struct {
 	StatusCode int
 	Message    string
@@ -171,7 +168,6 @@ func (e *TwitterAPIError) Error() string {
 	return fmt.Sprintf("twitter api error (%d)", e.StatusCode)
 }
 
-// NewTwitterService builds a TwitterService when OAuth credentials are configured.
 func NewTwitterService() (*TwitterService, error) {
 	clientID := strings.TrimSpace(os.Getenv("TWITTER_CLIENT_ID"))
 	clientSecret := strings.TrimSpace(os.Getenv("TWITTER_CLIENT_SECRET"))
@@ -202,7 +198,6 @@ func (s *TwitterService) getTwitterToken(userID uint) (*models.OAuth2Token, erro
 		return nil, fmt.Errorf("twitter access token missing for user %d", userID)
 	}
 
-	// Refresh ahead of expiry if necessary.
 	if token.NeedsRefresh() {
 		if err := s.refreshTwitterToken(&token); err != nil {
 			return nil, fmt.Errorf("failed to refresh twitter token for user %d: %w", userID, err)
@@ -277,7 +272,6 @@ func (s *TwitterService) refreshTwitterToken(token *models.OAuth2Token) error {
 	return nil
 }
 
-// FetchMentions fetches the latest mentions for the given Twitter user.
 func (s *TwitterService) FetchMentions(userID uint, twitterUserID, sinceID string) ([]TwitterTweet, string, error) {
 	token, err := s.getTwitterToken(userID)
 	if err != nil {
@@ -387,7 +381,6 @@ func (s *TwitterService) fetchMentionsWithToken(token *models.OAuth2Token, twitt
 		tweets = append(tweets, tweet)
 	}
 
-	// Tweets are returned newest-first. Reverse to process oldest-first.
 	for i, j := 0, len(tweets)-1; i < j; i, j = i+1, j-1 {
 		tweets[i], tweets[j] = tweets[j], tweets[i]
 	}
@@ -585,7 +578,6 @@ func (s *TwitterService) fetchFollowersWithToken(token *models.OAuth2Token, twit
 	return followers, nil
 }
 
-// PostTweet publishes a status update for the authenticated user.
 func (s *TwitterService) PostTweet(userID uint, text string, inReplyToID string) (*TwitterTweet, error) {
 	token, err := s.getTwitterToken(userID)
 	if err != nil {
@@ -677,7 +669,6 @@ func (s *TwitterService) postTweetWithToken(token *models.OAuth2Token, text stri
 	return result, nil
 }
 
-// Retweet republishes an existing tweet on behalf of the authenticated user.
 func (s *TwitterService) Retweet(userID uint, twitterUserID string, tweetID string) error {
 	twitterUserID = strings.TrimSpace(twitterUserID)
 	if twitterUserID == "" {

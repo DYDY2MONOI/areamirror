@@ -24,7 +24,7 @@ struct TestView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 30) {
-                Text("🎉")
+                Text("")
                     .font(.system(size: 80))
                 
                 Text("TEST PAGE")

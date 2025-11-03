@@ -126,9 +126,9 @@ class AuthService {
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    console.log('🔐 Service: Début de l\'enregistrement', userData)
+    console.log(' Service: Début de l\'enregistrement', userData)
     try {
-      console.log('🌐 Service: Envoi de la requête vers', `${BASE_URL}${API_ENDPOINTS.REGISTER}`)
+      console.log(' Service: Envoi de la requête vers', `${BASE_URL}${API_ENDPOINTS.REGISTER}`)
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
@@ -143,7 +143,7 @@ class AuthService {
       })
 
       clearTimeout(timeoutId)
-      console.log('📡 Service: Réponse reçue', response.status, response.statusText)
+      console.log(' Service: Réponse reçue', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Registration error' }))
@@ -151,11 +151,11 @@ class AuthService {
       }
 
       const data = await response.json()
-      console.log('✅ Service: Données reçues', data)
+      console.log(' Service: Données reçues', data)
       this.handleSuccessfulAuth(data)
       return data
     } catch (error) {
-      console.error('💥 Service: Erreur capturée', error)
+      console.error(' Service: Erreur capturée', error)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check that the backend is running.')
       }
@@ -268,7 +268,7 @@ class AuthService {
     }
   }
 
-  async linkGitHubAccount(code: string): Promise<{ github_username: string }> {
+  async linkGitHubAccount(code: string, redirectUri?: string): Promise<{ github_username: string }> {
     const token = localStorage.getItem('authToken')
     if (!token) {
       throw new Error('No authentication token found')
@@ -280,7 +280,10 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({
+        code,
+        ...(redirectUri ? { redirect_uri: redirectUri } : {})
+      })
     })
 
     if (!response.ok) {
@@ -377,11 +380,11 @@ class AuthService {
     }
 
     try {
-      console.log('📸 Service: Starting image upload')
+      console.log(' Service: Starting image upload')
       const formData = new FormData()
       formData.append('image', imageFile)
 
-      console.log('📸 Service: Sending to', `${BASE_URL}/profile/image`)
+      console.log(' Service: Sending to', `${BASE_URL}/profile/image`)
       const response = await fetch(`${BASE_URL}/profile/image`, {
         method: 'POST',
         headers: {
@@ -390,9 +393,9 @@ class AuthService {
         body: formData,
       })
 
-      console.log('📸 Service: Response received', response.status)
+      console.log(' Service: Response received', response.status)
       const data: ProfileResponse = await response.json()
-      console.log('📸 Service: Data received', data)
+      console.log(' Service: Data received', data)
 
       if (!response.ok) {
         throw new Error(data.user ? 'Error uploading image' : 'Upload error')
@@ -400,10 +403,10 @@ class AuthService {
 
       this.user = data.user
       this.storeUser(data.user)
-      console.log('📸 Service: Upload completed successfully')
+      console.log(' Service: Upload completed successfully')
       return data.user
     } catch (error) {
-      console.error('📸 Service: Error during upload:', error)
+      console.error(' Service: Error during upload:', error)
       throw error
     }
   }

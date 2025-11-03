@@ -31,10 +31,10 @@ class GitHubService {
 
   private getAuthHeaders() {
     if (!this.token) {
-      console.error('❌ GitHub Service: No token found in localStorage')
+      console.error(' GitHub Service: No token found in localStorage')
       throw new Error('Authentication token missing')
     }
-    console.log('🔑 GitHub Service: Using token', this.token.substring(0, 10) + '...')
+    console.log(' GitHub Service: Using token', this.token.substring(0, 10) + '...')
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.token}`,
@@ -44,26 +44,26 @@ class GitHubService {
   async getRepositories(): Promise<GitHubRepository[]> {
     try {
       this.updateToken()
-      console.log('🔍 GitHub Service: Fetching repositories from', `/api/github/repositories`)
+      console.log(' GitHub Service: Fetching repositories from', `/api/github/repositories`)
 
       const response = await fetch(`/api/github/repositories`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       })
 
-      console.log('📡 GitHub Service: Response status', response.status, response.statusText)
+      console.log(' GitHub Service: Response status', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to fetch repositories' }))
-        console.error('❌ GitHub Service: API Error', errorData)
+        console.error(' GitHub Service: API Error', errorData)
         throw new Error(errorData.error || `HTTP error ${response.status}`)
       }
 
       const data: GitHubRepositoriesResponse = await response.json()
-      console.log('✅ GitHub Service: Repositories loaded', data.repositories?.length || 0, 'repositories')
+      console.log(' GitHub Service: Repositories loaded', data.repositories?.length || 0, 'repositories')
       return data.repositories || []
     } catch (error) {
-      console.error('💥 GitHub Service: Error fetching repositories:', error)
+      console.error(' GitHub Service: Error fetching repositories:', error)
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.')
       }

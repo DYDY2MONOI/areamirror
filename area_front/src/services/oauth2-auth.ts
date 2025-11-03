@@ -122,20 +122,20 @@ class OAuth2AuthService {
   }
 
   storeUser(user: OAuth2User): void {
-    console.log('📦 storeUser called with:', user)
-    console.log('📦 User github_username:', user?.github_username)
+    console.log(' storeUser called with:', user)
+    console.log(' User github_username:', user?.github_username)
 
     if (!user) {
-      console.error('❌ storeUser called with null/undefined user!')
+      console.error(' storeUser called with null/undefined user!')
       return
     }
 
     this.user = user
     try {
       localStorage.setItem('oauth2_user', JSON.stringify(user))
-      console.log('✅ User stored successfully in localStorage')
+      console.log(' User stored successfully in localStorage')
     } catch (error) {
-      console.error('❌ Error storing user in localStorage:', error)
+      console.error(' Error storing user in localStorage:', error)
     }
   }
 
@@ -272,12 +272,12 @@ class OAuth2AuthService {
   }
 
   handleSuccessfulAuth(authResponse: OAuth2TokenResponse): void {
-    console.log('🔐 handleSuccessfulAuth called with:', authResponse)
-    console.log('🔐 Auth response user:', authResponse.user)
+    console.log(' handleSuccessfulAuth called with:', authResponse)
+    console.log(' Auth response user:', authResponse.user)
 
     if (!authResponse.user) {
-      console.error('❌ handleSuccessfulAuth: user is missing from response!')
-      console.error('❌ Full response:', authResponse)
+      console.error(' handleSuccessfulAuth: user is missing from response!')
+      console.error(' Full response:', authResponse)
       return
     }
 

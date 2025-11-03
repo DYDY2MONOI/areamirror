@@ -28,18 +28,15 @@ struct GenericConfigView: View {
         }
     }
     
-    // Filter fields based on conditional logic (e.g., Twitter action mode)
     var visibleFields: [ServiceConfigField] {
         let normalizedServiceName = serviceName.lowercased().trimmingCharacters(in: .whitespaces)
         return fields.filter { field in
-            // For Date Timer, hide eventDate and eventTime (handled by DatePicker)
             if normalizedServiceName == "date timer" {
                 if field.key == "eventDate" || field.key == "eventTime" {
                     return false
                 }
             }
             
-            // For Twitter action, show conditional fields based on actionMode
             if normalizedServiceName == "twitter" {
                 if let actionMode = configValues["actionMode"]?.stringValue {
                     if field.key == "tweetText" || field.key == "replyToTweetId" {
@@ -50,7 +47,6 @@ struct GenericConfigView: View {
                     }
                 }
             }
-            // For Telegram trigger, show conditional fields based on triggerType
             if normalizedServiceName == "telegram" {
                 if let triggerType = configValues["triggerType"]?.stringValue {
                     if field.key == "keyword" {
@@ -163,7 +159,6 @@ struct ConfigFieldView: View {
     }
 }
 
-// Helper to convert ConfigFieldValue dictionary to [String: AnyCodable]
 func configValuesToAnyCodable(_ values: [String: ConfigFieldValue]) -> [String: AnyCodable] {
     var result: [String: AnyCodable] = [:]
     for (key, value) in values {
@@ -177,7 +172,6 @@ func configValuesToAnyCodable(_ values: [String: ConfigFieldValue]) -> [String: 
     return result
 }
 
-// Helper to convert [String: AnyCodable] to ConfigFieldValue dictionary
 func anyCodableToConfigValues(_ values: [String: AnyCodable]?) -> [String: ConfigFieldValue] {
     guard let values = values else { return [:] }
     var result: [String: ConfigFieldValue] = [:]

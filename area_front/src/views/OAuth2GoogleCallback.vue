@@ -4,7 +4,7 @@
       <div class="callback-card">
         <div class="callback-header">
           <div class="logo-container">
-            <div class="logo-icon">🔐</div>
+            <div class="logo-icon"></div>
           </div>
           <h1 class="callback-title">Google Authentication</h1>
           <p class="callback-subtitle">Processing your Google login...</p>
@@ -16,14 +16,14 @@
         </div>
 
         <div v-else-if="success" class="success-container">
-          <div class="success-icon">✅</div>
+          <div class="success-icon"></div>
           <h2 class="success-title">Login Successful!</h2>
           <p class="success-message">{{ message }}</p>
           <p class="redirect-text">Redirecting to dashboard...</p>
         </div>
 
         <div v-else-if="error" class="error-container">
-          <div class="error-icon">❌</div>
+          <div class="error-icon"></div>
           <h2 class="error-title">Authentication Failed</h2>
           <p class="error-message">{{ error }}</p>
           <button @click="retryLogin" class="retry-button">Try Again</button>
@@ -74,7 +74,6 @@ onMounted(async () => {
 
     message.value = 'Authenticating with Google...'
     
-    // Use the new OAuth2 direct login endpoint
     const response = await fetch(`${API_BASE_URL}/oauth2/google/callback?code=${code}`)
     
     if (!response.ok) {
@@ -84,7 +83,6 @@ onMounted(async () => {
 
     const data = await response.json()
     
-    // Handle the OAuth2 response
     oauth2AuthService.handleSuccessfulAuth(data)
     
     success.value = true

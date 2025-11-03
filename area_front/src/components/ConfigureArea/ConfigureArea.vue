@@ -69,7 +69,7 @@
                 <v-icon size="24" color="white">mdi-calendar</v-icon>
               </div>
               <div class="config-info">
-                <h4 class="config-title">📅 Calendar Event Trigger</h4>
+                <h4 class="config-title"> Calendar Event Trigger</h4>
                 <p class="config-subtitle">Configure when this area should trigger</p>
               </div>
             </div>
@@ -89,7 +89,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📝 Event Title Filter</label>
+                  <label class="input-label"> Event Title Filter</label>
                   <input
                     v-model="form.triggerConfig.eventTitle"
                     type="text"
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📅 Calendar ID</label>
+                  <label class="input-label"> Calendar ID</label>
                   <input
                     v-model="form.triggerConfig.calendarId"
                     type="text"
@@ -121,7 +121,7 @@
                 <v-icon size="24" color="white">mdi-email</v-icon>
               </div>
               <div class="config-info">
-                <h4 class="config-title">📧 Gmail Action</h4>
+                <h4 class="config-title"> Gmail Action</h4>
                 <p class="config-subtitle">Configure the email to be sent</p>
               </div>
             </div>
@@ -129,7 +129,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">📧 Send Email To</label>
+                  <label class="input-label"> Send Email To</label>
                   <input
                     v-model="form.actionConfig.toEmail"
                     type="email"
@@ -141,7 +141,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📝 Email Subject</label>
+                  <label class="input-label"> Email Subject</label>
                   <input
                     v-model="form.actionConfig.subject"
                     class="modern-input"
@@ -152,7 +152,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📄 Email Body</label>
+                  <label class="input-label"> Email Body</label>
                   <textarea
                     v-model="form.actionConfig.body"
                     class="modern-textarea"
@@ -299,14 +299,14 @@ const sendTestEmail = async () => {
     const result = await response.json()
 
     if (response.ok) {
-      alert('✅ Test email sent successfully!')
+      alert(' Test email sent successfully!')
     } else {
       throw new Error(result.error || 'Failed to send test email')
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to send test email'
     console.error('Error sending test email:', err)
-    alert('❌ Failed to send test email: ' + (err instanceof Error ? err.message : 'Unknown error'))
+    alert(' Failed to send test email: ' + (err instanceof Error ? err.message : 'Unknown error'))
   } finally {
     isSendingTest.value = false
   }

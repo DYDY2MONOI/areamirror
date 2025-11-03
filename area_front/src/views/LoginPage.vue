@@ -454,7 +454,6 @@ const loginWithSpotify = () => {
   to { transform: rotate(360deg); }
 }
 
-/* Séparateur */
 .divider {
   display: flex;
   align-items: center;
@@ -484,7 +483,6 @@ const loginWithSpotify = () => {
   background: var(--color-bg-card);
 }
 
-/* Bouton OAuth */
 .oauth-button {
   width: 100%;
   padding: 1rem;
@@ -555,7 +553,6 @@ const loginWithSpotify = () => {
   transform: scale(1.1);
 }
 
-/* Bouton Guest */
 .guest-button {
   width: 100%;
   padding: 1rem;

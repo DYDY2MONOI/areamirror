@@ -2,7 +2,7 @@
 //  OAuthLoginManager.swift
 //  area
 //
-//  Created by GPT-5 Codex on 28/10/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import AuthenticationServices

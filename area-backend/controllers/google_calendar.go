@@ -87,7 +87,6 @@ func (gcc *GoogleCalendarController) HandleCallback(c *gin.Context) {
 	err = database.DB.Where("user_id = ? AND service = ?", userID, "google_calendar").First(&existingToken).Error
 
 	if err != nil {
-		// Create new token
 		oauthToken := models.OAuth2Token{
 			UserID:       userID,
 			Service:      "google_calendar",

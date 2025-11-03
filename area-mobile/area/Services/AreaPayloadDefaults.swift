@@ -2,7 +2,7 @@
 //  AreaPayloadDefaults.swift
 //  area
 //
-//  Created by Codex on 03/12/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -95,7 +95,7 @@ enum AreaPayloadDefaults {
         case "Twitter":
             return [
                 "actionMode": AnyCodable("tweet"),
-                "tweetText": AnyCodable("Thanks for the mention @{{tweetAuthorUsername}}! 🚀"),
+                "tweetText": AnyCodable("Thanks for the mention @{{tweetAuthorUsername}}! "),
                 "replyToTweetId": AnyCodable("{{tweetId}}")
             ]
         default:

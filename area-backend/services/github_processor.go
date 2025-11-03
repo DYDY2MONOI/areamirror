@@ -140,9 +140,9 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		bodyTemplate = gep.emailService.GetDefaultPushBodyTemplate()
 	}
 
-	log.Printf("📧 Sending email to: %s", actionConfig.DestinationEmail)
-	log.Printf("📧 Subject template: %s", subjectTemplate)
-	log.Printf("📧 Body template: %s", bodyTemplate)
+	log.Printf(" Sending email to: %s", actionConfig.DestinationEmail)
+	log.Printf(" Subject template: %s", subjectTemplate)
+	log.Printf(" Body template: %s", bodyTemplate)
 
 	err := gep.emailService.SendGitHubNotification(
 		actionConfig.DestinationEmail,
@@ -152,11 +152,11 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 	)
 
 	if err != nil {
-		log.Printf("❌ Failed to send email: %v", err)
+		log.Printf(" Failed to send email: %v", err)
 		return err
 	}
 
-	log.Printf("✅ Email sent successfully to: %s", actionConfig.DestinationEmail)
+	log.Printf(" Email sent successfully to: %s", actionConfig.DestinationEmail)
 
 	log.Printf("Email notification sent successfully for area %s to %s", area.Name, actionConfig.DestinationEmail)
 	return nil

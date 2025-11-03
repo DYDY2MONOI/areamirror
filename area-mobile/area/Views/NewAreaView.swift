@@ -309,7 +309,7 @@ struct NewAreaView: View {
         isCreating = true
         errorMessage = nil
 
-        print("🆕 NewAreaView.createArea attempting with trigger=\(triggerService) -> action=\(actionService)")
+        print("NewAreaView.createArea attempting with trigger=\(triggerService) -> action=\(actionService)")
 
         Task {
             do {
@@ -331,14 +331,14 @@ struct NewAreaView: View {
                 )
 
                 _ = try await areaService.createArea(payload: payload)
-                print("✅ Area created successfully from NewAreaView")
+                print("Area created successfully from NewAreaView")
 
                 await MainActor.run {
                     isCreating = false
                     showingSuccessAlert = true
                 }
             } catch {
-                print("❌ Failed to create area from NewAreaView: \(error.localizedDescription)")
+                print("Failed to create area from NewAreaView: \(error.localizedDescription)")
                 await MainActor.run {
                     isCreating = false
                     errorMessage = error.localizedDescription

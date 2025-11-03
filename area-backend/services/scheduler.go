@@ -156,6 +156,14 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking timer triggers: %v", err)
 	}
 
+	if err := s.checkSlackTriggers(); err != nil {
+		log.Printf("Error checking Slack triggers: %v", err)
+	}
+
+	if err := s.checkOneDriveTriggers(); err != nil {
+		log.Printf("Error checking OneDrive triggers: %v", err)
+	}
+
 	return nil
 }
 
@@ -553,7 +561,6 @@ func (s *SchedulerService) checkTwitterTriggers() error {
 				cfgDirty = true
 			}
 
-			// avoid unbounded growth: keep only tweets seen recently
 			if len(cfg.LastTweetStats) > 0 {
 				for id := range cfg.LastTweetStats {
 					if !currentIDs[id] && len(cfg.LastTweetStats) > 200 {
@@ -562,7 +569,7 @@ func (s *SchedulerService) checkTwitterTriggers() error {
 					}
 				}
 			}
-		default: // mentions
+		default:
 			tweets, newestID, err := s.twitterService.FetchMentions(area.UserID, twitterUserID, cfg.LastItemID)
 			if err != nil {
 				handleAPIError(err, "fetch twitter mentions")
@@ -1354,7 +1361,6 @@ func (s *SchedulerService) executeSpotifyAction(area *models.Area, actionConfig 
 		}
 	}
 	if columnIndex < 0 && len(headers) > 0 {
-		// try fallback header that matches common variants
 		if idx := resolveColumnIndex(headers, "spotify url"); idx >= 0 {
 			columnIndex = idx
 		} else if idx := resolveColumnIndex(headers, "spotify"); idx >= 0 {
