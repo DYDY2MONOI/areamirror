@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +23,7 @@ func OneDriveAuthStart(c *gin.Context) {
 	}
 	state := generateRandomState()
 
-	c.SetCookie("onedrive_state", state, 300, "/", "localhost", false, false)
+	c.SetCookie("onedrive_state", state, 300, "/", "", false, false)
 
 	authURL := onedriveService.GetAuthorizationURL(state)
 
@@ -36,16 +38,19 @@ func OneDriveCallback(c *gin.Context) {
 	state := c.Query("state")
 	_ = state
 
+	baseURL := strings.TrimRight(getBaseURL(), "/")
+	redirectPath := "/auth/onedrive/callback"
+
 	if code == "" {
 		errorMsg := c.Query("error")
 		errorDesc := c.Query("error_description")
-		redirectURL := fmt.Sprintf("http://localhost:3000/auth/onedrive/callback?error=%s&error_description=%s",
-			errorMsg, errorDesc)
+		redirectURL := fmt.Sprintf("%s%s?error=%s&error_description=%s",
+			baseURL, redirectPath, url.QueryEscape(errorMsg), url.QueryEscape(errorDesc))
 		c.Redirect(http.StatusFound, redirectURL)
 		return
 	}
 
-	redirectURL := fmt.Sprintf("http://localhost:3000/auth/onedrive/callback?code=%s", code)
+	redirectURL := fmt.Sprintf("%s%s?code=%s", baseURL, redirectPath, url.QueryEscape(code))
 	c.Redirect(http.StatusFound, redirectURL)
 }
 

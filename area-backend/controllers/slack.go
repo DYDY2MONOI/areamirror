@@ -8,6 +8,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +19,7 @@ func SlackAuthStart(c *gin.Context) {
 	config := slackService.OAuth2Config()
 
 	state := generateSlackRandomState()
-	c.SetCookie("slack_state", state, 300, "/", "localhost", false, false)
+	c.SetCookie("slack_state", state, 300, "/", "", false, false)
 
 	authURL := config.AuthCodeURL(state)
 
@@ -32,14 +34,17 @@ func SlackCallback(c *gin.Context) {
 	state := c.Query("state")
 	_ = state
 
+	baseURL := strings.TrimRight(getBaseURL(), "/")
+	redirectPath := "/auth/slack/callback"
+
 	if code == "" {
 		errorMsg := c.Query("error")
-		redirectURL := fmt.Sprintf("http://localhost:3000/auth/slack/callback?error=%s", errorMsg)
+		redirectURL := fmt.Sprintf("%s%s?error=%s", baseURL, redirectPath, url.QueryEscape(errorMsg))
 		c.Redirect(http.StatusFound, redirectURL)
 		return
 	}
 
-	redirectURL := fmt.Sprintf("http://localhost:3000/auth/slack/callback?code=%s", code)
+	redirectURL := fmt.Sprintf("%s%s?code=%s", baseURL, redirectPath, url.QueryEscape(code))
 	c.Redirect(http.StatusFound, redirectURL)
 }
 
@@ -95,9 +100,9 @@ func LinkSlackAccount(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "Slack account linked successfully",
-		"slack_id":    slackID,
-		"slack_team":  oauthResp.Team.Name,
+		"message":    "Slack account linked successfully",
+		"slack_id":   slackID,
+		"slack_team": oauthResp.Team.Name,
 	})
 }
 

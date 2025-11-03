@@ -647,10 +647,12 @@
                   v-model="form.actionConfig.spreadsheetId"
                   type="text"
                   class="form-input"
-                  placeholder="Laisser vide pour utiliser la feuille du déclencheur"
+                  :placeholder="template.triggerService === 'Google Sheets' ? 'Laisser vide pour utiliser la feuille du déclencheur' : 'ID de la feuille Google Sheets'"
+                  :required="template.triggerService !== 'Google Sheets'"
                 />
                 <small class="form-hint">
-                  Si laissé vide, l'automatisation utilisera l'ID configuré dans le déclencheur Google Sheets.
+                  <span v-if="template.triggerService === 'Google Sheets'">Si laissé vide, l'automatisation utilisera l'ID configuré dans le déclencheur Google Sheets.</span>
+                  <span v-else>L'ID de votre feuille Google Sheets (ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms)</span>
                 </small>
               </div>
 
@@ -660,11 +662,12 @@
                   v-model="form.actionConfig.range"
                   type="text"
                   class="form-input"
-                  placeholder="Feuille1!A2:C"
-                  required
+                  :placeholder="template.triggerService === 'Google Sheets' ? 'Laisser vide pour utiliser la plage du déclencheur' : 'Feuille1!A2:C'"
+                  :required="template.triggerService !== 'Google Sheets'"
                 />
                 <small class="form-hint">
-                  Plage à synchroniser (recommandé: commencer à la ligne 2 pour exclure l'entête).
+                  <span v-if="template.triggerService === 'Google Sheets'">Si laissé vide, utilisera la plage configurée dans le déclencheur.</span>
+                  <span v-else>Plage à synchroniser (recommandé: commencer à la ligne 2 pour exclure l'entête).</span>
                 </small>
               </div>
 
@@ -1313,6 +1316,17 @@ const actionIsValid = computed(() => {
       }
       console.log('OneDrive validation failed: unknown actionType')
       return false
+    case 'Spotify':
+      const playlistId = !!form.actionConfig.playlistId
+      const urlColumn = !!form.actionConfig.urlColumn
+
+      if (template.value.triggerService === 'Google Sheets') {
+        return playlistId && urlColumn
+      }
+
+      const spreadsheetId = !!form.actionConfig.spreadsheetId
+      const range = !!form.actionConfig.range
+      return playlistId && spreadsheetId && range && urlColumn
     default:
       return true
   }

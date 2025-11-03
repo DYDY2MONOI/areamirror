@@ -156,6 +156,14 @@ func (s *SchedulerService) CheckScheduledAreas() error {
 		log.Printf("Error checking timer triggers: %v", err)
 	}
 
+	if err := s.checkSlackTriggers(); err != nil {
+		log.Printf("Error checking Slack triggers: %v", err)
+	}
+
+	if err := s.checkOneDriveTriggers(); err != nil {
+		log.Printf("Error checking OneDrive triggers: %v", err)
+	}
+
 	return nil
 }
 
