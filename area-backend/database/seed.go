@@ -35,6 +35,7 @@ func SeedData() {
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
 		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
+		{Name: "Twitter", Description: "Service de microblogging Twitter/X", IconURL: "https://twitter.com/icon.png", IsActive: true},
 		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
 		{Name: "Timer", Description: "Déclenche des automatisations à intervalles réguliers", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Date Timer", Description: "Planifie des rappels d'événements à des dates précises", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
@@ -48,7 +49,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer, telegram models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer, telegram, twitter models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -61,6 +62,7 @@ func SeedData() {
 	DB.Where("name = ?", "Timer").First(&timer)
 	DB.Where("name = ?", "Date Timer").First(&dateTimer)
 	DB.Where("name = ?", "Telegram").First(&telegram)
+	DB.Where("name = ?", "Twitter").First(&twitter)
 
 	actions := []models.Action{
 		{ServiceID: gmail.ID, Name: "Nouveau email reçu", Description: "Se déclenche quand un nouvel email arrive", Parameters: `{"sender": "", "subject": ""}`},
