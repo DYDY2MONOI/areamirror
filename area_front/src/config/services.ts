@@ -1,3 +1,5 @@
+import { API_ROOT_URL } from './api'
+
 export interface ServiceConfig {
   id: string
   name: string
@@ -88,7 +90,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'onedrive',
     color: '#0078D4',
     description: 'Connect your OneDrive account to manage files and folders',
-    authUrl: 'http://localhost:8080/onedrive/auth/start',
+    authUrl: `${API_ROOT_URL}/onedrive/auth/start`,
     callbackPath: '/auth/onedrive/callback',
     scopes: ['Files.ReadWrite', 'Files.ReadWrite.All', 'offline_access'],
     isEnabled: true
@@ -110,7 +112,7 @@ export const SERVICES_CONFIG: ServiceConfig[] = [
     icon: 'slack',
     color: '#4A154B',
     description: 'Connect your Slack workspace to send and receive messages',
-    authUrl: 'http://localhost:8080/slack/auth/start',
+    authUrl: `${API_ROOT_URL}/slack/auth/start`,
     callbackPath: '/auth/slack/callback',
     scopes: ['channels:read', 'channels:history', 'chat:write', 'users:read'],
     isEnabled: true

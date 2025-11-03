@@ -105,10 +105,10 @@ func NewEmailService() (*EmailService, error) {
 }
 
 func (es *EmailService) SendGitHubNotification(to, subjectTemplate, bodyTemplate string, eventData GitHubEventData) error {
-	fmt.Printf("📧 Sending real email to: %s\n", to)
-	fmt.Printf("📧 Repository: %s\n", eventData.Repository.FullName)
-	fmt.Printf("📧 Commit: %s\n", eventData.HeadCommit.Message)
-	fmt.Printf("📧 Author: %s\n", eventData.HeadCommit.Author.Name)
+	fmt.Printf(" Sending real email to: %s\n", to)
+	fmt.Printf(" Repository: %s\n", eventData.Repository.FullName)
+	fmt.Printf(" Commit: %s\n", eventData.HeadCommit.Message)
+	fmt.Printf(" Author: %s\n", eventData.HeadCommit.Author.Name)
 
 	subject, err := es.renderTemplate(subjectTemplate, eventData)
 	if err != nil {
@@ -186,7 +186,7 @@ func (es *EmailService) renderTemplate(templateStr string, data interface{}) (st
 }
 
 func (es *EmailService) GetDefaultPushSubjectTemplate() string {
-	return "🚀 Nouvelle activité sur {{.Repository.Name}}"
+	return "Nouvelle activité sur {{.Repository.Name}}"
 }
 
 func (es *EmailService) GetDefaultPushBodyTemplate() string {
@@ -222,7 +222,7 @@ func (es *EmailService) GetDefaultPushBodyTemplate() string {
             {{if .Repository.Description}}<p>{{.Repository.Description}}</p>{{end}}
         </div>
 
-        <h2>📝 Nouveaux commits</h2>
+        <h2>Nouveaux commits</h2>
         {{range .Commits}}
         <div class="commit">
             <div class="commit-id">{{.ID}}</div>

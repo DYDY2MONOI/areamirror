@@ -308,14 +308,14 @@ struct CreateView: View {
                 )
                 
                 _ = try await areaService.createArea(payload: payload)
-                print("✅ Area created successfully")
+                print("Area created successfully")
                 
                 DispatchQueue.main.async {
                     isCreating = false
                     showSuccessAlert = true
                 }
             } catch {
-                print("❌ Error creating area: \(error.localizedDescription)")
+                print("Error creating area: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     isCreating = false
                     errorMessage = error.localizedDescription

@@ -13,14 +13,14 @@
         </div>
 
         <div v-else-if="success" class="success-container">
-          <div class="success-icon">✅</div>
+          <div class="success-icon"></div>
           <h2 class="success-title">Success!</h2>
           <p class="success-message">Your GitHub account has been linked successfully!</p>
           <p class="redirect-text">Redirecting to your profile...</p>
         </div>
 
         <div v-else-if="error" class="error-container">
-          <div class="error-icon">❌</div>
+          <div class="error-icon"></div>
           <h2 class="error-title">Linking Failed</h2>
           <p class="error-message">{{ error }}</p>
           <div class="error-actions">
@@ -34,7 +34,7 @@
         </div>
 
         <div v-else class="info-container">
-          <div class="info-icon">ℹ️</div>
+          <div class="info-icon"></div>
           <h2 class="info-title">No Link Request</h2>
           <p class="info-message">No GitHub link request is currently active.</p>
           <button @click="goToProfile" class="action-button primary">

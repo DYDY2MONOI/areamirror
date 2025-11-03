@@ -220,7 +220,7 @@ struct AreaCard: View {
                             area = updatedArea
                         } catch {
                             area.isActive = originalState
-                            print("❌ Error toggling area: \(error.localizedDescription)")
+                            print("Error toggling area: \(error.localizedDescription)")
                         }
                     }
                 }) {

@@ -2,7 +2,7 @@
 //  AreaService.swift
 //  area
 //
-//  Created by Dydy2Brazil on 19/09/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -27,7 +27,7 @@ class AreaService: ObservableObject {
     
     func fetchUserAreas() async {
         guard let authorization = authorizationHeader() else {
-            print("ℹ️ No authentication token – skipping user areas fetch")
+            print("No authentication token – skipping user areas fetch")
             self.errorMessage = nil
             self.userAreas = []
             self.userAreasLoaded = true
@@ -50,33 +50,33 @@ class AreaService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            print("📡 GET /mobile/user/me/areas")
+            print("GET /mobile/user/me/areas")
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
-                print("📡 /mobile/user/me/areas status: \(httpResponse.statusCode)")
+                print("/mobile/user/me/areas status: \(httpResponse.statusCode)")
                 if httpResponse.statusCode == 200 {
                     do {
                         let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
-                        print("✅ Fetched \(areaResponse.data.count) user areas")
+                        print("Fetched \(areaResponse.data.count) user areas")
                         self.userAreas = areaResponse.data
                         self.userAreasLoaded = true
                         self.isLoading = false
                     } catch {
                         let body = String(data: data, encoding: .utf8) ?? "<no-body>"
-                        print("❌ Decoding user areas failed: \(Self.describeDecodingError(error)) | Body: \(body)")
+                        print("Decoding user areas failed: \(Self.describeDecodingError(error)) | Body: \(body)")
                         throw error
                     }
                 } else {
                     let body = String(data: data, encoding: .utf8) ?? "<no-body>"
-                    print("❌ Failed to fetch user areas: \(body)")
+                    print("Failed to fetch user areas: \(body)")
                     self.errorMessage = "Failed to fetch user areas"
                     self.userAreasLoaded = true
                     self.isLoading = false
                 }
             }
         } catch {
-            print("❌ Error fetching user areas: \(error.localizedDescription)")
+            print("Error fetching user areas: \(error.localizedDescription)")
             self.errorMessage = "Network error: \(error.localizedDescription)"
             self.userAreasLoaded = true
             self.isLoading = false
@@ -103,9 +103,9 @@ class AreaService: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
                     let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
-                    print("✅ Fetched \(areaResponse.data.count) popular areas")
+                    print("Fetched \(areaResponse.data.count) popular areas")
                     for (index, area) in areaResponse.data.enumerated() {
-                        print("📋 Popular area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
+                        print("Popular area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
                     }
                     self.popularAreas = areaResponse.data
                     self.isLoading = false
@@ -140,9 +140,9 @@ class AreaService: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
                     let areaResponse = try JSONDecoder().decode(AreaResponse.self, from: data)
-                    print("✅ Fetched \(areaResponse.data.count) recommended areas")
+                    print("Fetched \(areaResponse.data.count) recommended areas")
                     for (index, area) in areaResponse.data.enumerated() {
-                        print("📋 Recommended area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
+                        print("Recommended area \(index): \(area.name) - \(area.triggerService) -> \(area.actionService)")
                     }
                     self.recommendedAreas = areaResponse.data
                     self.isLoading = false
@@ -158,15 +158,15 @@ class AreaService: ObservableObject {
     }
     
     func fetchAllAreas() async {
-        print("🔄 Starting fetchAllAreas - loading user areas first")
+        print("Starting fetchAllAreas - loading user areas first")
         await fetchUserAreas()
-        print("✅ User areas loaded, now fetching popular/recommended")
+        print("User areas loaded, now fetching popular/recommended")
         
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchPopularAreas() }
             group.addTask { await self.fetchRecommendedAreas() }
         }
-        print("✅ All areas loaded")
+        print("All areas loaded")
     }
 
     struct CreateOrUpdateAreaRequest: Codable {
@@ -197,13 +197,13 @@ class AreaService: ObservableObject {
     }
 
     func createArea(payload: CreateOrUpdateAreaRequest) async throws -> Area {
-        print("➕ AreaService.createArea called")
+        print("AreaService.createArea called")
         guard let authorization = authorizationHeader() else {
-            print("❌ No auth token for create")
+            print("No auth token for create")
             throw AreaServiceError.unauthorized
         }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas")) else {
-            print("❌ Invalid URL for create")
+            print("Invalid URL for create")
             throw AreaServiceError.invalidURL
         }
         var request = URLRequest(url: url)
@@ -213,7 +213,7 @@ class AreaService: ObservableObject {
         let encoder = JSONEncoder()
         let bodyData = try encoder.encode(payload)
         #if DEBUG
-        if let json = String(data: bodyData, encoding: .utf8) { print("➡️ createArea body: \(json)") }
+        if let json = String(data: bodyData, encoding: .utf8) { print("createArea body: \(json)") }
         #endif
         request.httpBody = bodyData
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -221,9 +221,9 @@ class AreaService: ObservableObject {
             throw AreaServiceError.server("Invalid response")
         }
         #if DEBUG
-        print("📡 createArea status: \(http.statusCode)")
+        print("createArea status: \(http.statusCode)")
         if let body = String(data: data, encoding: .utf8) {
-            print("📦 createArea response body: \(body)")
+            print("createArea response body: \(body)")
         }
         #endif
         guard (200...299).contains(http.statusCode) else {
@@ -245,16 +245,16 @@ class AreaService: ObservableObject {
     }
 
     func updateArea(areaId: String, payload: CreateOrUpdateAreaRequest) async throws -> Area {
-        print("🔄 AreaService.updateArea called with ID: \(areaId)")
+        print("AreaService.updateArea called with ID: \(areaId)")
         guard let authorization = authorizationHeader() else {
-            print("❌ No auth token")
+            print("No auth token")
             throw AreaServiceError.unauthorized
         }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/\(areaId)")) else {
-            print("❌ Invalid URL")
+            print("Invalid URL")
             throw AreaServiceError.invalidURL
         }
-        print("🔄 PUT request to: \(url.absoluteString)")
+        print("PUT request to: \(url.absoluteString)")
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -265,7 +265,7 @@ class AreaService: ObservableObject {
         
         let bodyData = try encoder.encode(payload)
         #if DEBUG
-        if let json = String(data: bodyData, encoding: .utf8) { print("➡️ updateArea body: \(json)") }
+        if let json = String(data: bodyData, encoding: .utf8) { print("updateArea body: \(json)") }
         #endif
         request.httpBody = bodyData
         
@@ -273,10 +273,10 @@ class AreaService: ObservableObject {
         guard let http = response as? HTTPURLResponse else {
             throw AreaServiceError.server("Invalid response")
         }
-        print("📡 Update response status: \(http.statusCode)")
+        print("Update response status: \(http.statusCode)")
         guard (200...299).contains(http.statusCode) else {
             let msg = String(data: data, encoding: .utf8) ?? "Server error"
-            print("❌ Update failed: \(msg)")
+            print("Update failed: \(msg)")
             throw AreaServiceError.server(msg)
         }
         do {
@@ -298,13 +298,13 @@ class AreaService: ObservableObject {
     }
 
     func toggleArea(areaId: String) async throws -> Area {
-        print("🔁 AreaService.toggleArea called with ID: \(areaId)")
+        print("AreaService.toggleArea called with ID: \(areaId)")
         guard let authorization = authorizationHeader() else {
-            print("❌ No auth token for toggle")
+            print("No auth token for toggle")
             throw AreaServiceError.unauthorized
         }
         guard let url = URL(string: AppConfig.getAPIEndpoint("/mobile/areas/\(areaId)/toggle")) else {
-            print("❌ Invalid toggle URL")
+            print("Invalid toggle URL")
             throw AreaServiceError.invalidURL
         }
         var request = URLRequest(url: url)
@@ -315,10 +315,10 @@ class AreaService: ObservableObject {
         guard let http = response as? HTTPURLResponse else {
             throw AreaServiceError.server("Invalid response")
         }
-        print("📡 Toggle response status: \(http.statusCode)")
+        print("Toggle response status: \(http.statusCode)")
         guard (200...299).contains(http.statusCode) else {
             let msg = String(data: data, encoding: .utf8) ?? "Server error"
-            print("❌ Toggle failed: \(msg)")
+            print("Toggle failed: \(msg)")
             throw AreaServiceError.server(msg)
         }
         do {

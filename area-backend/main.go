@@ -106,7 +106,6 @@ func main() {
 	r.GET("/slack/auth/start", controllers.SlackAuthStart)
 	r.GET("/slack/callback", controllers.SlackCallback)
 
-	// Google Agenda routes
 	googleAgendaController := controllers.NewGoogleAgendaController()
 	r.GET("/google-agenda/auth", controllers.AuthMiddleware(), googleAgendaController.GetAuthURL)
 	r.GET("/google-agenda/callback", controllers.AuthMiddleware(), googleAgendaController.HandleCallback)

@@ -48,7 +48,6 @@ const initAuth = async () => {
         }
       }
     } else {
-      // Fallback to regular auth service
       const isAuth = await authService.checkAuthStatus()
       isAuthenticated.value = isAuth
       currentUser.value = authService.currentUser
@@ -78,21 +77,21 @@ export function useAuth() {
   }
 
   const register = async (userData: { email: string; password: string; first_name?: string; last_name?: string }) => {
-    console.log('🔄 Composable: Début de l\'enregistrement')
+    console.log(' Composable: Début de l\'enregistrement')
     isLoading.value = true
     try {
-      console.log('🔄 Composable: Appel du service authService.register')
+      console.log(' Composable: Appel du service authService.register')
       const response = await authService.register(userData)
-      console.log('✅ Composable: Service terminé, mise à jour de l\'état')
+      console.log(' Composable: Service terminé, mise à jour de l\'état')
       isAuthenticated.value = authService.isAuthenticated
       currentUser.value = authService.currentUser
-      console.log('✅ Composable: État mis à jour', { isAuthenticated: isAuthenticated.value, currentUser: currentUser.value })
+      console.log(' Composable: État mis à jour', { isAuthenticated: isAuthenticated.value, currentUser: currentUser.value })
       return response
     } catch (error) {
-      console.error('❌ Composable: Erreur capturée', error)
+      console.error(' Composable: Erreur capturée', error)
       throw error
     } finally {
-      console.log('🏁 Composable: Fin du processus')
+      console.log(' Composable: Fin du processus')
       isLoading.value = false
     }
   }
@@ -113,7 +112,7 @@ export function useAuth() {
   const refreshProfile = async () => {
     try {
       if (oauth2AuthService.isAuthenticated) {
-        console.log('🔄 Using OAuth2 auth service for profile refresh')
+        console.log(' Using OAuth2 auth service for profile refresh')
         const isAuth = await oauth2AuthService.checkAuthStatus()
         isAuthenticated.value = isAuth
         if (oauth2AuthService.currentUser) {
@@ -168,7 +167,7 @@ export function useAuth() {
 
   const linkGitHubAccount = async (code: string, redirectUri?: string) => {
     try {
-      const result = await authService.linkGitHubAccount(code)
+      const result = await authService.linkGitHubAccount(code, redirectUri)
       await refreshProfile()
       return result
     } catch (error) {

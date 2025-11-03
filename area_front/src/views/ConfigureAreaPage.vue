@@ -65,7 +65,7 @@
               <v-icon size="24" color="white">mdi-calendar</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">📅 Calendar Event Trigger</h4>
+              <h4 class="config-title"> Calendar Event Trigger</h4>
               <p class="config-subtitle">Configure when this area should trigger</p>
             </div>
           </div>
@@ -73,7 +73,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">📅 Event Date</label>
+                <label class="form-label"> Event Date</label>
                 <div class="date-picker-container">
                   <input
                     v-model="form.triggerConfig.eventDate"
@@ -155,7 +155,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📝 Event Title Filter</label>
+                <label class="form-label"> Event Title Filter</label>
                 <input
                   v-model="form.triggerConfig.eventTitle"
                   type="text"
@@ -167,7 +167,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📅 Calendar ID</label>
+                <label class="form-label"> Calendar ID</label>
                 <input
                   v-model="form.triggerConfig.calendarId"
                   type="text"
@@ -187,7 +187,7 @@
               <v-icon size="24" color="white">mdi-google-spreadsheet</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">📊 Google Sheets Change Trigger</h4>
+              <h4 class="config-title"> Google Sheets Change Trigger</h4>
               <p class="config-subtitle">Surveille une feuille Google Sheets et déclenche une action lors de modifications</p>
             </div>
           </div>
@@ -195,7 +195,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">🆔 Spreadsheet ID</label>
+                <label class="form-label"> Spreadsheet ID</label>
                 <input
                   v-model="form.triggerConfig.spreadsheetId"
                   type="text"
@@ -207,7 +207,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📄 Nom de la feuille</label>
+                <label class="form-label"> Nom de la feuille</label>
                 <input
                   v-model="form.triggerConfig.sheetName"
                   type="text"
@@ -218,7 +218,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📍 Plage à surveiller</label>
+                <label class="form-label"> Plage à surveiller</label>
                 <input
                   v-model="form.triggerConfig.range"
                   type="text"
@@ -250,7 +250,7 @@
               <v-icon size="24" color="white">mdi-github</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">🐙 GitHub Repository Trigger</h4>
+              <h4 class="config-title"> GitHub Repository Trigger</h4>
               <p class="config-subtitle">Configure which GitHub events should trigger this area</p>
             </div>
           </div>
@@ -258,7 +258,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">📁 Repository</label>
+                <label class="form-label"> Repository</label>
                 <input
                   v-model="form.triggerConfig.repository"
                   type="text"
@@ -270,7 +270,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">🌿 Branch</label>
+                <label class="form-label"> Branch</label>
                 <input
                   v-model="form.triggerConfig.branch"
                   type="text"
@@ -281,7 +281,7 @@
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label">📋 Event Types</label>
+                <label class="form-label"> Event Types</label>
                 <div class="checkbox-group">
                   <label class="checkbox-item">
                     <input
@@ -324,7 +324,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">🔐 Webhook Secret</label>
+                <label class="form-label"> Webhook Secret</label>
                 <input
                   v-model="form.triggerConfig.webhookSecret"
                   type="password"
@@ -343,7 +343,7 @@
               <v-icon size="24" color="white">mdi-slack</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">💬 Slack Channel Monitor</h4>
+              <h4 class="config-title"> Slack Channel Monitor</h4>
               <p class="config-subtitle">Configure which Slack channel to monitor for new messages</p>
             </div>
           </div>
@@ -351,7 +351,7 @@
           <div class="config-content">
             <div class="form-row">
               <div class="form-group full-width">
-                <label class="form-label">🔗 Channel ID</label>
+                <label class="form-label"> Channel ID</label>
                 <input
                   v-model="form.triggerConfig.channel"
                   type="text"
@@ -371,14 +371,14 @@
               <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">☁️ OneDrive File Trigger</h4>
+              <h4 class="config-title"> OneDrive File Trigger</h4>
               <p class="config-subtitle">Choose which file event should trigger this area</p>
             </div>
           </div>
 
           <div class="config-content">
             <div class="form-group">
-              <label class="form-label">📁 Trigger Type</label>
+              <label class="form-label"> Trigger Type</label>
               <div class="radio-group">
                 <label class="radio-item">
                   <input
@@ -387,7 +387,7 @@
                     value="Nouveau fichier"
                     @change="updateOneDriveTriggerType"
                   />
-                  <p class="config-subtitle">📄 New File</p>
+                  <p class="config-subtitle"> New File</p>
                 </label>
                 <label class="radio-item">
                   <input
@@ -396,7 +396,7 @@
                     value="Fichier modifié"
                     @change="updateOneDriveTriggerType"
                   />
-                  <p class="config-subtitle">✏️ Modified File</p>
+                  <p class="config-subtitle"> Modified File</p>
                 </label>
               </div>
               <small class="form-hint">Choose a type of file event for this AREA</small>
@@ -410,7 +410,7 @@
               <v-icon size="24" color="white">mdi-email</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">📧 Gmail Action</h4>
+              <h4 class="config-title"> Gmail Action</h4>
               <p class="config-subtitle">Configure the email to be sent</p>
             </div>
           </div>
@@ -418,7 +418,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">📧 Send Email To</label>
+                <label class="form-label"> Send Email To</label>
                 <input
                   v-model="form.actionConfig.toEmail"
                   type="email"
@@ -431,7 +431,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📝 Email Subject</label>
+                <label class="form-label"> Email Subject</label>
                 <input
                   v-model="form.actionConfig.subject"
                   class="form-input"
@@ -442,7 +442,7 @@
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label">📄 Email Body</label>
+                <label class="form-label"> Email Body</label>
                 <textarea
                   v-model="form.actionConfig.body"
                   class="form-textarea"
@@ -462,7 +462,7 @@
               <v-icon size="24" color="white">mdi-discord</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">💬 Discord Message</h4>
+              <h4 class="config-title"> Discord Message</h4>
               <p class="config-subtitle">Configure the channel and content for your Discord notification</p>
             </div>
           </div>
@@ -470,7 +470,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">🔗 Webhook URL</label>
+                <label class="form-label"> Webhook URL</label>
                 <input
                   v-model="form.actionConfig.webhookUrl"
                   type="url"
@@ -482,7 +482,7 @@
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label">💬 Message Content</label>
+                <label class="form-label"> Message Content</label>
                 <textarea
                   v-model="form.actionConfig.message"
                   class="form-textarea"
@@ -502,7 +502,7 @@
               <v-icon size="24" color="white">mdi-slack</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">💬 Slack Message</h4>
+              <h4 class="config-title"> Slack Message</h4>
               <p class="config-subtitle">Configure the channel and content for your Slack notification</p>
             </div>
           </div>
@@ -510,7 +510,7 @@
           <div class="config-content">
             <div class="form-row">
               <div class="form-group full-width">
-                <label class="form-label">🔗 Channel ID</label>
+                <label class="form-label"> Channel ID</label>
                 <input
                   v-model="form.actionConfig.channel"
                   type="text"
@@ -522,7 +522,7 @@
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label">💬 Message Content</label>
+                <label class="form-label"> Message Content</label>
                 <textarea
                   v-model="form.actionConfig.message"
                   class="form-input"
@@ -542,14 +542,14 @@
               <v-icon size="24" color="white">mdi-microsoft-onedrive</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">☁️ OneDrive Action</h4>
+              <h4 class="config-title"> OneDrive Action</h4>
               <p class="config-subtitle">Choose what to do on OneDrive</p>
             </div>
           </div>
 
           <div class="config-content">
             <div class="form-group">
-              <label class="form-label">⚡ Action Type</label>
+              <label class="form-label"> Action Type</label>
               <div class="radio-group">
                 <label class="radio-item">
                   <input
@@ -558,7 +558,7 @@
                     value="Upload fichier"
                     @change="updateOneDriveActionType"
                   />
-                  <p class="config-subtitle">📄 Upload File</p>
+                  <p class="config-subtitle"> Upload File</p>
                 </label>
                 <label class="radio-item">
                   <input
@@ -567,14 +567,14 @@
                     value="Créer dossier"
                     @change="updateOneDriveActionType"
                   />
-                  <p class="config-subtitle">📁 Create Folder</p>
+                  <p class="config-subtitle"> Create Folder</p>
                 </label>
               </div>
             </div>
 
             <div v-if="oneDriveActionType === 'Upload fichier'" class="form-grid">
               <div class="form-group full-width">
-                <label class="form-label">📄 File Name</label>
+                <label class="form-label"> File Name</label>
                 <input
                   v-model="form.actionConfig.fileName"
                   type="text"
@@ -586,7 +586,7 @@
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label">📝 File Content</label>
+                <label class="form-label"> File Content</label>
                 <textarea
                   v-model="form.actionConfig.content"
                   class="form-input"
@@ -600,7 +600,7 @@
 
             <div v-if="oneDriveActionType === 'Créer dossier'" class="form-grid">
               <div class="form-group full-width">
-                <label class="form-label">📁 Folder Name</label>
+                <label class="form-label"> Folder Name</label>
                 <input
                   v-model="form.actionConfig.folderName"
                   type="text"
@@ -620,7 +620,7 @@
               <v-icon size="24" color="white">mdi-music</v-icon>
             </div>
             <div class="config-info">
-              <h4 class="config-title">🎧 Mise à jour de playlist Spotify</h4>
+              <h4 class="config-title"> Mise à jour de playlist Spotify</h4>
               <p class="config-subtitle">Synchronise une playlist Spotify avec les liens présents dans votre feuille Google Sheets</p>
             </div>
           </div>
@@ -628,7 +628,7 @@
           <div class="config-content">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">🎵 ID de la playlist</label>
+                <label class="form-label"> ID de la playlist</label>
                 <input
                   v-model="form.actionConfig.playlistId"
                   type="text"
@@ -642,7 +642,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📄 Spreadsheet ID {{ template.triggerService === 'Google Sheets' ? '(optionnel)' : '' }}</label>
+                <label class="form-label"> Spreadsheet ID (optionnel)</label>
                 <input
                   v-model="form.actionConfig.spreadsheetId"
                   type="text"
@@ -657,7 +657,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">📊 Plage de la feuille {{ template.triggerService === 'Google Sheets' ? '(optionnel)' : '' }}</label>
+                <label class="form-label"> Plage de la feuille</label>
                 <input
                   v-model="form.actionConfig.range"
                   type="text"
@@ -672,7 +672,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">🔗 Colonne des liens Spotify</label>
+                <label class="form-label"> Colonne des liens Spotify</label>
                 <input
                   v-model="form.actionConfig.urlColumn"
                   type="text"
@@ -720,7 +720,7 @@
       >
         <div class="logs-header">
           <div>
-            <h4 class="logs-title">📒 Historique des messages Discord</h4>
+            <h4 class="logs-title"> Historique des messages Discord</h4>
             <p class="logs-subtitle">Retrouvez les dernières notifications envoyées pour cette automatisation.</p>
           </div>
           <button class="btn btn-refresh" @click="refreshLogs" :disabled="isLoadingLogs">
@@ -815,7 +815,7 @@
 
         <div class="test-email-section" v-if="template?.actionService === 'Gmail'">
           <div class="test-email-info">
-            <h4>📧 Test Email Configuration</h4>
+            <h4> Test Email Configuration</h4>
             <p>Send a test email to verify your configuration works correctly.</p>
             <div class="email-preview">
               <strong>To:</strong> {{ form.actionConfig.toEmail || 'Enter email address' }}<br>
@@ -832,13 +832,13 @@
             {{ isSendingTest ? 'Sending...' : 'Send Test Email' }}
           </button>
           <div v-if="error" class="error-message">
-            ❌ {{ error }}
+             {{ error }}
           </div>
         </div>
 
         <div class="test-email-section" v-if="template?.actionService === 'Discord'">
           <div class="test-email-info">
-            <h4>💬 Test Discord Message</h4>
+            <h4> Test Discord Message</h4>
             <p>Send a test message to verify your Discord configuration works correctly.</p>
             <div class="email-preview">
               <strong>Webhook URL:</strong> {{ form.actionConfig.webhookUrl || 'Enter webhook URL' }}<br>
@@ -854,13 +854,13 @@
             {{ isSendingDiscordTest ? 'Sending...' : 'Send Test Message' }}
           </button>
           <div v-if="discordTestError" class="error-message">
-            ❌ {{ discordTestError }}
+             {{ discordTestError }}
           </div>
         </div>
 
         <div class="test-trigger-section" v-if="template?.triggerService === 'Spotify'">
           <div class="test-trigger-info">
-            <h4>🎵 Tester la connexion Spotify</h4>
+            <h4> Tester la connexion Spotify</h4>
             <p>Vérifiez le compte Spotify lié et récupérez le morceau en cours de lecture.</p>
             <div v-if="spotifyTestResult" class="trigger-preview">
               <strong>Compte Spotify :</strong>
@@ -907,13 +907,13 @@
             {{ isTestingSpotify ? 'Test en cours...' : 'Tester Spotify' }}
           </button>
           <div v-if="spotifyTestError" class="error-message">
-            ❌ {{ spotifyTestError }}
+             {{ spotifyTestError }}
           </div>
         </div>
 
         <div class="test-trigger-section" v-if="template?.triggerService === 'Google Calendar'">
           <div class="test-trigger-info">
-            <h4>🕐 Test Calendar Trigger</h4>
+            <h4> Test Calendar Trigger</h4>
             <p>Test if your calendar trigger is working correctly. This will simulate the trigger firing.</p>
             <div class="trigger-preview">
               <strong>Event Date:</strong> {{ form.triggerConfig.eventDate || 'Select date' }}<br>
@@ -930,13 +930,13 @@
             {{ isTestingTrigger ? 'Testing...' : 'Test Trigger' }}
           </button>
           <div v-if="triggerError" class="error-message">
-            ❌ {{ triggerError }}
+             {{ triggerError }}
           </div>
         </div>
 
         <div class="test-trigger-section" v-if="template?.triggerService === 'GitHub'">
           <div class="test-trigger-info">
-            <h4>🐙 Test GitHub Trigger</h4>
+            <h4> Test GitHub Trigger</h4>
             <p>Test if your GitHub trigger is working correctly. This will simulate a webhook event.</p>
             <div class="trigger-preview">
               <strong>Repository:</strong> {{ form.triggerConfig.repository || 'Enter repository' }}<br>
@@ -953,13 +953,13 @@
             {{ isTestingTrigger ? 'Testing...' : 'Test GitHub Trigger' }}
           </button>
           <div v-if="triggerError" class="error-message">
-            ❌ {{ triggerError }}
+             {{ triggerError }}
           </div>
         </div>
 
         <div class="test-trigger-section" v-if="template?.triggerService === 'Google Sheets'">
           <div class="test-trigger-info">
-            <h4>📊 Tester la connexion Google Sheets</h4>
+            <h4> Tester la connexion Google Sheets</h4>
             <p>Vérifiez que votre identifiant de feuille et la plage surveillée retournent bien des données.</p>
             <div class="trigger-preview">
               <strong>Spreadsheet ID:</strong> {{ form.triggerConfig.spreadsheetId || 'Renseignez un identifiant' }}<br>
@@ -975,7 +975,7 @@
             {{ isTestingGoogleSheets ? 'Test en cours...' : 'Tester la feuille' }}
           </button>
           <div v-if="sheetsTestError" class="error-message">
-            ❌ {{ sheetsTestError }}
+             {{ sheetsTestError }}
           </div>
           <div v-else-if="sheetsTestResult" class="sheets-test-result">
             <div class="sheets-test-summary">
@@ -1152,7 +1152,7 @@ watch(() => template.value, (newTemplate) => {
       discordTestError.value = null
     } else if (newTemplate.actionService === 'Discord') {
       const defaultMessage = newTemplate.triggerService === 'Google Sheets'
-        ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+        ? ' Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
         : 'Reminder: {{eventTitle}} starts at {{eventTime}}. Area: {{areaName}}'
 
       form.actionConfig = {
@@ -1161,7 +1161,7 @@ watch(() => template.value, (newTemplate) => {
       }
       discordTestError.value = null
     } else if (newTemplate.actionService === 'Slack') {
-      const defaultMessage = '📢 Notification from {{areaName}} at {{eventTime}}'
+      const defaultMessage = ' Notification from {{areaName}} at {{eventTime}}'
 
       form.actionConfig = {
         channel: '',
@@ -1597,7 +1597,7 @@ const sendTestEmail = async () => {
     console.log('Response data:', result)
 
     if (response.ok) {
-      alert('✅ Test email sent successfully! Check your inbox.')
+      alert(' Test email sent successfully! Check your inbox.')
       error.value = null
     } else {
       throw new Error(result.error || `Server error: ${response.status}`)
@@ -1606,7 +1606,7 @@ const sendTestEmail = async () => {
     const errorMessage = err instanceof Error ? err.message : 'Failed to send test email'
     error.value = errorMessage
     console.error('Error sending test email:', err)
-    alert('❌ Failed to send test email: ' + errorMessage)
+    alert(' Failed to send test email: ' + errorMessage)
   } finally {
     isSendingTest.value = false
   }
@@ -1646,7 +1646,7 @@ const sendTestDiscord = async () => {
     console.log('Discord test response data:', result)
 
     if (response.ok) {
-      alert('✅ Test Discord message sent successfully! Check your channel.')
+      alert(' Test Discord message sent successfully! Check your channel.')
       discordTestError.value = null
     } else {
       throw new Error(result.error || `Server error: ${response.status}`)
@@ -1655,7 +1655,7 @@ const sendTestDiscord = async () => {
     const errorMessage = err instanceof Error ? err.message : 'Failed to send test Discord message'
     discordTestError.value = errorMessage
     console.error('Error sending test Discord message:', err)
-    alert('❌ Failed to send test Discord message: ' + errorMessage)
+    alert(' Failed to send test Discord message: ' + errorMessage)
   } finally {
     isSendingDiscordTest.value = false
   }
@@ -1666,7 +1666,7 @@ const testSpotifyConnection = async () => {
   if (!token) {
     const errorMessage = 'Veuillez vous connecter avant de tester la connexion Spotify.'
     spotifyTestError.value = errorMessage
-    alert('❌ ' + errorMessage)
+    alert(' ' + errorMessage)
     return
   }
 
@@ -1694,20 +1694,20 @@ const testSpotifyConnection = async () => {
 
     if (result.requiresReauth) {
       const warningMessage = result.warning || 'Spotify requires additional permissions. Please unlink then relink your Spotify account and accept the playback scopes.'
-      alert('⚠️ ' + warningMessage)
+      alert(' ' + warningMessage)
     } else if (result.warning) {
-      alert('⚠️ ' + result.warning)
+      alert(' ' + result.warning)
     } else {
       const message = typeof result.message === 'string' && result.message.length
         ? result.message
         : 'Spotify connection verified!'
-      alert('✅ ' + message)
+      alert(' ' + message)
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify connection'
     spotifyTestError.value = errorMessage
     console.error('Error testing Spotify connection:', err)
-    alert('❌ Échec du test Spotify: ' + errorMessage)
+    alert(' Échec du test Spotify: ' + errorMessage)
   } finally {
     isTestingSpotify.value = false
   }
@@ -1759,7 +1759,7 @@ const testTrigger = async () => {
     console.log('Scheduler test response:', result)
 
     if (response.ok) {
-      alert('✅ Trigger test successful! Check your email inbox.')
+      alert(' Trigger test successful! Check your email inbox.')
       triggerError.value = null
 
       try {
@@ -1780,7 +1780,7 @@ const testTrigger = async () => {
     const errorMessage = err instanceof Error ? err.message : 'Failed to test trigger'
     triggerError.value = errorMessage
     console.error('Error testing trigger:', err)
-    alert('❌ Trigger test failed: ' + errorMessage)
+    alert(' Trigger test failed: ' + errorMessage)
   } finally {
     isTestingTrigger.value = false
   }
@@ -1837,7 +1837,7 @@ const testGitHubTrigger = async () => {
     console.log('GitHub webhook test response:', result)
 
     if (response.ok) {
-      alert('✅ GitHub trigger test successful! Check your configured action.')
+      alert(' GitHub trigger test successful! Check your configured action.')
       triggerError.value = null
 
       try {
@@ -1858,7 +1858,7 @@ const testGitHubTrigger = async () => {
     const errorMessage = err instanceof Error ? err.message : 'Failed to test GitHub trigger'
     triggerError.value = errorMessage
     console.error('Error testing GitHub trigger:', err)
-    alert('❌ GitHub trigger test failed: ' + errorMessage)
+    alert(' GitHub trigger test failed: ' + errorMessage)
   } finally {
     isTestingTrigger.value = false
   }
@@ -1903,12 +1903,12 @@ const testSpotifyPlaylist = async () => {
     const result = await areaService.testSpotifyPlaylist(playlistId)
     const message = result?.message || 'Playlist accessible'
     spotifyPlaylistTestMessage.value = message
-    alert('✅ ' + message)
+    alert(' ' + message)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to test Spotify playlist'
     spotifyPlaylistTestError.value = errorMessage
     console.error('Error testing Spotify playlist:', err)
-    alert('❌ Test playlist: ' + errorMessage)
+    alert(' Test playlist: ' + errorMessage)
   } finally {
     isTestingSpotifyPlaylist.value = false
   }
@@ -1984,7 +1984,7 @@ const createArea = async () => {
         const updatedArea = await areaService.updateArea(existingArea.value.id, areaData)
         console.log('Area updated successfully:', updatedArea)
 
-        alert(`✅ Area "${updatedArea.name}" updated successfully!`)
+        alert(` Area "${updatedArea.name}" updated successfully!`)
 
         router.push('/')
         return
@@ -1992,7 +1992,7 @@ const createArea = async () => {
         console.error('Update failed:', updateError)
         error.value = `Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`
 
-        alert(`❌ Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`)
+        alert(` Failed to update area: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`)
         return
       }
     } else {
@@ -2000,7 +2000,7 @@ const createArea = async () => {
       const createdArea = await areaService.createArea(areaData)
       console.log('New area created successfully:', createdArea)
 
-      alert(`✅ Area "${createdArea.name}" created successfully!`)
+      alert(` Area "${createdArea.name}" created successfully!`)
 
       router.push('/')
     }

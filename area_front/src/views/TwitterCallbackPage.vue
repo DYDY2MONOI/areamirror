@@ -72,7 +72,6 @@ onMounted(async () => {
       throw new Error('No authorization code received from Twitter/X')
     }
 
-    // Retrieve the code_verifier from sessionStorage (PKCE)
     const codeVerifier = sessionStorage.getItem('twitter_code_verifier')
     if (!codeVerifier) {
       throw new Error('PKCE verification failed: code_verifier not found')
@@ -80,7 +79,6 @@ onMounted(async () => {
 
     await authService.linkTwitterAccount(code, codeVerifier)
     
-    // Clean up the stored code_verifier
     sessionStorage.removeItem('twitter_code_verifier')
 
     loading.value = false

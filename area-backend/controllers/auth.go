@@ -212,7 +212,7 @@ func init() {
 func getBaseURL() string {
 	baseURL := os.Getenv("BASE_URL")
 	if baseURL == "" {
-		return "https://electrovalent-pursily-yee.ngrok-free.dev"
+		return "https://overeasily-superable-catarina.ngrok-free.dev"
 	}
 	return baseURL
 }
@@ -522,9 +522,9 @@ func GetMe(c *gin.Context) {
 	}
 
 	if user.GitHubUsername != nil {
-		log.Printf("🔍 GetMe: User %d has GitHub username: %s", user.ID, *user.GitHubUsername)
+		log.Printf(" GetMe: User %d has GitHub username: %s", user.ID, *user.GitHubUsername)
 	} else {
-		log.Printf("⚠️ GetMe: User %d has NULL GitHub username", user.ID)
+		log.Printf(" GetMe: User %d has NULL GitHub username", user.ID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -851,40 +851,40 @@ func LinkGitHubAccount(c *gin.Context) {
 		}
 	}
 
-	log.Printf("🔍 LinkGitHubAccount: Using redirect URI: %s", redirectURI)
+	log.Printf(" LinkGitHubAccount: Using redirect URI: %s", redirectURI)
 	accessToken, err := exchangeCodeForToken(req.Code, githubClientID, githubClientSecret, redirectURI)
 	if err != nil {
-		log.Printf("❌ Error exchanging code for token in LinkGitHubAccount: %v", err)
+		log.Printf(" Error exchanging code for token in LinkGitHubAccount: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
 	}
 
-	log.Printf("🔍 LinkGitHubAccount: Got access token, fetching GitHub user...")
+	log.Printf(" LinkGitHubAccount: Got access token, fetching GitHub user...")
 	githubUser, err := getGitHubUser(accessToken)
 	if err != nil {
-		log.Printf("❌ Error getting GitHub user in LinkGitHubAccount: %v", err)
+		log.Printf(" Error getting GitHub user in LinkGitHubAccount: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get GitHub user"})
 		return
 	}
 
-	log.Printf("🔍 LinkGitHubAccount: GitHub User Response - ID: %d, Login: %s, Email: %s, Name: %s",
+	log.Printf(" LinkGitHubAccount: GitHub User Response - ID: %d, Login: %s, Email: %s, Name: %s",
 		githubUser.ID, githubUser.Login, githubUser.Email, githubUser.Name)
 
 	if githubUser.ID == 0 {
-		log.Printf("⚠️ WARNING: GitHub user ID is 0 in LinkGitHubAccount!")
+		log.Printf(" WARNING: GitHub user ID is 0 in LinkGitHubAccount!")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid GitHub user data received"})
 		return
 	}
 
 	if githubUser.Login == "" {
-		log.Printf("⚠️ WARNING: GitHub username is empty in LinkGitHubAccount!")
+		log.Printf(" WARNING: GitHub username is empty in LinkGitHubAccount!")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "GitHub username is missing"})
 		return
 	}
 
 	var user models.User
 	if err := database.DB.First(&user, userID).Error; err != nil {
-		log.Printf("❌ Error finding user in LinkGitHubAccount: %v", err)
+		log.Printf(" Error finding user in LinkGitHubAccount: %v", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
@@ -1010,8 +1010,8 @@ func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
 		return nil, err
 	}
 
-	log.Printf("🔍 GitHub API Raw Response: %s", string(body))
-	log.Printf("🔍 GitHub API Response Status: %d", resp.StatusCode)
+	log.Printf(" GitHub API Raw Response: %s", string(body))
+	log.Printf(" GitHub API Response Status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, string(body))
@@ -1019,12 +1019,12 @@ func getGitHubUser(accessToken string) (*GitHubUserResponse, error) {
 
 	var githubUser GitHubUserResponse
 	if err := json.Unmarshal(body, &githubUser); err != nil {
-		log.Printf("❌ Error unmarshaling GitHub response: %v", err)
-		log.Printf("❌ Response body: %s", string(body))
+		log.Printf(" Error unmarshaling GitHub response: %v", err)
+		log.Printf(" Response body: %s", string(body))
 		return nil, err
 	}
 
-	log.Printf("✅ Parsed GitHub User - ID: %d, Login: %s, Email: %s, Name: %s",
+	log.Printf(" Parsed GitHub User - ID: %d, Login: %s, Email: %s, Name: %s",
 		githubUser.ID, githubUser.Login, githubUser.Email, githubUser.Name)
 
 	return &githubUser, nil
@@ -1515,16 +1515,16 @@ func GetGitHubRepositories(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("🔍 Fetching repositories for user: %s (GitHub username: %s)\n", user.Email, *user.GitHubUsername)
+	fmt.Printf(" Fetching repositories for user: %s (GitHub username: %s)\n", user.Email, *user.GitHubUsername)
 
 	repositories, err := getGitHubRepositoriesForUser(*user.GitHubUsername)
 	if err != nil {
-		fmt.Printf("❌ Error fetching repositories: %v\n", err)
+		fmt.Printf(" Error fetching repositories: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch repositories"})
 		return
 	}
 
-	fmt.Printf("✅ Successfully fetched %d repositories\n", len(repositories))
+	fmt.Printf(" Successfully fetched %d repositories\n", len(repositories))
 	c.JSON(http.StatusOK, GitHubRepositoriesResponse{
 		Repositories: repositories,
 	})
@@ -1544,9 +1544,9 @@ func getGitHubRepositoriesForUser(username string) ([]GitHubRepository, error) {
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	if githubToken != "" {
 		req.Header.Set("Authorization", "token "+githubToken)
-		fmt.Printf("🔑 Using GitHub token for API request\n")
+		fmt.Printf(" Using GitHub token for API request\n")
 	} else {
-		fmt.Printf("⚠️ No GitHub token found, using public API (rate limited)\n")
+		fmt.Printf(" No GitHub token found, using public API (rate limited)\n")
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -2086,41 +2086,38 @@ func GitHubDirectLogin(c *gin.Context) {
 
 	githubUser, err := getGitHubUser(accessToken)
 	if err != nil {
-		log.Printf("❌ Error getting GitHub user: %v", err)
+		log.Printf(" Error getting GitHub user: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get GitHub user"})
 		return
 	}
 
-	log.Printf("🔍 GitHub User Response - ID: %d, Login: %s, Email: %s, Name: %s",
+	log.Printf(" GitHub User Response - ID: %d, Login: %s, Email: %s, Name: %s",
 		githubUser.ID, githubUser.Login, githubUser.Email, githubUser.Name)
 
 	if githubUser.ID == 0 {
-		log.Printf("⚠️ WARNING: GitHub user ID is 0! This is invalid.")
+		log.Printf(" WARNING: GitHub user ID is 0! This is invalid.")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid GitHub user data received"})
 		return
 	}
 
 	if githubUser.Login == "" {
-		log.Printf("⚠️ WARNING: GitHub username is empty!")
+		log.Printf(" WARNING: GitHub username is empty!")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "GitHub username is missing"})
 		return
 	}
 
 	githubIDStr := fmt.Sprintf("%d", githubUser.ID)
 
-	// Handle missing email (GitHub may not return it if user hides it)
 	email := githubUser.Email
 	if email == "" {
-		// Generate a unique email for users without public email
 		email = fmt.Sprintf("github-%s@oauth.local", githubIDStr)
-		log.Printf("⚠️ GitHub user has no email, using generated: %s", email)
+		log.Printf(" GitHub user has no email, using generated: %s", email)
 	}
 
-	// Generate a random password for OAuth users (they won't use password login)
 	randomPassword := fmt.Sprintf("oauth_%s_%d", githubIDStr, time.Now().Unix())
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(randomPassword), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("❌ Error hashing password: %v", err)
+		log.Printf(" Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user password"})
 		return
 	}
@@ -2146,17 +2143,17 @@ func GitHubDirectLogin(c *gin.Context) {
 		if user.GitHubUsername != nil {
 			githubUsernameStr = *user.GitHubUsername
 		}
-		log.Printf("💾 Creating user with GitHubID: %s, GitHubUsername: %s", githubIDStr, githubUsernameStr)
+		log.Printf(" Creating user with GitHubID: %s, GitHubUsername: %s", githubIDStr, githubUsernameStr)
 
 		if err := database.DB.Create(&user).Error; err != nil {
-			log.Printf("❌ Error creating user: %v", err)
+			log.Printf(" Error creating user: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 			return
 		}
 
-		log.Printf("✅ User created with ID: %d", user.ID)
+		log.Printf(" User created with ID: %d", user.ID)
 		if err := database.DB.First(&user, user.ID).Error; err != nil {
-			log.Printf("❌ Error retrieving created user: %v", err)
+			log.Printf(" Error retrieving created user: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve created user"})
 			return
 		}
@@ -2169,7 +2166,7 @@ func GitHubDirectLogin(c *gin.Context) {
 		if user.GitHubUsername != nil {
 			dbGitHubUsernameStr = *user.GitHubUsername
 		}
-		log.Printf("✅ Created new user with GitHub - DB GitHubID: %s, DB GitHubUsername: %s", dbGitHubIDStr, dbGitHubUsernameStr)
+		log.Printf(" Created new user with GitHub - DB GitHubID: %s, DB GitHubUsername: %s", dbGitHubIDStr, dbGitHubUsernameStr)
 	} else {
 		if user.GitHubUsername == nil || *user.GitHubUsername != githubUser.Login {
 			user.GitHubUsername = &githubUser.Login
@@ -2177,7 +2174,7 @@ func GitHubDirectLogin(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update GitHub username"})
 				return
 			}
-			log.Printf("✅ Updated existing user GitHub username: %s", githubUser.Login)
+			log.Printf(" Updated existing user GitHub username: %s", githubUser.Login)
 		}
 		if err := database.DB.First(&user, user.ID).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
@@ -2186,9 +2183,9 @@ func GitHubDirectLogin(c *gin.Context) {
 	}
 
 	if user.GitHubUsername != nil {
-		log.Printf("🔍 User %d has GitHub username: %s", user.ID, *user.GitHubUsername)
+		log.Printf(" User %d has GitHub username: %s", user.ID, *user.GitHubUsername)
 	} else {
-		log.Printf("⚠️ User %d has NULL GitHub username", user.ID)
+		log.Printf(" User %d has NULL GitHub username", user.ID)
 	}
 
 	accessTokenJWT, err := generateAccessToken(user.ID, user.Email)
@@ -2378,7 +2375,7 @@ func SpotifyDirectLogin(c *gin.Context) {
 		return
 	}
 
-	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback", stateInfo.isMobile)
+	redirectURI := getRedirectURI("SPOTIFY_REDIRECT_URI", "MOBILE_SPOTIFY_REDIRECT_URI", "https://overeasily-superable-catarina.ngrok-free.dev/oauth2/spotify/callback", stateInfo.isMobile)
 
 	if spotifyClientID == "" || spotifyClientSecret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Spotify OAuth not configured"})

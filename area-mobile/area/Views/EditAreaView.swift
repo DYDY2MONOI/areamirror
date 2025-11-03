@@ -17,21 +17,16 @@ struct EditAreaView: View {
     @State private var name: String = ""
     @State private var description: String = ""
     
-    @State private var eventDate: String = ""
-    @State private var eventTime: String = ""
-    @State private var eventTitle: String = ""
-    @State private var calendarId: String = "primary"
-    @State private var eventDateTime: Date = Date()
+    @State private var triggerConfigValues: [String: ConfigFieldValue] = [:]
+    @State private var actionConfigValues: [String: ConfigFieldValue] = [:]
     
-    @State private var toEmail: String = ""
-    @State private var subject: String = ""
-    @State private var emailBody: String = ""
+    @State private var eventDateTime: Date = Date()
     
     @State private var isSaving = false
     @State private var errorMessage: String?
     
     init(area: Area, isEditing: Bool = true) {
-        print("📱 EditAreaView init with area: \(area.name) (ID: \(area.id)), isEditing: \(isEditing)")
+        print("EditAreaView init with area: \(area.name) (ID: \(area.id)), isEditing: \(isEditing)")
         self.area = area
         self.isEditing = isEditing
         
@@ -39,39 +34,38 @@ struct EditAreaView: View {
         _description = State(initialValue: area.description)
         
         if let triggerConfig = area.triggerConfig {
-            print("📱 Loading trigger config for existing area: \(area.name)")
-            if area.triggerService == "Date Timer" {
-                _eventDate = State(initialValue: triggerConfig["eventDate"]?.value as? String ?? "")
-                _eventTime = State(initialValue: triggerConfig["eventTime"]?.value as? String ?? "")
-                _eventTitle = State(initialValue: triggerConfig["eventTitle"]?.value as? String ?? "")
-                _calendarId = State(initialValue: triggerConfig["calendarId"]?.value as? String ?? "primary")
-                if let parsed = Self.parseCalendarDateTime(dateString: _eventDate.wrappedValue, timeString: _eventTime.wrappedValue) {
+            print("Loading trigger config for existing area: \(area.name)")
+            print("Trigger service name: '\(area.triggerService)'")
+            triggerConfigValues = anyCodableToConfigValues(triggerConfig)
+            
+            let normalizedTriggerService = area.triggerService.lowercased().trimmingCharacters(in: .whitespaces)
+            if normalizedTriggerService == "date timer" {
+                let eventDate = triggerConfigValues["eventDate"]?.stringValue ?? ""
+                let eventTime = triggerConfigValues["eventTime"]?.stringValue ?? ""
+                if let parsed = Self.parseCalendarDateTime(dateString: eventDate, timeString: eventTime) {
                     _eventDateTime = State(initialValue: parsed)
                 }
-                print("📱 Loaded calendar config: date=\(triggerConfig["eventDate"]?.value as? String ?? "nil"), time=\(triggerConfig["eventTime"]?.value as? String ?? "nil")")
             }
-        } else if area.triggerService == "Date Timer" {
-            print("📱 No trigger config, using default calendar config")
-            _eventDate = State(initialValue: "")
-            _eventTime = State(initialValue: "")
-            _eventDateTime = State(initialValue: Date())
-            _eventTitle = State(initialValue: "")
-            _calendarId = State(initialValue: "primary")
+        } else {
+            let triggerFields = ServiceConfigMetadata.triggerConfigFields(for: area.triggerService)
+            for field in triggerFields {
+                if let defaultValue = field.defaultValue {
+                    triggerConfigValues[field.key] = defaultValue
+                }
+            }
         }
         
         if let actionConfig = area.actionConfig {
-            print("📱 Loading action config for existing area: \(area.name)")
-            if area.actionService == "Gmail" {
-                _toEmail = State(initialValue: actionConfig["toEmail"]?.value as? String ?? "")
-                _subject = State(initialValue: actionConfig["subject"]?.value as? String ?? "Reminder: {{eventTitle}}")
-                _emailBody = State(initialValue: actionConfig["body"]?.value as? String ?? "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}")
-                print("📱 Loaded Gmail config: to=\(actionConfig["toEmail"]?.value as? String ?? "nil"), subject=\(actionConfig["subject"]?.value as? String ?? "nil")")
+            print("Loading action config for existing area: \(area.name)")
+            print("Action service name: '\(area.actionService)'")
+            actionConfigValues = anyCodableToConfigValues(actionConfig)
+        } else {
+            let actionFields = ServiceConfigMetadata.actionConfigFields(for: area.actionService)
+            for field in actionFields {
+                if let defaultValue = field.defaultValue {
+                    actionConfigValues[field.key] = defaultValue
+                }
             }
-        } else if area.actionService == "Gmail" {
-            print("📱 No action config, using default Gmail config")
-            _toEmail = State(initialValue: "")
-            _subject = State(initialValue: "Reminder: {{eventTitle}}")
-            _emailBody = State(initialValue: "Hello! This is a reminder about your upcoming event: {{eventTitle}} at {{eventTime}}.\n\nArea: {{areaName}}")
         }
     }
     
@@ -85,12 +79,24 @@ struct EditAreaView: View {
                         
                         formCard
                         
-                        if area.triggerService == "Date Timer" {
-                            calendarTriggerCard
+                        #if DEBUG
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("DEBUG: triggerService = '\(area.triggerService)'")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            Text("DEBUG: actionService = '\(area.actionService)'")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 20)
+                        #endif
+                        
+                        if let triggerFields = getTriggerConfigFields(for: area.triggerService), !triggerFields.isEmpty {
+                            genericTriggerConfigCard(serviceName: area.triggerService, fields: triggerFields)
                         }
                         
-                        if area.actionService == "Gmail" {
-                            gmailActionCard
+                        if let actionFields = getActionConfigFields(for: area.actionService), !actionFields.isEmpty {
+                            genericActionConfigCard(serviceName: area.actionService, fields: actionFields)
                         }
                         
                         if let errorMessage = errorMessage {
@@ -159,56 +165,120 @@ struct EditAreaView: View {
         }
     }
     
-    private var calendarTriggerCard: some View {
+    @ViewBuilder
+    private func genericTriggerConfigCard(serviceName: String, fields: [ServiceConfigField]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "calendar")
+                Image(systemName: serviceIcon(serviceName))
                     .foregroundColor(.white)
-                Text("Calendar Trigger")
+                Text("\(serviceName) Trigger")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
             }
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Date & time")
-                    .foregroundColor(.white)
-                    .font(.system(size: 14, weight: .medium))
-                DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
-                    .labelsHidden()
-                    .datePickerStyle(.compact)
-                    .onChange(of: eventDateTime) { oldValue, newValue in
-                        let (dateStr, timeStr) = Self.formatCalendarStrings(from: newValue)
-                        eventDate = dateStr
-                        eventTime = timeStr
-                    }
+            if serviceName.lowercased() == "date timer" {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Date & time")
+                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .medium))
+                    DatePicker("", selection: $eventDateTime, displayedComponents: [.date, .hourAndMinute])
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .onChange(of: eventDateTime) { oldValue, newValue in
+                            let (dateStr, timeStr) = Self.formatCalendarStrings(from: newValue)
+                            triggerConfigValues["eventDate"] = .string(dateStr)
+                            triggerConfigValues["eventTime"] = .string(timeStr)
+                        }
+                }
             }
-            labeledField(label: "Event title", placeholder: "Event title", text: $eventTitle)
-            labeledField(label: "Calendar ID", placeholder: "primary", text: $calendarId)
+            
+            GenericConfigView(
+                fields: fields,
+                configValues: $triggerConfigValues,
+                serviceName: serviceName
+            )
         }
         .cardStyle()
         .padding(.horizontal, 20)
     }
     
-    private var gmailActionCard: some View {
+    @ViewBuilder
+    private func genericActionConfigCard(serviceName: String, fields: [ServiceConfigField]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "envelope.fill")
+                Image(systemName: serviceIcon(serviceName))
                     .foregroundColor(.white)
-                Text("Gmail Action")
+                Text("\(serviceName) Action")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
             }
             
-            labeledField(label: "To email", placeholder: "your-email@gmail.com", text: $toEmail)
-            labeledField(label: "Subject", placeholder: "Reminder: {{eventTitle}}", text: $subject)
-            labeledField(label: "Body", placeholder: "Body", text: $emailBody, axis: .vertical)
+            GenericConfigView(
+                fields: fields,
+                configValues: $actionConfigValues,
+                serviceName: serviceName
+            )
         }
         .cardStyle()
         .padding(.horizontal, 20)
+    }
+    
+    private func getTriggerConfigFields(for serviceName: String) -> [ServiceConfigField]? {
+        let fields = ServiceConfigMetadata.triggerConfigFields(for: serviceName)
+        return fields.isEmpty ? nil : fields
+    }
+    
+    private func getActionConfigFields(for serviceName: String) -> [ServiceConfigField]? {
+        let fields = ServiceConfigMetadata.actionConfigFields(for: serviceName)
+        return fields.isEmpty ? nil : fields
     }
     
     private var canSave: Bool {
-        !name.isEmpty && (area.actionService != "Gmail" || (!toEmail.isEmpty && !subject.isEmpty))
+        if name.isEmpty { return false }
+        
+        if let triggerFields = getTriggerConfigFields(for: area.triggerService) {
+            for field in triggerFields where field.isRequired {
+                let value = triggerConfigValues[field.key]?.stringValue ?? ""
+                if value.isEmpty {
+                    return false
+                }
+            }
+        }
+        
+        if let actionFields = getActionConfigFields(for: area.actionService) {
+            for field in actionFields where field.isRequired {
+                let value = actionConfigValues[field.key]?.stringValue ?? ""
+                if value.isEmpty {
+                    return false
+                }
+            }
+            
+            let normalizedActionService = area.actionService.lowercased().trimmingCharacters(in: .whitespaces)
+            if normalizedActionService == "twitter" {
+                if actionConfigValues["actionMode"]?.stringValue == "tweet" {
+                    let tweetText = actionConfigValues["tweetText"]?.stringValue ?? ""
+                    if tweetText.isEmpty {
+                        return false
+                    }
+                } else if actionConfigValues["actionMode"]?.stringValue == "retweet" {
+                    let tweetId = actionConfigValues["tweetId"]?.stringValue ?? ""
+                    if tweetId.isEmpty {
+                        return false
+                    }
+                }
+            }
+            
+            if normalizedActionService == "spotify" {
+                let playlistId = actionConfigValues["playlistId"]?.stringValue ?? ""
+                let range = actionConfigValues["range"]?.stringValue ?? ""
+                let urlColumn = actionConfigValues["urlColumn"]?.stringValue ?? ""
+                if playlistId.isEmpty || range.isEmpty || urlColumn.isEmpty {
+                    return false
+                }
+            }
+        }
+        
+        return true
     }
     
     private func saveArea() {
@@ -218,23 +288,18 @@ struct EditAreaView: View {
         Task {
             do {
                 var triggerConfig: [String: AnyCodable] = [:]
-                if area.triggerService == "Date Timer" {
-                    triggerConfig = [
-                        "eventDate": AnyCodable(eventDate),
-                        "eventTime": AnyCodable(eventTime),
-                        "eventTitle": AnyCodable(eventTitle),
-                        "calendarId": AnyCodable(calendarId)
-                    ]
+                let normalizedTriggerService = area.triggerService.lowercased().trimmingCharacters(in: .whitespaces)
+                
+                if normalizedTriggerService == "date timer" {
+                    let (dateStr, timeStr) = Self.formatCalendarStrings(from: eventDateTime)
+                    triggerConfigValues["eventDate"] = .string(dateStr)
+                    triggerConfigValues["eventTime"] = .string(timeStr)
                 }
                 
+                triggerConfig = configValuesToAnyCodable(triggerConfigValues)
+                
                 var actionConfig: [String: AnyCodable] = [:]
-                if area.actionService == "Gmail" {
-                    actionConfig = [
-                        "toEmail": AnyCodable(toEmail),
-                        "subject": AnyCodable(subject),
-                        "body": AnyCodable(emailBody)
-                    ]
-                }
+                actionConfig = configValuesToAnyCodable(actionConfigValues)
                 
                 let fullPayload = AreaService.CreateOrUpdateAreaRequest(
                     name: name,
@@ -249,13 +314,13 @@ struct EditAreaView: View {
                 )
                 
                 if isEditing {
-                    print("🔄 Updating existing area with ID: \(area.id)")
+                    print("Updating existing area with ID: \(area.id)")
                     _ = try await areaService.updateArea(areaId: area.id, payload: fullPayload)
-                    print("✅ Area updated successfully")
+                    print("Area updated successfully")
                 } else {
-                    print("➕ Creating new area")
+                    print("Creating new area")
                     _ = try await areaService.createArea(payload: fullPayload)
-                    print("✅ Area created successfully")
+                    print("Area created successfully")
                 }
                 
                 DispatchQueue.main.async {
@@ -275,6 +340,7 @@ struct EditAreaView: View {
         switch service {
         case "Gmail": return "SendEmail"
         case "Discord": return "SendDiscordMessage"
+        case "Twitter", "Twitter / X": return "PostTweet"
         default: return "Action"
         }
     }

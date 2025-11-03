@@ -28,7 +28,8 @@ onMounted(async () => {
 
   if (code) {
     try {
-      await linkGitHubAccount(code)
+      const redirectUri = `${window.location.origin}/auth/github/callback`
+      await linkGitHubAccount(code, redirectUri)
       router.push('/github-link?success=true')
     } catch (error) {
       console.error('GitHub linking error:', error)

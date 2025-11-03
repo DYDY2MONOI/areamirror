@@ -235,60 +235,60 @@ const getActionIcon = (service: string) => {
 const getTriggerEmoji = (service: string) => {
   switch (service) {
     case "Date Timer":
-      return "📅"
+      return ""
     case "GitHub":
-      return "🐙"
+      return ""
     case "Gmail":
-      return "📧"
+      return ""
     case "Discord":
-      return "💬"
+      return ""
     case "Slack":
-      return "💼"
+      return ""
     case "Weather":
-      return "🌤️"
+      return ""
     case "Instagram":
-      return "📸"
+      return ""
     case "Twitter":
-      return "🐦"
+      return ""
     case "YouTube":
-      return "📺"
+      return ""
     case "Spotify":
-      return "🎵"
+      return ""
     case "Telegram":
-      return "✈️"
+      return ""
     case "Twitch":
-      return "🎮"
+      return ""
     case "Dropbox":
-      return "📁"
+      return ""
     case "Notion":
-      return "📝"
+      return ""
     default:
-      return "⚙️"
+      return ""
   }
 }
 
 const getActionEmoji = (service: string) => {
   switch (service) {
     case "Gmail":
-      return "📧"
+      return ""
     case "Discord":
-      return "💬"
+      return ""
     case "Slack":
-      return "💼"
+      return ""
     case "GitHub":
-      return "🐙"
+      return ""
     case "Telegram":
-      return "✈️"
+      return ""
     case "Twitter":
-      return "🐦"
+      return ""
     case "Instagram":
-      return "📸"
+      return ""
     case "Dropbox":
-      return "📁"
+      return ""
     case "Notion":
-      return "📝"
+      return ""
     default:
-      return "⚙️"
+      return ""
   }
 }
 

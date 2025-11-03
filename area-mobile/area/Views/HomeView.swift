@@ -25,13 +25,11 @@ struct HomeView: View {
 
                 ScrollView {
                     VStack(spacing: 32) {
-                        // Top bar
                         HStack {
                             ProfileAvatar(size: 32, user: AuthService.shared.currentUser)
                             Spacer()
                         }
 
-                        // Content sections
                         if areaService.isLoading {
                             ProgressView("Loading areas...")
                                 .foregroundColor(.white)

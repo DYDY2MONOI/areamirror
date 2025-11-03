@@ -2,7 +2,7 @@
 //  AreaPayloadDefaults.swift
 //  area
 //
-//  Created by Codex on 03/12/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import Foundation
@@ -18,6 +18,8 @@ enum AreaPayloadDefaults {
             return "Playback"
         case "Telegram":
             return "message_received"
+        case "Twitter":
+            return "mentions"
         default:
             return "Webhook"
         }
@@ -27,6 +29,8 @@ enum AreaPayloadDefaults {
         switch service {
         case "Gmail":
             return "SendEmail"
+        case "Twitter":
+            return "PostTweet"
         default:
             return "Action"
         }
@@ -59,6 +63,12 @@ enum AreaPayloadDefaults {
                 "chatId": AnyCodable(""),
                 "triggerType": AnyCodable("message_received")
             ]
+        case "Twitter":
+            return [
+                "monitorType": AnyCodable("mentions"),
+                "keyword": AnyCodable(""),
+                "includeRetweets": AnyCodable(false)
+            ]
         default:
             return [:]
         }
@@ -81,6 +91,12 @@ enum AreaPayloadDefaults {
             return [
                 "channel": AnyCodable(""),
                 "message": AnyCodable("")
+            ]
+        case "Twitter":
+            return [
+                "actionMode": AnyCodable("tweet"),
+                "tweetText": AnyCodable("Thanks for the mention @{{tweetAuthorUsername}}! "),
+                "replyToTweetId": AnyCodable("{{tweetId}}")
             ]
         default:
             return [:]

@@ -340,7 +340,6 @@ const errorMessages = ref<Record<string, string>>({})
 const successMessages = ref<Record<string, string>>({})
 const isLoading = ref(false)
 
-// PKCE helper functions for Twitter OAuth 2.0
 function generateCodeVerifier(): string {
   const array = new Uint8Array(32)
   crypto.getRandomValues(array)
@@ -488,11 +487,9 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      // Generate PKCE parameters for Twitter OAuth 2.0
       const codeVerifier = generateCodeVerifier()
       const codeChallenge = await generateCodeChallenge(codeVerifier)
 
-      // Store code_verifier in sessionStorage for later use
       sessionStorage.setItem('twitter_code_verifier', codeVerifier)
 
       const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
@@ -697,7 +694,6 @@ onMounted(async () => {
   overflow-x: hidden;
 }
 
-/* Space Background */
 .space-background {
   position: fixed;
   top: 0;
@@ -785,7 +781,6 @@ onMounted(async () => {
   }
 }
 
-/* Nebula Effect */
 .nebula {
   position: absolute;
   top: 0;

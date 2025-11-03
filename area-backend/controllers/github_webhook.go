@@ -28,12 +28,12 @@ func NewGitHubWebhookController() *GitHubWebhookController {
 func (ghc *GitHubWebhookController) verifyWebhookSignature(payload []byte, signature string) bool {
 	secret := os.Getenv("WEBHOOK_SECRET")
 	if secret == "" {
-		fmt.Printf("⚠️ Warning: WEBHOOK_SECRET not configured, skipping verification\n")
+		fmt.Printf(" Warning: WEBHOOK_SECRET not configured, skipping verification\n")
 		return true
 	}
 
 	if !strings.HasPrefix(signature, "sha256=") {
-		fmt.Printf("❌ Invalid signature format: %s\n", signature)
+		fmt.Printf(" Invalid signature format: %s\n", signature)
 		return false
 	}
 
@@ -43,8 +43,8 @@ func (ghc *GitHubWebhookController) verifyWebhookSignature(payload []byte, signa
 	mac.Write(payload)
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	fmt.Printf("🔐 Expected signature: %s\n", expectedSignature)
-	fmt.Printf("🔐 Received signature: %s\n", signature)
+	fmt.Printf(" Expected signature: %s\n", expectedSignature)
+	fmt.Printf(" Received signature: %s\n", signature)
 
 	return hmac.Equal([]byte(signature), []byte(expectedSignature))
 }
@@ -53,7 +53,7 @@ func (ghc *GitHubWebhookController) HandleWebhook(c *gin.Context) {
 	eventType := c.GetHeader("X-GitHub-Event")
 	signature := c.GetHeader("X-Hub-Signature-256")
 
-	fmt.Printf("🎣 Webhook received! Event type: %s, Signature: %s\n", eventType, signature)
+	fmt.Printf(" Webhook received! Event type: %s, Signature: %s\n", eventType, signature)
 
 	if eventType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing X-GitHub-Event header"})
@@ -67,12 +67,12 @@ func (ghc *GitHubWebhookController) HandleWebhook(c *gin.Context) {
 	}
 
 	if !ghc.verifyWebhookSignature(body, signature) {
-		fmt.Printf("❌ Webhook signature verification failed\n")
+		fmt.Printf(" Webhook signature verification failed\n")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook signature"})
 		return
 	}
 
-	fmt.Printf("✅ Webhook signature verified successfully\n")
+	fmt.Printf(" Webhook signature verified successfully\n")
 
 	switch eventType {
 	case "push":

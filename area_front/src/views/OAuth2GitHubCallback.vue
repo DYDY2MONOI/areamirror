@@ -4,7 +4,7 @@
       <div class="callback-card">
         <div class="callback-header">
           <div class="logo-container">
-            <div class="logo-icon">🔐</div>
+            <div class="logo-icon"></div>
           </div>
           <h1 class="callback-title">GitHub Authentication</h1>
           <p class="callback-subtitle">Processing your GitHub login...</p>
@@ -16,14 +16,14 @@
         </div>
 
         <div v-else-if="success" class="success-container">
-          <div class="success-icon">✅</div>
+          <div class="success-icon"></div>
           <h2 class="success-title">Login Successful!</h2>
           <p class="success-message">{{ message }}</p>
           <p class="redirect-text">Redirecting to dashboard...</p>
         </div>
 
         <div v-else-if="error" class="error-container">
-          <div class="error-icon">❌</div>
+          <div class="error-icon"></div>
           <h2 class="error-title">Authentication Failed</h2>
           <p class="error-message">{{ error }}</p>
           <button @click="retryLogin" class="retry-button">Try Again</button>
@@ -40,7 +40,7 @@ import { useRouter } from 'vue-router'
 import { oauth2AuthService } from '@/services/oauth2-auth'
 import { API_BASE_URL } from '@/config/api'
 
-console.log('🚀 OAuth2GitHubCallback component is loading...')
+console.log(' OAuth2GitHubCallback component is loading...')
 
 const router = useRouter()
 const loading = ref(true)
@@ -48,10 +48,10 @@ const success = ref(false)
 const error = ref('')
 const message = ref('Connecting to GitHub...')
 
-console.log('🚀 Component variables initialized')
+console.log(' Component variables initialized')
 
 const redirectToDashboard = () => {
-  console.log('🔄 Redirecting to dashboard...')
+  console.log(' Redirecting to dashboard...')
   router.push('/profile')
 }
 
@@ -64,35 +64,35 @@ const goToLogin = () => {
 }
 
 onMounted(async () => {
-  console.log('🎯 onMounted hook started')
-  console.log('🔍 Current URL:', window.location.href)
-  console.log('🔍 Search params:', window.location.search)
+  console.log(' onMounted hook started')
+  console.log(' Current URL:', window.location.href)
+  console.log(' Search params:', window.location.search)
 
   try {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     const errorParam = urlParams.get('error')
 
-    console.log('🔍 Code from URL:', code)
-    console.log('🔍 Error param:', errorParam)
+    console.log(' Code from URL:', code)
+    console.log(' Error param:', errorParam)
 
     if (errorParam) {
-      console.error('❌ Error param found:', errorParam)
+      console.error(' Error param found:', errorParam)
       throw new Error('GitHub authentication was cancelled or failed')
     }
 
     if (!code) {
-      console.error('❌ No code found in URL')
+      console.error(' No code found in URL')
       throw new Error('No authorization code received from GitHub')
     }
 
     message.value = 'Authenticating with GitHub...'
-    console.log('📡 Fetching from:', `${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
+    console.log(' Fetching from:', `${import.meta.env.VITE_API_BASE_URL}/oauth2/github/callback?code=${code}`)
 
     const response = await fetch(`${API_BASE_URL}/oauth2/github/callback?code=${code}`)
 
-    console.log('📡 Response status:', response.status)
-    console.log('📡 Response ok:', response.ok)
+    console.log(' Response status:', response.status)
+    console.log(' Response ok:', response.ok)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Authentication failed' }))
@@ -101,9 +101,9 @@ onMounted(async () => {
 
     const data = await response.json()
 
-    console.log('🔍 GitHub OAuth Response:', data)
-    console.log('🔍 Response user object:', data.user)
-    console.log('🔍 GitHub username in response:', data.user?.github_username)
+    console.log(' GitHub OAuth Response:', data)
+    console.log(' Response user object:', data.user)
+    console.log(' GitHub username in response:', data.user?.github_username)
 
     if (!data.access_token || !data.user) {
       throw new Error('Invalid response format from server')
@@ -112,7 +112,7 @@ onMounted(async () => {
     oauth2AuthService.handleSuccessfulAuth(data)
 
     const storedUser = localStorage.getItem('oauth2_user')
-    console.log('✅ Stored user after auth:', storedUser ? JSON.parse(storedUser) : 'NULL')
+    console.log(' Stored user after auth:', storedUser ? JSON.parse(storedUser) : 'NULL')
 
     success.value = true
     loading.value = false
@@ -123,14 +123,14 @@ onMounted(async () => {
     }, 2000)
 
   } catch (err) {
-    console.error('💥 ERROR in GitHub OAuth callback:', err)
-    console.error('💥 Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+    console.error(' ERROR in GitHub OAuth callback:', err)
+    console.error(' Error stack:', err instanceof Error ? err.stack : 'No stack trace')
     loading.value = false
     error.value = err instanceof Error ? err.message : 'Failed to authenticate with GitHub'
     console.error('GitHub OAuth2 error:', err)
   }
 
-  console.log('🎯 onMounted hook completed')
+  console.log(' onMounted hook completed')
 })
 </script>
 

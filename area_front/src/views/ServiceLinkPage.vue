@@ -242,7 +242,6 @@ const isLoading = ref(false)
 const errorMessages = ref<Record<string, string>>({})
 const successMessages = ref<Record<string, string>>({})
 
-// PKCE helper functions for Twitter OAuth 2.0
 function generateCodeVerifier(): string {
   const array = new Uint8Array(32)
   crypto.getRandomValues(array)
@@ -372,7 +371,7 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      const fallbackRedirect = 'https://electrovalent-pursily-yee.ngrok-free.dev/oauth2/spotify/callback'
+      const fallbackRedirect = 'https://overeasily-superable-catarina.ngrok-free.dev/oauth2/spotify/callback'
       const overrideRedirect = import.meta.env.VITE_SPOTIFY_LINK_REDIRECT_URI || fallbackRedirect
       const redirectUri = encodeURIComponent(overrideRedirect)
       const scopeParam = encodeURIComponent(service.scopes.join(' '))
@@ -387,11 +386,9 @@ const linkService = async (serviceId: string) => {
         return
       }
 
-      // Generate PKCE parameters for Twitter OAuth 2.0
       const codeVerifier = generateCodeVerifier()
       const codeChallenge = await generateCodeChallenge(codeVerifier)
       
-      // Store code_verifier in sessionStorage for later use
       sessionStorage.setItem('twitter_code_verifier', codeVerifier)
 
       const redirectUri = encodeURIComponent(`${window.location.origin}${service.callbackPath}`)
@@ -451,7 +448,9 @@ const handleServiceCallback = async (serviceId: string, code: string) => {
 
   try {
     if (serviceId === 'github') {
-      const result = await linkGitHubAccount(code)
+      const service = SERVICES_CONFIG.find(s => s.id === serviceId)
+      const redirectUri = service ? `${window.location.origin}${service.callbackPath}` : undefined
+      const result = await linkGitHubAccount(code, redirectUri)
       successMessages.value[serviceId] = 'GitHub account linked successfully!'
     } else if (serviceId === 'google') {
       const result = await linkGoogleAccount(code)

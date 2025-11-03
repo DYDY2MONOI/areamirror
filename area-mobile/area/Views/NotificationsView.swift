@@ -2,7 +2,7 @@
 //  NotificationsView.swift
 //  area
 //
-//  Created by Codex on 02/11/2025.
+//  Created by Dydy2Brazil on 19/09/2025.≈
 //
 
 import SwiftUI
@@ -90,7 +90,6 @@ struct NotificationsView: View {
         }
         .navigationViewStyle(.stack)
         .task {
-            // On open, try importing any delivered notifications not captured while backgrounded
             await NotificationService.shared.importDeliveredNotifications()
         }
     }

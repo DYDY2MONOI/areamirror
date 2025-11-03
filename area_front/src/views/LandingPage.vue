@@ -273,7 +273,6 @@
 
     <OnboardingTutorial :is-open="showOnboarding" @close="closeOnboarding" />
 
-    <!-- Daltonism Modal -->
     <div v-if="showDaltonismModal" class="daltonism-modal-overlay" @click="onDaltonismCancel">
       <div class="daltonism-modal-container" @click.stop>
         <div class="daltonism-modal-content">
@@ -457,7 +456,7 @@ onMounted(async () => {
 
   const isNewUser = localStorage.getItem('area_new_user') === 'true'
 
-  console.log('🔍 Onboarding Check:', {
+  console.log(' Onboarding Check:', {
     isNewUser,
     currentUser: currentUser.value,
     userId: currentUser.value?.id
@@ -467,7 +466,7 @@ onMounted(async () => {
     const tutorialKey = `area_tutorial_completed_${currentUser.value.id}`
     const tutorialCompleted = localStorage.getItem(tutorialKey) === 'true'
 
-    console.log('📚 Tutorial Status:', {
+    console.log(' Tutorial Status:', {
       tutorialKey,
       tutorialCompleted,
       willShowTutorial: !tutorialCompleted
@@ -475,16 +474,16 @@ onMounted(async () => {
 
     if (!tutorialCompleted) {
       setTimeout(() => {
-        console.log('🎉 Affichage du tutoriel!')
+        console.log(' Affichage du tutoriel!')
         showOnboarding.value = true
         localStorage.removeItem('area_new_user')
       }, 1000)
     } else {
-      console.log('✅ Tutoriel déjà complété pour cet utilisateur')
+      console.log(' Tutoriel déjà complété pour cet utilisateur')
       localStorage.removeItem('area_new_user')
     }
   } else {
-    console.log('❌ Conditions non remplies pour afficher le tutoriel')
+    console.log(' Conditions non remplies pour afficher le tutoriel')
   }
 
   window.addEventListener('beforeunload', () => {

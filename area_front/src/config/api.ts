@@ -26,6 +26,7 @@ const getApiUrl = () => {
 }
 
 export const API_BASE_URL = getApiUrl()
+export const API_ROOT_URL = API_BASE_URL.replace(/\/api$/, '')
 
 export const API_ENDPOINTS = {
   LOGIN: '/login',

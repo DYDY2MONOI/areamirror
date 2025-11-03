@@ -107,7 +107,7 @@ func (s *SlackService) sendPayload(webhookURL string, payload SlackWebhookMessag
 func CreateGitHubNotificationAttachment(repoName, commitMessage, author, commitURL string) Attachment {
 	return Attachment{
 		Color: "#36a64f",
-		Title: fmt.Sprintf("📝 Nouveau commit sur %s", repoName),
+		Title: fmt.Sprintf(" Nouveau commit sur %s", repoName),
 		Text:  commitMessage,
 		Fields: []Field{
 			{

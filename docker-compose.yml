@@ -33,7 +33,7 @@ services:
       OAUTH2_ACCESS_TOKEN_EXPIRY: ${OAUTH2_ACCESS_TOKEN_EXPIRY:-900}
       OAUTH2_REFRESH_TOKEN_EXPIRY: ${OAUTH2_REFRESH_TOKEN_EXPIRY:-2592000}
       OAUTH2_TOKEN_CLEANUP_INTERVAL: ${OAUTH2_TOKEN_CLEANUP_INTERVAL:-24h}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://overeasily-superable-catarina.ngrok-free.dev,http://localhost:8080}
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
       RATE_LIMIT_REQUESTS_PER_MINUTE: ${RATE_LIMIT_REQUESTS_PER_MINUTE:-60}
       RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-10}
@@ -44,17 +44,17 @@ services:
       TWITTER_CLIENT_ID: ${TWITTER_CLIENT_ID}
       TWITTER_CLIENT_SECRET: ${TWITTER_CLIENT_SECRET}
       TWITTER_REDIRECT_URI: ${TWITTER_REDIRECT_URI}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/callback}
-      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:3000/oauth2/github/callback}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://overeasily-superable-catarina.ngrok-free.dev/callback}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-https://overeasily-superable-catarina.ngrok-free.dev/oauth2/github/callback}
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
-      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:8080/webhooks/github}
+      WEBHOOK_URL: ${WEBHOOK_URL:-https://overeasily-superable-catarina.ngrok-free.dev/webhooks/github}
       WEBHOOK_SECRET: ${WEBHOOK_SECRET}
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET}
-      FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI:-http://localhost:3000/oauth2/facebook/callback}
+      FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI:-https://overeasily-superable-catarina.ngrok-free.dev/oauth2/facebook/callback}
       ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID}
       ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET}
-      ONEDRIVE_REDIRECT_URI: ${ONEDRIVE_REDIRECT_URI:-http://localhost:8080/onedrive/callback}
+      ONEDRIVE_REDIRECT_URI: ${ONEDRIVE_REDIRECT_URI:-https://overeasily-superable-catarina.ngrok-free.dev/onedrive/callback}
       GOOGLE_SHEETS_API_KEY: ${GOOGLE_SHEETS_API_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-https://overeasily-superable-catarina.ngrok-free.dev/webhooks/telegram}
@@ -64,7 +64,7 @@ services:
       SPOTIFY_LINK_REDIRECT_URI: ${SPOTIFY_LINK_REDIRECT_URI:-http://127.0.0.1:3000/oauth2/spotify/callback}
       SLACK_CLIENT_ID: ${SLACK_CLIENT_ID}
       SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET}
-      SLACK_REDIRECT_URI: ${SLACK_REDIRECT_URI:-http://localhost:8080/slack/callback}
+      SLACK_REDIRECT_URI: ${SLACK_REDIRECT_URI:-https://overeasily-superable-catarina.ngrok-free.dev/slack/callback}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
     ports:

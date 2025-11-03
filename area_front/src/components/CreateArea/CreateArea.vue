@@ -129,7 +129,7 @@
                   <v-icon size="24" color="#8b5cf6">mdi-brain</v-icon>
                 </div>
                 <div class="selector-info">
-                  <h3 class="selector-title">✨ Transform with AI (Optional)</h3>
+                  <h3 class="selector-title"> Transform with AI (Optional)</h3>
                   <p class="selector-subtitle">Use OpenAI to generate text before sending</p>
                 </div>
               </div>
@@ -247,7 +247,7 @@
                 <img :src="getIconUrl('google-calendar.png')" alt="Google Calendar" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">📅 Calendar Event Trigger</h4>
+                <h4 class="config-title"> Calendar Event Trigger</h4>
                 <p class="config-subtitle">Configure when this area should trigger</p>
               </div>
             </div>
@@ -255,7 +255,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">📅 Event Date & Time</label>
+                  <label class="input-label"> Event Date & Time</label>
                   <input
                     v-model="form.triggerConfig.eventTime"
                     type="datetime-local"
@@ -267,7 +267,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📝 Event Title (Optional)</label>
+                  <label class="input-label"> Event Title (Optional)</label>
                   <input
                     v-model="form.triggerConfig.eventTitle"
                     class="modern-input"
@@ -277,7 +277,7 @@
                 </div>
 
                 <div class="input-container" v-if="form.triggerService === 'Google Calendar'">
-                  <label class="input-label">🗓️ Calendar ID</label>
+                  <label class="input-label"> Calendar ID</label>
                   <input
                     v-model="form.triggerConfig.calendarId"
                     class="modern-input"
@@ -295,7 +295,7 @@
                 <img :src="getIconUrl('github.png')" alt="GitHub" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">🐙 GitHub Repository Trigger</h4>
+                <h4 class="config-title"> GitHub Repository Trigger</h4>
                 <p class="config-subtitle">Configure which GitHub events should trigger this area</p>
               </div>
             </div>
@@ -514,7 +514,7 @@
                 <img :src="getIconUrl('google-drive.png')" alt="Google Drive" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">📁 Google Drive Trigger</h4>
+                <h4 class="config-title"> Google Drive Trigger</h4>
                 <p class="config-subtitle">Trigger when a new file appears in a folder</p>
               </div>
             </div>
@@ -522,7 +522,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">🗂️ Folder ID</label>
+                  <label class="input-label"> Folder ID</label>
                   <input
                     v-model="form.triggerConfig.folderId"
                     class="modern-input"
@@ -533,7 +533,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">🔖 Email Subject (Gmail action)</label>
+                  <label class="input-label"> Email Subject (Gmail action)</label>
                   <input
                     v-if="form.actionService === 'Gmail'"
                     v-model="form.actionConfig.subject"
@@ -552,7 +552,7 @@
                 <img :src="getIconUrl('google-sheets.png')" alt="Google Sheets" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">📊 Google Sheets Trigger</h4>
+                <h4 class="config-title"> Google Sheets Trigger</h4>
                 <p class="config-subtitle">Surveillez une plage de votre feuille et déclenchez des actions sur chaque modification</p>
               </div>
             </div>
@@ -560,7 +560,7 @@
             <div class="config-content">
               <div class="sheets-config-grid">
                 <div class="input-container">
-                  <label class="input-label">🆔 Spreadsheet ID</label>
+                  <label class="input-label"> Spreadsheet ID</label>
                   <input
                     v-model="form.triggerConfig.spreadsheetId"
                     class="modern-input"
@@ -571,7 +571,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📄 Nom de la feuille (optionnel)</label>
+                  <label class="input-label"> Nom de la feuille (optionnel)</label>
                   <input
                     v-model="form.triggerConfig.sheetName"
                     class="modern-input"
@@ -581,7 +581,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📍 Plage A1</label>
+                  <label class="input-label"> Plage A1</label>
                   <input
                     v-model="form.triggerConfig.range"
                     class="modern-input"
@@ -611,7 +611,7 @@
                   {{ isTestingGoogleSheets ? 'Test en cours...' : 'Tester la connexion' }}
                 </button>
                 <div v-if="sheetsTestError" class="error-message">
-                  ❌ {{ sheetsTestError }}
+                   {{ sheetsTestError }}
                 </div>
                 <div v-else-if="sheetsTestResult" class="sheets-test-result">
                   <div class="sheets-test-summary">
@@ -649,7 +649,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">⏱️ Time Interval</label>
+                  <label class="input-label">⏱ Time Interval</label>
                   <select v-model="form.triggerConfig.interval" class="modern-select" required>
                     <option value="">Select an interval...</option>
                     <option value="30s">Every 30 seconds (testing)</option>
@@ -683,7 +683,7 @@
                 <img :src="getFallbackIcon('OpenAI')" alt="OpenAI" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">🤖 OpenAI Configuration</h4>
+                <h4 class="config-title"> OpenAI Configuration</h4>
                 <p class="config-subtitle">Configure how OpenAI should generate text from your trigger data</p>
               </div>
             </div>
@@ -691,7 +691,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">💬 System Prompt (Optional)</label>
+                  <label class="input-label"> System Prompt (Optional)</label>
                   <textarea
                     v-model="form.intermediateActionConfig.systemPrompt"
                     class="modern-textarea"
@@ -702,7 +702,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">✍️ Prompt</label>
+                  <label class="input-label"> Prompt</label>
                   <textarea
                     v-model="form.intermediateActionConfig.prompt"
                     class="modern-textarea"
@@ -726,7 +726,7 @@
 
                 <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div class="input-container">
-                    <label class="input-label">🌡️ Temperature</label>
+                    <label class="input-label"> Temperature</label>
                     <input
                       v-model.number="form.intermediateActionConfig.temperature"
                       type="number"
@@ -739,7 +739,7 @@
                   </div>
 
                   <div class="input-container">
-                    <label class="input-label">📏 Max Tokens</label>
+                    <label class="input-label"> Max Tokens</label>
                     <input
                       v-model.number="form.intermediateActionConfig.maxTokens"
                       type="number"
@@ -752,16 +752,88 @@
                   </div>
                 </div>
               </div>
+          </div>
+        </div>
+
+        <div v-if="form.triggerService === 'Twitter'" class="config-section">
+          <div class="config-header">
+            <div class="config-icon">
+              <img :src="getIconUrl('twitter.png')" alt="Twitter / X" class="service-icon" />
+            </div>
+            <div class="config-info">
+              <h4 class="config-title"> Twitter Trigger</h4>
+              <p class="config-subtitle">Trigger this area when your account is mentioned on Twitter/X</p>
             </div>
           </div>
 
-          <div v-if="form.triggerService === 'Telegram'" class="config-section">
-            <div class="config-header">
-              <div class="config-icon">
-                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+            <div class="config-content">
+              <div class="input-group">
+                <div class="input-container">
+                  <label class="input-label"> Monitor Type</label>
+                  <select v-model="form.triggerConfig.monitorType" class="modern-select" required>
+                    <option value="">Select monitor type...</option>
+                    <option value="mentions">Account Mentions</option>
+                    <option value="likes">Likes on my Tweets</option>
+                    <option value="retweets">Retweets of my Tweets</option>
+                    <option value="followers">New Followers</option>
+                  </select>
+                  <small class="input-hint">
+                    <span v-if="isTwitterMentionMonitor">Monitor your linked account for new mentions in real time.</span>
+                    <span v-else-if="isTwitterLikeMonitor">Detect increases in likes across your recent tweets.</span>
+                    <span v-else-if="isTwitterRetweetMonitor">Trigger when someone retweets one of your recent tweets.</span>
+                    <span v-else>Trigger whenever a new follower appears on your account.</span>
+                  </small>
+                </div>
+
+                <div v-if="isTwitterMentionMonitor" class="input-container">
+                  <label class="input-label"> Keyword Filter (optional)</label>
+                  <input
+                    v-model="form.triggerConfig.keyword"
+                    class="modern-input"
+                    placeholder="e.g. automation"
+                />
+                <small class="input-hint">Only trigger when the mention includes this word or phrase.</small>
               </div>
+              </div>
+
+            <div v-if="isTwitterMentionMonitor" class="input-container">
+              <label class="checkbox-item" style="margin: 0;">
+                <input
+                  type="checkbox"
+                  v-model="form.triggerConfig.includeRetweets"
+                />
+                <span class="checkbox-label">Include retweets that mention me</span>
+              </label>
+              <small class="checkbox-hint">When disabled, retweets won't trigger this automation.</small>
+            </div>
+
+            <div class="info-box">
+              <v-icon size="16" color="#1DA1F2">mdi-twitter</v-icon>
+              <span>
+                <template v-if="isTwitterMentionMonitor">
+                  Provides variables such as <code>&#123;&#123;tweetText&#125;&#125;</code>, <code>&#123;&#123;tweetAuthorUsername&#125;&#125;</code>, and <code>&#123;&#123;tweetUrl&#125;&#125;</code> for your reactions.
+                </template>
+                <template v-else-if="isTwitterLikeMonitor">
+                  Gives you <code>&#123;&#123;tweetNewLikes&#125;&#125;</code>, <code>&#123;&#123;tweetLikeCount&#125;&#125;</code>, and <code>&#123;&#123;tweetUrl&#125;&#125;</code> to reference in notifications.
+                </template>
+                <template v-else-if="isTwitterRetweetMonitor">
+                  Use <code>&#123;&#123;tweetNewRetweets&#125;&#125;</code>, <code>&#123;&#123;tweetRetweetCount&#125;&#125;</code>, and <code>&#123;&#123;tweetUrl&#125;&#125;</code> to highlight engagement.
+                </template>
+                <template v-else>
+                  Access follower details like <code>&#123;&#123;followerUsername&#125;&#125;</code>, <code>&#123;&#123;followerName&#125;&#125;</code>, and <code>&#123;&#123;followerBio&#125;&#125;</code>.
+                </template>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="form.triggerService === 'Telegram'" class="config-section">
+          <div class="config-header">
+            <div class="config-icon">
+              <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+            </div>
               <div class="config-info">
-                <h4 class="config-title">💬 Telegram Trigger</h4>
+                <h4 class="config-title"> Telegram Trigger</h4>
                 <p class="config-subtitle">Configure which Telegram messages should trigger this area</p>
               </div>
             </div>
@@ -769,7 +841,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">📱 Chat ID</label>
+                  <label class="input-label"> Chat ID</label>
                   <input
                     v-model="form.triggerConfig.chatId"
                     class="modern-input"
@@ -780,7 +852,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">🎯 Trigger Type</label>
+                  <label class="input-label"> Trigger Type</label>
                   <select v-model="form.triggerConfig.triggerType" class="modern-select" required>
                     <option value="">Select trigger type...</option>
                     <option value="message_received">Any Message Received</option>
@@ -791,7 +863,7 @@
                 </div>
 
                 <div v-if="form.triggerConfig.triggerType === 'keyword_match'" class="input-container">
-                  <label class="input-label">🔑 Keyword</label>
+                  <label class="input-label"> Keyword</label>
                   <input
                     v-model="form.triggerConfig.keyword"
                     class="modern-input"
@@ -802,7 +874,7 @@
                 </div>
 
                 <div v-if="form.triggerConfig.triggerType === 'command_received'" class="input-container">
-                  <label class="input-label">⚡ Command</label>
+                  <label class="input-label"> Command</label>
                   <input
                     v-model="form.triggerConfig.command"
                     class="modern-input"
@@ -845,7 +917,7 @@
                 <img :src="getIconUrl('gmail.png')" alt="Gmail" class="service-icon" />
               </div>
               <div class="config-info">
-                <h4 class="config-title">📧 Gmail Action</h4>
+                <h4 class="config-title"> Gmail Action</h4>
                 <p class="config-subtitle">Configure the email to be sent</p>
               </div>
             </div>
@@ -853,7 +925,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">📧 Send Email To</label>
+                  <label class="input-label"> Send Email To</label>
                   <input
                     v-model="form.actionConfig.toEmail"
                     type="email"
@@ -865,7 +937,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📝 Email Subject</label>
+                  <label class="input-label"> Email Subject</label>
                   <input
                     v-model="form.actionConfig.subject"
                     class="modern-input"
@@ -876,7 +948,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📄 Email Body</label>
+                  <label class="input-label"> Email Body</label>
                   <textarea
                     v-model="form.actionConfig.body"
                     class="modern-textarea"
@@ -890,13 +962,13 @@
             </div>
           </div>
 
-          <div v-if="form.actionService === 'Discord'" class="config-section">
-            <div class="config-header">
-              <div class="config-icon">
-                <img :src="getIconUrl('discord.png')" alt="Discord" class="service-icon" />
-              </div>
+        <div v-if="form.actionService === 'Discord'" class="config-section">
+          <div class="config-header">
+            <div class="config-icon">
+              <img :src="getIconUrl('discord.png')" alt="Discord" class="service-icon" />
+            </div>
               <div class="config-info">
-                <h4 class="config-title">💬 Discord Action</h4>
+                <h4 class="config-title"> Discord Action</h4>
                 <p class="config-subtitle">Configure the Discord message to be sent</p>
               </div>
             </div>
@@ -904,7 +976,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">🔗 Discord Webhook URL</label>
+                  <label class="input-label"> Discord Webhook URL</label>
                   <input
                     v-model="form.actionConfig.webhookUrl"
                     class="modern-input"
@@ -915,7 +987,7 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">💬 Message</label>
+                  <label class="input-label"> Message</label>
                   <textarea
                     v-model="form.actionConfig.message"
                     class="modern-textarea"
@@ -941,16 +1013,89 @@
                   </div>
                 </div>
               </div>
+          </div>
+        </div>
+
+        <div v-if="form.actionService === 'Twitter'" class="config-section">
+          <div class="config-header">
+            <div class="config-icon">
+              <img :src="getIconUrl('twitter.png')" alt="Twitter / X" class="service-icon" />
+            </div>
+            <div class="config-info">
+              <h4 class="config-title"> Twitter Action</h4>
+              <p class="config-subtitle">Publish a new tweet or retweet automatically</p>
             </div>
           </div>
 
-          <div v-if="form.actionService === 'Telegram'" class="config-section">
-            <div class="config-header">
-              <div class="config-icon">
-                <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+          <div class="config-content">
+            <div class="input-container">
+              <label class="input-label"> Twitter Action Type</label>
+              <select v-model="form.actionConfig.actionMode" class="modern-select">
+                <option value="tweet">Post a Tweet</option>
+                <option value="retweet">Retweet a Tweet</option>
+              </select>
+              <small class="input-hint">Choose whether to publish a new tweet or boost an existing one.</small>
+            </div>
+
+            <template v-if="isTwitterTweetMode">
+              <div class="input-container">
+                <label class="input-label"> Tweet Text</label>
+                <textarea
+                  v-model="form.actionConfig.tweetText"
+                  class="modern-textarea"
+                  rows="4"
+                  maxlength="280"
+                  placeholder="Thanks for the mention @&#123;&#123;tweetAuthorUsername&#125;&#125;! "
+                  required
+                ></textarea>
+                <small class="input-hint">
+                  Keep it under 280 characters. You can use variables like <code>&#123;&#123;tweetText&#125;&#125;</code>, <code>&#123;&#123;tweetAuthorUsername&#125;&#125;</code>, or <code>&#123;&#123;openaiGeneratedText&#125;&#125;</code>.
+                </small>
               </div>
+
+              <div class="input-container">
+                <label class="input-label">↩ Reply To Tweet ID (optional)</label>
+                <input
+                  v-model="form.actionConfig.replyToTweetId"
+                  class="modern-input"
+                  placeholder="&#123;&#123;tweetId&#125;&#125;"
+                />
+                <small class="input-hint">Provide a tweet ID to reply to. Use <code>&#123;&#123;tweetId&#125;&#125;</code> to reply to the triggering mention.</small>
+              </div>
+
+              <div class="info-box">
+                <v-icon size="16" color="#1DA1F2">mdi-lightbulb-on</v-icon>
+                <span>Pair with OpenAI to craft smart responses via <code>&#123;&#123;openaiGeneratedText&#125;&#125;</code>.</span>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="input-container">
+                <label class="input-label"> Tweet ID to Retweet</label>
+                <input
+                  v-model="form.actionConfig.tweetId"
+                  class="modern-input"
+                  placeholder="&#123;&#123;tweetId&#125;&#125;"
+                  required
+                />
+                <small class="input-hint">Use <code>&#123;&#123;tweetId&#125;&#125;</code> to retweet the tweet that triggered this automation, or provide any tweet ID.</small>
+              </div>
+
+              <div class="info-box">
+                <v-icon size="16" color="#1DA1F2">mdi-repeat</v-icon>
+                <span>We will retweet the specified tweet as soon as this automation runs.</span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div v-if="form.actionService === 'Telegram'" class="config-section">
+          <div class="config-header">
+            <div class="config-icon">
+              <img :src="getIconUrl('telegram.png')" alt="Telegram" class="service-icon" />
+            </div>
               <div class="config-info">
-                <h4 class="config-title">📱 Telegram Action</h4>
+                <h4 class="config-title"> Telegram Action</h4>
                 <p class="config-subtitle">Configure the Telegram message to be sent</p>
               </div>
             </div>
@@ -958,7 +1103,7 @@
             <div class="config-content">
               <div class="input-group">
                 <div class="input-container">
-                  <label class="input-label">💬 Chat ID</label>
+                  <label class="input-label"> Chat ID</label>
                   <input
                     v-model="form.actionConfig.chatId"
                     type="text"
@@ -988,11 +1133,11 @@
                 </div>
 
                 <div class="input-container">
-                  <label class="input-label">📝 Message</label>
+                  <label class="input-label"> Message</label>
                   <textarea
                     v-model="form.actionConfig.message"
                     class="modern-textarea"
-                    placeholder="🤖 Notification from {{areaName}}&#10;⏰ Triggered at {{triggerTime}}"
+                    placeholder=" Notification from {{areaName}}&#10;⏰ Triggered at {{triggerTime}}"
                     rows="5"
                     required
                   ></textarea>
@@ -1200,7 +1345,8 @@ const fetchServices = async () => {
       Timer: 'google-calendar.png',
       'Date Timer': 'google-calendar.png',
       Telegram: 'telegram.png',
-      OpenAI: 'openai.png'
+      OpenAI: 'openai.png',
+      Twitter: 'twitter.png'
     }
 
     fetchedServices.forEach(service => {
@@ -1250,7 +1396,8 @@ const getFallbackIcon = (serviceName: string) => {
     timer: 'google-calendar.png',
     telegram: 'telegram.png',
     openai: 'openai.png',
-    spotify: 'spotify.png'
+    spotify: 'spotify.png',
+    twitter: 'twitter.png'
   }
 
   const matchedDefault = Object.keys(defaultIcons).find(name => name === normalized)
@@ -1306,9 +1453,55 @@ const form = reactive({
     prompt: '',
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 500
+  maxTokens: 500
   } as any,
 })
+
+const twitterMonitorType = computed(() => {
+  const raw = (form.triggerConfig?.monitorType ?? 'mentions').toString().trim().toLowerCase()
+  return raw || 'mentions'
+})
+const isTwitterMentionMonitor = computed(() => twitterMonitorType.value === 'mentions')
+const isTwitterLikeMonitor = computed(() => twitterMonitorType.value === 'likes')
+const isTwitterRetweetMonitor = computed(() => twitterMonitorType.value === 'retweets')
+const isTwitterFollowerMonitor = computed(() => twitterMonitorType.value === 'followers')
+
+const twitterActionMode = computed(() => {
+  const raw = (form.actionConfig?.actionMode ?? 'tweet').toString().toLowerCase().trim()
+  return raw === 'retweet' ? 'retweet' : 'tweet'
+})
+
+const isTwitterTweetMode = computed(() => twitterActionMode.value === 'tweet')
+
+const buildDefaultTwitterTweetText = () => {
+  return form.triggerService === 'Twitter'
+    ? 'Thanks for the mention @{{tweetAuthorUsername}}! '
+    : 'Automation update from {{areaName}}'
+}
+
+const getTwitterActionType = () => (twitterActionMode.value === 'retweet' ? 'Retweet' : 'PostTweet')
+const getTwitterTriggerType = () => twitterMonitorType.value
+
+const getSanitizedTwitterActionConfig = (): Record<string, any> => {
+  if (twitterActionMode.value === 'retweet') {
+    return {
+      actionMode: 'retweet',
+      tweetId: (form.actionConfig?.tweetId || '').toString().trim()
+    }
+  }
+
+  const replyValue = (form.actionConfig?.replyToTweetId || '').toString().trim()
+  const config: Record<string, any> = {
+    actionMode: 'tweet',
+    tweetText: (form.actionConfig?.tweetText || '').toString()
+  }
+
+  if (replyValue) {
+    config.replyToTweetId = replyValue
+  }
+
+  return config
+}
 
 const isCalendarTrigger = computed(() => isCalendarService(form.triggerService))
 
@@ -1429,6 +1622,11 @@ const isFormValid = computed(() => {
            form.triggerConfig.interval
   }
 
+  if (form.triggerService === 'Twitter') {
+    return hasBasicInfo &&
+           form.triggerConfig.monitorType
+  }
+
   if (form.triggerService === 'Telegram') {
     const hasBasicTelegramConfig = hasBasicInfo &&
            form.triggerConfig.chatId &&
@@ -1451,6 +1649,20 @@ const isFormValid = computed(() => {
 
   if (form.actionService === 'Spotify') {
     return hasBasicInfo
+  }
+
+  if (form.actionService === 'Twitter') {
+    if (!hasBasicInfo) {
+      return false
+    }
+
+    if (twitterActionMode.value === 'retweet') {
+      const tweetId = (form.actionConfig.tweetId || '').toString().trim()
+      return !!tweetId
+    }
+
+    const tweetText = (form.actionConfig.tweetText || '').toString().trim()
+    return tweetText.length > 0
   }
 
   if (form.actionService === 'Telegram') {
@@ -1526,6 +1738,44 @@ watch(
   }
 )
 
+watch(twitterMonitorType, (newType, oldType) => {
+  if (form.triggerService !== 'Twitter') {
+    return
+  }
+  if (newType !== oldType && newType !== 'mentions') {
+    if (form.triggerConfig.keyword) {
+      form.triggerConfig.keyword = ''
+    }
+    if (form.triggerConfig.includeRetweets) {
+      form.triggerConfig.includeRetweets = false
+    }
+  }
+  if (newType === 'mentions' && typeof form.triggerConfig.includeRetweets !== 'boolean') {
+    form.triggerConfig.includeRetweets = false
+  }
+  if (!form.triggerConfig.monitorType || form.triggerConfig.monitorType === '') {
+    form.triggerConfig.monitorType = newType
+  }
+})
+
+watch(twitterActionMode, (newMode, oldMode) => {
+  if (form.actionService !== 'Twitter') {
+    return
+  }
+  if (newMode === 'retweet') {
+    if (!form.actionConfig?.tweetId || (form.actionConfig.tweetId || '').toString().trim() === '') {
+      form.actionConfig.tweetId = '{{tweetId}}'
+    }
+  } else {
+    if (!form.actionConfig?.tweetText || oldMode === 'retweet') {
+      form.actionConfig.tweetText = buildDefaultTwitterTweetText()
+    }
+    if (form.triggerService === 'Twitter' && (oldMode === 'retweet' || !form.actionConfig?.replyToTweetId)) {
+      form.actionConfig.replyToTweetId = '{{tweetId}}'
+    }
+  }
+})
+
 
 const selectTrigger = (serviceId: string) => {
   form.triggerService = serviceId
@@ -1569,6 +1819,12 @@ const selectTrigger = (serviceId: string) => {
     form.triggerConfig = {
       interval: '5m'
     }
+  } else if (serviceId === 'Twitter') {
+    form.triggerConfig = {
+      monitorType: 'mentions',
+      keyword: '',
+      includeRetweets: false
+    }
   } else if (serviceId === 'Telegram') {
     form.triggerConfig = {
       chatId: '',
@@ -1605,13 +1861,15 @@ const selectAction = (serviceId: string) => {
     }
   } else if (serviceId === 'Discord') {
     const defaultMessage = form.triggerService === 'Telegram'
-      ? '📱 **Telegram Message**\n👤 From: {{firstName}} (@{{username}})\n💬 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      ? ' **Telegram Message**\n From: {{firstName}} (@{{username}})\n Message: {{messageText}}\n Chat: {{chatId}}'
       : form.triggerService === 'Google Sheets'
-      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      ? ' Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Spotify'
-      ? '🎧 Now playing: {{trackName}} — {{artistNames}}\n🔗 {{trackUrl}}'
+      ? ' Now playing: {{trackName}} — {{artistNames}}\n {{trackUrl}}'
+      : form.triggerService === 'Twitter'
+      ? ' New mention from @{{tweetAuthorUsername}}: {{tweetText}}\n {{tweetUrl}}'
       : form.triggerService === 'Timer'
-      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      ? '⏰ Timer triggered for {{areaName}}\n Time: {{triggerTime}}\n⏱ Interval: {{interval}}'
       : 'Automation triggered for {{areaName}}'
 
     form.actionConfig = {
@@ -1630,16 +1888,30 @@ const selectAction = (serviceId: string) => {
       urlColumn: 'SpotifyLink',
       hasHeader
     }
+  } else if (serviceId === 'Twitter') {
+    const defaultTweet = form.triggerService === 'Twitter'
+      ? 'Thanks for the mention @{{tweetAuthorUsername}}! '
+      : 'Automation update from {{areaName}}'
+    const defaultReply = form.triggerService === 'Twitter' ? '{{tweetId}}' : ''
+
+    form.actionConfig = {
+      actionMode: 'tweet',
+      tweetText: defaultTweet,
+      replyToTweetId: defaultReply,
+      tweetId: '{{tweetId}}'
+    }
   } else if (serviceId === 'Telegram') {
     const defaultMessage = form.triggerService === 'Timer'
-      ? '⏰ Timer triggered for {{areaName}}\n📅 Time: {{triggerTime}}\n⏱️ Interval: {{interval}}'
+      ? '⏰ Timer triggered for {{areaName}}\n Time: {{triggerTime}}\n⏱ Interval: {{interval}}'
       : form.triggerService === 'Google Sheets'
-      ? '📊 Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
+      ? ' Google Sheets update ({{changeType}}) in {{sheetName}} row {{rowNumber}}: {{rowData}}'
       : form.triggerService === 'Telegram'
-      ? '💬 Telegram message received!\n👤 From: {{firstName}} (@{{username}})\n📝 Message: {{messageText}}\n📱 Chat: {{chatId}}'
+      ? ' Telegram message received!\n From: {{firstName}} (@{{username}})\n Message: {{messageText}}\n Chat: {{chatId}}'
       : form.triggerService === 'Spotify'
-      ? '🎧 Now playing on Spotify: {{trackName}} — {{artistNames}}'
-      : '🤖 Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
+      ? ' Now playing on Spotify: {{trackName}} — {{artistNames}}'
+      : form.triggerService === 'Twitter'
+      ? ' New mention from @{{tweetAuthorUsername}}: {{tweetText}}'
+      : ' Notification from {{areaName}}\n⏰ Triggered at {{triggerTime}}'
 
     form.actionConfig = {
       chatId: '',
@@ -1684,6 +1956,10 @@ const getMissingFields = () => {
     }
   }
 
+  if (form.triggerService === 'Twitter') {
+    if (!form.triggerConfig.monitorType) missing.push('Monitor Type')
+  }
+
   if (form.actionService === 'Gmail') {
     if (!form.actionConfig.toEmail) missing.push('Email Address')
     if (!form.actionConfig.subject) missing.push('Email Subject')
@@ -1704,6 +1980,15 @@ const getMissingFields = () => {
     if (!sheetId) missing.push('Spreadsheet ID')
     if (!range) missing.push('Sheet Range')
     if (!urlColumn) missing.push('Spotify Column')
+  }
+
+  if (form.actionService === 'Twitter') {
+    if (twitterActionMode.value === 'retweet') {
+      const tweetId = (form.actionConfig.tweetId || '').toString().trim()
+      if (!tweetId) missing.push('Tweet ID to Retweet')
+    } else {
+      if (!form.actionConfig.tweetText) missing.push('Tweet Text')
+    }
   }
 
   if (form.actionService === 'Telegram') {
@@ -1797,14 +2082,14 @@ const sendTestEmail = async () => {
     const result = await response.json()
 
     if (response.ok) {
-      alert('✅ Test email sent successfully!')
+      alert(' Test email sent successfully!')
     } else {
       throw new Error(result.error || 'Failed to send test email')
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to send test email'
     console.error('Error sending test email:', err)
-    alert('❌ Failed to send test email: ' + (err instanceof Error ? err.message : 'Unknown error'))
+    alert(' Failed to send test email: ' + (err instanceof Error ? err.message : 'Unknown error'))
   } finally {
     isSendingTest.value = false
   }
@@ -1913,6 +2198,7 @@ const createArea = async () => {
       )
     } else if (form.triggerService === 'Google Sheets') {
       const isSpotifyAction = form.actionService === 'Spotify'
+      const isTwitterAction = form.actionService === 'Twitter'
       const sanitizedActionConfig = isSpotifyAction
         ? {
             playlistId: (form.actionConfig.playlistId || '').toString().trim(),
@@ -1923,6 +2209,8 @@ const createArea = async () => {
               ? form.actionConfig.hasHeader
               : !!form.triggerConfig?.hasHeader
           }
+        : isTwitterAction
+        ? getSanitizedTwitterActionConfig()
         : form.actionConfig
 
       const areaData: any = {
@@ -1935,6 +2223,8 @@ const createArea = async () => {
           ? 'SendEmail'
           : isSpotifyAction
           ? 'UpdatePlaylist'
+          : isTwitterAction
+          ? getTwitterActionType()
           : 'Action',
         triggerConfig: {
           spreadsheetId: form.triggerConfig.spreadsheetId,
@@ -1958,6 +2248,8 @@ const createArea = async () => {
 
       await areaService.createArea(areaData)
     } else if (form.triggerService === 'Weather') {
+      const isSpotifyAction = form.actionService === 'Spotify'
+      const isTwitterAction = form.actionService === 'Twitter'
       const areaData: any = {
         name: form.areaName,
         description: form.description,
@@ -1966,11 +2258,13 @@ const createArea = async () => {
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail'
           ? 'SendEmail'
-          : form.actionService === 'Spotify'
+          : isSpotifyAction
           ? 'UpdatePlaylist'
+          : isTwitterAction
+          ? getTwitterActionType()
           : 'Action',
         triggerConfig: form.triggerConfig,
-        actionConfig: form.actionService === 'Spotify'
+        actionConfig: isSpotifyAction
           ? {
               playlistId: (form.actionConfig.playlistId || '').toString().trim(),
               spreadsheetId: (form.actionConfig.spreadsheetId || '').toString().trim(),
@@ -1980,6 +2274,8 @@ const createArea = async () => {
                 ? form.actionConfig.hasHeader
                 : true
             }
+          : isTwitterAction
+          ? getSanitizedTwitterActionConfig()
           : form.actionConfig
       }
 
@@ -2016,6 +2312,8 @@ const createArea = async () => {
           ? 'SendEmail'
           : form.actionService === 'Spotify'
           ? 'UpdatePlaylist'
+          : form.actionService === 'Twitter'
+          ? getTwitterActionType()
           : 'Action',
         triggerConfig: triggerConfig,
         actionConfig: form.actionService === 'Spotify'
@@ -2028,6 +2326,8 @@ const createArea = async () => {
                 ? form.actionConfig.hasHeader
                 : true
             }
+          : form.actionService === 'Twitter'
+          ? getSanitizedTwitterActionConfig()
           : form.actionConfig
       }
 
@@ -2068,12 +2368,16 @@ const createArea = async () => {
           ? 'Event'
           : form.triggerService === 'Spotify'
           ? 'Playback'
+          : form.triggerService === 'Twitter'
+          ? getTwitterTriggerType()
           : 'Webhook',
         actionService: form.actionService!,
         actionType: form.actionService === 'Gmail'
           ? 'SendEmail'
           : form.actionService === 'Spotify'
           ? 'UpdatePlaylist'
+          : form.actionService === 'Twitter'
+          ? getTwitterActionType()
           : 'Action',
         triggerConfig: triggerConfig,
         actionConfig: form.actionService === 'Spotify'
@@ -2086,6 +2390,8 @@ const createArea = async () => {
                 ? form.actionConfig.hasHeader
                 : true
             }
+          : form.actionService === 'Twitter'
+          ? getSanitizedTwitterActionConfig()
           : form.actionConfig
       }
 
