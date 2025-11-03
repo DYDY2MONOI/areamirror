@@ -35,10 +35,11 @@ func SeedData() {
 		{Name: "Discord", Description: "Plateforme de communication", IconURL: "https://discord.com/icon.png", IsActive: true},
 		{Name: "OneDrive", Description: "Service de stockage Microsoft", IconURL: "https://onedrive.com/icon.png", IsActive: true},
 		{Name: "Google Sheets", Description: "Surveille les feuilles de calcul Google Sheets", IconURL: "https://sheets.google.com/icon.png", IsActive: true},
+		{Name: "Twitter", Description: "Service de microblogging Twitter/X", IconURL: "https://twitter.com/icon.png", IsActive: true},
 		{Name: "Spotify", Description: "Service de streaming musical", IconURL: "https://spotify.com/icon.png", IsActive: true},
 		{Name: "Timer", Description: "Déclenche des automatisations à intervalles réguliers", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
 		{Name: "Date Timer", Description: "Planifie des rappels d'événements à des dates précises", IconURL: "https://calendar.google.com/icon.png", IsActive: true},
-		{Name: "Twitter", Description: "Automatise les interactions avec Twitter/X", IconURL: "https://twitter.com/icon.png", IsActive: true},
+		{Name: "Telegram", Description: "Plateforme de messagerie instantanée", IconURL: "https://telegram.org/icon.png", IsActive: true},
 	}
 
 	for _, service := range services {
@@ -48,7 +49,7 @@ func SeedData() {
 		}
 	}
 
-	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer, twitter models.Service
+	var gmail, slack, github, weather, calendar, discord, onedrive, sheets, spotify, timer, dateTimer, telegram, twitter models.Service
 	DB.Where("name = ?", "Gmail").First(&gmail)
 	DB.Where("name = ?", "Slack").First(&slack)
 	DB.Where("name = ?", "GitHub").First(&github)
@@ -60,6 +61,7 @@ func SeedData() {
 	DB.Where("name = ?", "Spotify").First(&spotify)
 	DB.Where("name = ?", "Timer").First(&timer)
 	DB.Where("name = ?", "Date Timer").First(&dateTimer)
+	DB.Where("name = ?", "Telegram").First(&telegram)
 	DB.Where("name = ?", "Twitter").First(&twitter)
 
 	actions := []models.Action{
@@ -78,6 +80,9 @@ func SeedData() {
 		{ServiceID: twitter.ID, Name: "Nouveau follower Twitter", Description: "Se déclenche lorsqu'un nouvel utilisateur vous suit", Parameters: `{"monitorType": "followers"}`},
 		{ServiceID: timer.ID, Name: "Intervalle écoulé", Description: "Se déclenche après un intervalle défini", Parameters: `{"interval": "15m"}`},
 		{ServiceID: dateTimer.ID, Name: "Rappel d'événement programmé", Description: "Se déclenche à la date et l'heure configurées", Parameters: `{"eventTime": "", "eventTitle": "", "calendarId": ""}`},
+		{ServiceID: telegram.ID, Name: "Message reçu", Description: "Se déclenche quand un message est reçu", Parameters: `{"chatId": "", "triggerType": "any_message"}`},
+		{ServiceID: telegram.ID, Name: "Mot-clé détecté", Description: "Se déclenche quand un mot-clé spécifique est détecté", Parameters: `{"chatId": "", "triggerType": "keyword_match", "keyword": ""}`},
+		{ServiceID: telegram.ID, Name: "Commande reçue", Description: "Se déclenche quand une commande spécifique est reçue", Parameters: `{"chatId": "", "triggerType": "command_received", "command": ""}`},
 	}
 
 	for _, action := range actions {
@@ -96,8 +101,7 @@ func SeedData() {
 		{ServiceID: onedrive.ID, Name: "Upload fichier", Description: "Upload un fichier vers OneDrive", Parameters: `{"fileName": "", "content": ""}`},
 		{ServiceID: onedrive.ID, Name: "Créer dossier", Description: "Crée un nouveau dossier sur OneDrive", Parameters: `{"folderName": ""}`},
 		{ServiceID: spotify.ID, Name: "Mettre à jour playlist", Description: "Synchronise une playlist Spotify avec une feuille Google Sheets", Parameters: `{"playlistId": "", "spreadsheetId": "", "range": "", "urlColumn": "SpotifyLink", "hasHeader": true}`},
-		{ServiceID: twitter.ID, Name: "Publier un tweet", Description: "Publie un tweet sur votre compte Twitter/X", Parameters: `{"actionMode": "tweet", "tweetText": "", "replyToTweetId": ""}`},
-		{ServiceID: twitter.ID, Name: "Retweeter", Description: "Retweete automatiquement un tweet spécifique", Parameters: `{"actionMode": "retweet", "tweetId": "{{tweetId}}"}`},
+		{ServiceID: telegram.ID, Name: "Envoyer message Telegram", Description: "Envoie un message sur Telegram", Parameters: `{"chatId": "", "message": ""}`},
 	}
 
 	for _, reaction := range reactions {
