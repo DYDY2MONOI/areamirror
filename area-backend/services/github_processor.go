@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 )
 
 type GitHubEventProcessor struct {
@@ -15,16 +16,16 @@ type GitHubEventProcessor struct {
 type GitHubWebhookPayload struct {
 	Ref        string `json:"ref"`
 	Repository struct {
-		ID       int    `json:"id"`
-		Name     string `json:"name"`
-		FullName string `json:"full_name"`
-		HTMLURL  string `json:"html_url"`
+		ID          int    `json:"id"`
+		Name        string `json:"name"`
+		FullName    string `json:"full_name"`
+		HTMLURL     string `json:"html_url"`
 		Description string `json:"description"`
 	} `json:"repository"`
 	Commits []struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
@@ -44,9 +45,9 @@ type GitHubWebhookPayload struct {
 	Forced     bool   `json:"forced"`
 	Compare    string `json:"compare"`
 	HeadCommit struct {
-		ID       string `json:"id"`
-		Message  string `json:"message"`
-		Author   struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
+		Author  struct {
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		} `json:"author"`
@@ -119,7 +120,7 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 		return nil
 	}
 
-	if !gep.shouldSendNotification(config.NotificationTypes, payload) {
+	if !gep.shouldSendNotification(config.NotificationTypes, "push") {
 		return nil
 	}
 
@@ -162,19 +163,18 @@ func (gep *GitHubEventProcessor) processAreaForEvent(area models.Area, payload G
 	return nil
 }
 
-func (gep *GitHubEventProcessor) shouldSendNotification(notificationTypes []string, payload GitHubWebhookPayload) bool {
+func (gep *GitHubEventProcessor) shouldSendNotification(notificationTypes []string, eventType string) bool {
 	if len(notificationTypes) == 0 {
 		return true
 	}
 
+	currentEvent := strings.ToLower(eventType)
 	for _, notificationType := range notificationTypes {
-		switch notificationType {
-		case "push":
+		switch strings.ToLower(notificationType) {
+		case "all":
 			return true
-		case "pull_request":
-			return false
-		case "issues":
-			return false
+		case currentEvent:
+			return true
 		default:
 			continue
 		}
@@ -197,9 +197,9 @@ func (gep *GitHubEventProcessor) convertToEventData(payload GitHubWebhookPayload
 			Description: payload.Repository.Description,
 		},
 		Commits: func() []struct {
-			ID       string `json:"id"`
-			Message  string `json:"message"`
-			Author   struct {
+			ID      string `json:"id"`
+			Message string `json:"message"`
+			Author  struct {
 				Name  string `json:"name"`
 				Email string `json:"email"`
 			} `json:"author"`
@@ -209,9 +209,9 @@ func (gep *GitHubEventProcessor) convertToEventData(payload GitHubWebhookPayload
 			Modified []string `json:"modified"`
 		} {
 			var commits []struct {
-				ID       string `json:"id"`
-				Message  string `json:"message"`
-				Author   struct {
+				ID      string `json:"id"`
+				Message string `json:"message"`
+				Author  struct {
 					Name  string `json:"name"`
 					Email string `json:"email"`
 				} `json:"author"`
@@ -222,9 +222,9 @@ func (gep *GitHubEventProcessor) convertToEventData(payload GitHubWebhookPayload
 			}
 			for _, commit := range payload.Commits {
 				commits = append(commits, struct {
-					ID       string `json:"id"`
-					Message  string `json:"message"`
-					Author   struct {
+					ID      string `json:"id"`
+					Message string `json:"message"`
+					Author  struct {
 						Name  string `json:"name"`
 						Email string `json:"email"`
 					} `json:"author"`
@@ -244,14 +244,14 @@ func (gep *GitHubEventProcessor) convertToEventData(payload GitHubWebhookPayload
 			}
 			return commits
 		}(),
-		Pusher: payload.Pusher,
-		Ref:    payload.Ref,
-		Before: payload.Before,
-		After:  payload.After,
-		Created: payload.Created,
-		Deleted: payload.Deleted,
-		Forced:  payload.Forced,
-		Compare: payload.Compare,
+		Pusher:     payload.Pusher,
+		Ref:        payload.Ref,
+		Before:     payload.Before,
+		After:      payload.After,
+		Created:    payload.Created,
+		Deleted:    payload.Deleted,
+		Forced:     payload.Forced,
+		Compare:    payload.Compare,
 		HeadCommit: payload.HeadCommit,
 	}
 }
